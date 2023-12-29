@@ -1,0 +1,309 @@
+﻿number,Category,trans_answer
+1,0,0
+1,1 a 2,1 to 2
+1,3 a 5,3 to 5
+1,5 a 9,5 to 9
+1,10 a 15,10 to 15
+1,más de15,More than 15
+2,Fitopatología,Plant Pathology
+2,Entomología,Entomology
+2,MIP,IPM (Integrated Pest Management)
+2,Sistemas de semillas,Seed Systems
+2,Agronomía,Agronomy
+2,Horticultura,Horticulture
+2,Economía,Economics
+2,Ciencias sociales,Social Sciences
+2,Extensión agrícola,Agricultural Extension
+2,Gestión de operaciones agrícolas/consultores de cultivos,Agricultural Operations Management/Crop Consultants
+2,Investigación,Research
+2,Productor,Producer
+2,otros,Others
+3,públicas,Public
+3,privadas,Private
+4,Sin educación formal,No Formal Education
+4,Educación primaria,Primary Education
+4,Educación secundaria,Secondary Education
+4,Licenciatura,Bachelor's Degree
+4,Maestría,Master's Degree
+4,"Doctorado (Ph.D., Ed.D., etc.)",Doctorate
+5,Moko o Madurabiche,Moko or Madurabiche
+5,Sigatoka Negra,Black Sigatoka
+5,Enfermedad del Mosaico del Banano,Banana Mosaic Disease
+5,Sigatoka Amarilla,Yellow Sigatoka
+5,Elefantiasis,Elephantiasis
+5,Fusarium,Fusarium
+5,Picudo Negro,Black Weevil
+5,Cochinilla,Scale Insect
+5,Arañita Roja,Red Spider Mite
+5,Escarabajo Cicatrizante,Scarab Beetle
+5,Nematodos,Nematodes
+5,Moscas Blancas,Whiteflies
+5,No estoy seguro,Not Sure
+6,Sin conocimiento,No Knowledge
+6,Muy bajo conocimiento,Very Low Knowledge
+6,Bajo conocimiento,Low Knowledge
+6,Moderado conocimiento,Moderate Knowledge
+6,Alto conocimiento,High Knowledge
+6,Muy alto conocimiento,Very High Knowledge
+6,No estoy seguro,Not Sure
+7,Extremadamente improbable,Extremely Unlikely
+7,Muy improbable,Very Unlikely
+7,Poco probable,Unlikely
+7,Algo improbable,Somewhat Unlikely
+7,Neutral,Neutral
+7,Algo probable,Somewhat Likely
+7,Probable,Likely
+7,Muy probable,Very Likely
+7,Extremadamente probable,Extremely Likely
+7,No estoy seguro,Not Sure
+8,No eficaz,Not Effective
+8,Poco eficaz,Slightly Effective
+8,Moderadamente eficaz,Moderately Effective
+8,Muy eficaz,Very Effective
+8,Extremadamente eficaz,Extremely Effective
+8,No estoy seguro,Not Sure
+9,Sin capacitación o información disponible,No Training or Information Available
+9,Deficiente,Poor
+9,Regular,Fair
+9,Adecuado,Adequate
+9,Bueno,Good
+9,Excelente,Excellent
+9,Inseguro,Unsure
+11,10 a 0,10 to 0
+11,9 a 1,9 to 1
+11,8 a 2,8 to 2
+11,7 a 3,7 to 3
+11,6 a 4,6 to 4
+11,5 a 5,5 to 5
+11,4 a 6,4 to 6
+11,3 a 7,3 to 7
+11,2 a 8,2 to 8
+11,1 a 9,1 to 9
+11,0 a 10,0 to 10
+13,Cada 1 o 2 ciclos,Every 1 or 2 cycles
+13,Cada 3 a 4 ciclos,Every 3 to 4 cycles
+13,Cada 5 a 6 ciclos,Every 5 to 6 cycles
+13,Cada 7 o más ciclos,Every 7 or more cycles
+13,No estoy seguro,Not Sure
+14,Inspección y pruebas,Inspection and Testing
+14,Tratamiento y desinfección,Treatment and Disinfection
+14,Cuarentena y aislamiento,Quarantine and Isolation
+14,Condiciones de almacenamiento,Storage Conditions
+14,Mantenimiento de registros,Record Keeping
+14,Capacitación y concientización,Training and Awareness
+14,Cumplimiento de regulaciones,Compliance with Regulations
+14,Participación comunitaria,Community Involvement
+14,Consulta con expertos,Consultation with Experts
+14,Monitoreo y presentación de informes,Monitoring and Reporting
+14,Ninguno,None
+14,Inseguro,Unsure
+15,"Control Químico (Pesticidas, Fungicidas)",Chemical Control
+15,"Control Biológico (Insectos Beneficiosos, Controles Microbianos)",Biological Control
+15,"Control Cultural (Rotación de Cultivos, Saneamiento)",Cultural Control
+15,"Control Físico (Trampas, Barreras)",Physical Control
+15,Manejo Integrado de Plagas y Enfermedades,Integrated Pest and Disease Management
+15,"Medidas de Bioseguridad (Cuarentena, Desinfección)",Biosecurity Measures
+15,Monitoreo y Reporte,Monitoring and Reporting
+15,Educación y Capacitación,Education and Training
+15,Cumplimiento Normativo,Regulatory Compliance
+15,Participación Comunitaria,Community Participation
+15,Inseguro,Unsure
+16,0%,0%
+16,1%-10%,1%-10%
+16,11%-20%,11%-20%
+16,21%-30%,21%-30%
+16,31%-40%,31%-40%
+16,41%-50%,41%-50%
+16,51%-60%,51%-60%
+16,61%-70%,61%-70%
+16,71%-80%,71%-80%
+16,81%-90%,81%-90%
+16,91%-100%,91%-100%
+16,No seguro,Not Sure
+17,0%,0%
+17,1%-10%,1%-10%
+17,11%-20%,11%-20%
+17,21%-30%,21%-30%
+17,31%-40%,31%-40%
+17,41%-50%,41%-50%
+17,51%-60%,51%-60%
+17,61%-70%,61%-70%
+17,71%-80%,71%-80%
+17,81%-90%,81%-90%
+17,91%-100%,91%-100%
+17,No seguro,Not Sure
+18,0%,0%
+18,1%-10%,1%-10%
+18,11%-20%,11%-20%
+18,21%-30%,21%-30%
+18,31%-40%,31%-40%
+18,41%-50%,41%-50%
+18,51%-60%,51%-60%
+18,61%-70%,61%-70%
+18,71%-80%,71%-80%
+18,81%-90%,81%-90%
+18,91%-100%,91%-100%
+18,No seguro,Not Sure
+19,0%,0%
+19,1%-10%,1%-10%
+19,11%-20%,11%-20%
+19,21%-30%,21%-30%
+19,31%-40%,31%-40%
+19,41%-50%,41%-50%
+19,51%-60%,51%-60%
+19,61%-70%,61%-70%
+19,71%-80%,71%-80%
+19,81%-90%,81%-90%
+19,91%-100%,91%-100%
+19,No seguro,Not Sure
+20,0%,0%
+20,1%-10%,1%-10%
+20,11%-20%,11%-20%
+20,21%-30%,21%-30%
+20,31%-40%,31%-40%
+20,41%-50%,41%-50%
+20,51%-60%,51%-60%
+20,61%-70%,61%-70%
+20,71%-80%,71%-80%
+20,81%-90%,81%-90%
+20,91%-100%,91%-100%
+20,No seguro,Not Sure
+21,Diario,Daily
+21,Semanal,Weekly
+21,Quincenal,Biweekly
+21,Mensual,Monthly
+21,Bimestral,Bimonthly
+21,Trimestral,Quarterly
+21,Semestral,Semiannually
+21,Anual,Annually
+21,Según sea necesario,As Needed
+21,No supervisado,Unsupervised
+21,No estoy seguro,Not Sure
+22,No eficaz,Not Effective
+22,Poco eficaz,Slightly Effective
+22,Moderadamente eficaz,Moderately Effective
+22,Muy eficaz,Very Effective
+22,Extremadamente eficaz,Extremely Effective
+22,Inseguro,Unsure
+23,No eficaz,Not Effective
+23,Poco eficaz,Slightly Effective
+23,Moderadamente eficaz,Moderately Effective
+23,Muy eficaz,Very Effective
+23,Extremadamente eficaz,Extremely Effective
+23,Inseguro,Unsure
+24,No eficaz,Not Effective
+24,Poco eficaz,Slightly Effective
+24,Moderadamente eficaz,Moderately Effective
+24,Muy eficaz,Very Effective
+24,Extremadamente eficaz,Extremely Effective
+24,Inseguro,Unsure
+25,No eficaz,Not Effective
+25,Poco eficaz,Slightly Effective
+25,Moderadamente eficaz,Moderately Effective
+25,Muy eficaz,Very Effective
+25,Extremadamente eficaz,Extremely Effective
+25,Inseguro,Unsure
+26,No eficaz,Not Effective
+26,Poco eficaz,Slightly Effective
+26,Moderadamente eficaz,Moderately Effective
+26,Muy eficaz,Very Effective
+26,Extremadamente eficaz,Extremely Effective
+26,Inseguro,Unsure
+27,Recursos Financieros,Financial Resources
+27,Conocimiento Técnico,Technical Knowledge
+27,Acceso a Material de Siembra de Calidad,Access to Quality Planting Material
+27,Disponibilidad de Mano de Obra,Availability of Labor
+27,Políticas y Regulaciones Gubernamentales,Government Policies and Regulations
+27,Aceptación Social/Apoyo Comunitario,Social Acceptance/Community Support
+27,Acceso al Mercado,Market Access
+27,Condiciones Ambientales,Environmental Conditions
+27,Impactos del Cambio Climático,Impacts of Climate Change
+27,Presión de Plagas y Enfermedades,Pest and Disease Pressure
+27,Acceso a Servicios de Capacitación y Extensión,Access to Training and Extension Services
+27,Disponibilidad de Infraestructura y Equipo,Availability of Infrastructure and Equipment
+27,Inseguro,Unsure
+28,No significativo,Not Significant
+28,Algo significativo ,Somewhat Significant
+28,Muy significativo,Very Significant
+28,No estoy seguro,Not Sure
+29,Ninguna medida,No Measures
+29,Algunas medidas,Some Measures
+29,Medidas significativas,Significant Measures
+29,No estoy seguro,Not Sure
+30,Sin limitación,No Limitation
+30,Poca limitación,Little Limitation
+30,Limitación moderada,Moderate Limitation
+30,Limitación extrema,Extreme Limitation
+30,Inseguro,Unsure
+31,Sin limitación,No Limitation
+31,Poca limitación,Little Limitation
+31,Limitación moderada,Moderate Limitation
+31,Limitación extrema,Extreme Limitation
+31,Inseguro,Unsure
+32,Aspersor,Sprinkler
+32,Goteo,Drip
+32,Cuenca,Basin
+32,Surco/zanja,Furrow/Trench
+32,Otro,Other
+32,Ninguno,None
+32,Inseguro,Unsure
+33,Aguas superficiales,Surface Water
+33,Aguas subterráneas,Groundwater
+33,Aguas residuales tratadas,Treated Wastewater
+33,Presas,Dams
+33,Distritos de riego comunales,Community Irrigation Districts
+33,Lluvias,Rainwater
+33,Otros ,Others
+33,Inseguro,Unsure
+33,Ninguno,None
+35,Filtración,Filtration
+35,Tratamiento químico,Chemical Treatment
+35,Tratamiento físico,Physical Treatment
+35,Sin tratamiento,No Treatment
+35,Inseguro,Unsure
+36,0%,0%
+36,1%-10%,1%-10%
+36,11%-20%,11%-20%
+36,21%-30%,21%-30%
+36,31%-40%,31%-40%
+36,41%-50%,41%-50%
+36,51%-60%,51%-60%
+36,61%-70%,61%-70%
+36,71%-80%,71%-80%
+36,81%-90%,81%-90%
+36,91%-100%,91%-100%
+36,No seguro,Not Sure
+37,Extremadamente improbable,Extremely Unlikely
+37,Muy improbable,Very Unlikely
+37,Poco probable,Unlikely
+37,Algo improbable,Somewhat Unlikely
+37,Neutral,Neutral
+37,Algo probable,Somewhat Likely
+37,Probable,Likely
+37,Muy probable,Very Likely
+37,Extremadamente probable,Extremely Likely
+37,Inseguro,Unsure
+39,Riesgo insignificante,Insignificant Risk
+39,Riesgo muy bajo,Very Low Risk
+39,Riesgo bajo,Low Risk
+39,Riesgo moderado,Moderate Risk
+39,Riesgo alto,High Risk
+39,No estoy seguro,Not Sure
+40,No Factible,Not Feasible
+40,Poco Factible,Slightly Feasible
+40,Moderadamente Factible,Moderately Feasible
+40,Muy Factible,Very Feasible
+40,Extremadamente Factible,Extremely Feasible
+41,Comercio de material vegetal infectado,Trade of Infected Plant Material
+41,Medidas de bioseguridad inadecuadas,Inadequate Biosecurity Measures
+41,Falta de aplicación de la cuarentena,Lack of Quarantine Enforcement
+41,Vigilancia limitada de enfermedades,Limited Disease Surveillance
+41,Conciencia comunitaria,Community Awareness
+41,Marco regulatorio débil,Weak Regulatory Framework
+41,Efectos del cambio climático,Effects of Climate Change
+41,Especies invasoras,Invasive Species
+41,Factores políticos,Political Factors
+41,Demanda del mercado,Market Demand
+41,Migración,Migration
+41,Inestabilidad social,Social Instability
+41,No estoy seguro,Not Sure
