@@ -1,0 +1,177 @@
+---
+title: "Analisis of individual Questions EKE Colombia - Banano and Plantain 2023"
+author: "Jacobo Robledo"
+date: "`r Sys.Date()`"
+output: github_document
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Libraries, Functions, and Global Variables
+
+#### `tree_map_3` Function
+
+**Description:**\
+This function creates a treemap visualization based on a given dataset.
+It first calculates the frequency of occurrences for specified grouping variables and then plots a treemap using these frequencies.
+
+**Parameters:**\
+
+-   `data`: A data frame containing the data to be visualized.
+
+-   `group`: The name of the column in 'data' to be used as the primary grouping variable.
+
+-   `subgroup_1`: The name of the column in 'data' to be used as the first level subgroup.
+
+-   `subgroup_2`: The name of the column in 'data' to be used as the second level subgroup.
+
+-   `color_column`: The name of the column in 'data' that determines the color of the treemap blocks.
+
+-   `title`: The title to be displayed on the treemap.
+
+**Details:**\
+The function groups the data by 'group', 'subgroup_1', 'subgroup_2', and 'color_column', then calculates the frequency of each group.
+It uses the 'treemap' package to create the treemap, where the size of each block is determined by the calculated frequency.
+The color of the blocks is determined by the 'color_column'.
+The function allows customization of label sizes, colors, and placement, as well as border colors and widths.
+
+**Returns:**\
+A treemap plot as specified by the input parameters.
+
+**Example Usage:**\
+`tree_map_3(my_data, "main_category", "sub_category1", "sub_category2", "color_var", "My Treemap Title")`
+
+#### `Col_map_by_depto` Function
+
+**Description:**\
+This function creates a colored map visualization based on departmental data.
+It utilizes the `colmap` function to map data to specific geographical areas (departments) and applies a continuous color scale to these areas.
+
+**Function Structure:** - `colmap(departamentos, data, data_id, var)`: Maps the `var` variable from the `data` data frame onto the `departamentos` geographical layout.
+The `data_id` specifies the matching column in `data` that corresponds to department IDs.
+- `scale_fill_continuous(low, high, na.value)`: Applies a continuous color scale to the map.
+The `low` and `high` parameters define the color range for the lowest and highest values of `var`, respectively.
+The `na.value` parameter defines the color for missing values.
+- `labs(fill = legend_lab)`: Sets the label for the map legend.
+
+**Parameters:**\
+- `departamentos`: The geographical layout of departments.
+- `data`: The data frame containing the data to be visualized.
+- `data_id`: The column in `data` that corresponds to department IDs.
+- `var`: The variable in `data` to be visualized on the map.
+- `low`: The color representing the low end of the `var` variable's range.
+- `high`: The color representing the high end of the `var` variable's range.
+- `na.value`: The color used for missing values in `var`.
+- `legend_lab`: The label for the map's legend.
+
+**Example Usage:**\
+Suppose you have a data frame `my_data` with department IDs in `depto_id` column and a variable `population` to visualize.
+You could call:
+
+`R Col_map_by_depto(departamentos = my_map_layout, data = my_data, data_id = "depto_id", var = "population", low = "blue", high = "red", na.value = "grey", legend_lab = "Population")`
+
+```{r libraries}
+#libraries----
+  library(treemap)
+  library(tidyverse)
+  library(RColorBrewer)
+  library("colmaps")
+  library("homicidios")
+#Global variables
+  #set the color palette for bananas and plantains
+  palette_banana <- colorRampPalette(c("#FFDA00","#FFF2CC" ))
+  palette_plantain <- colorRampPalette(c("#28B463","#BEF4BE"))
+  #data set: individual questions:
+  #read individual surveys from GitHub
+  num_cols <- length(read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", nrows = 1, header = TRUE))
+  # Create a colClasses vector with "character" for each column
+  col_classes <- rep("character", num_cols)
+  individual_surveys<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", colClasses = col_classes)
+  #reformat columns
+  individual_surveys$question_number<- as.integer(individual_surveys$question_number)
+
+
+#function tree_map_3 
+  tree_map_3<- function(data,group, subgroup_1, subgroup_2, color_column, title){
+    #Calculate the frequencies
+    frequency_personalized_question<- data %>%
+      group_by(!!rlang::sym(group), !!rlang::sym(subgroup_1), !!rlang::sym(subgroup_2), !!rlang::sym(color_column)) %>%
+      summarise(frequency=n())
+    #Plot the tree map 
+    figure<- treemap(frequency_personalized_question,
+            index=c(group,subgroup_1, subgroup_2), 
+            vSize="frequency",
+            vColor=color_column,
+            type="color",
+            fontsize.labels=c(0,7,4),                # size of labels. Give the size per level of aggregation: size for group, size for subgroup, sub-subgroups...
+            fontcolor.labels=c("transparent","#654321", "#A58F65"),    # Color of labels
+            fontface.labels=c(2,1,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
+            bg.labels=c("transparent"),              # Background color of labels
+            align.labels=list(
+              c("center", "top"), 
+              c("right", "bottom"), 
+              c("left", "top")
+            ),                                   # Where to place labels in the rectangle?
+            overlap.labels=0.5,                      # number between 0 and 1 that determines the tolerance of the overlap between labels. 0 means that labels of lower levels are not printed if higher level labels overlap, 1  means that labels are always printed. In-between values, for instance the default value .5, means that lower level labels are printed if other labels do not overlap with more than .5  times their area size.
+            inflate.labels=T,                        # If true, labels are bigger when rectangle is bigger.
+            border.col=c("white","#654321","#A58F65"),             # Color of borders of groups, of subgroups, of subsubgroups ....
+            border.lwds=c(3,2, 0.5),                         # Width of colors
+            title=title,                      # Customize your title
+            #fontsize.title=12                       # Size of the title
+    )
+    return(figure)
+  }
+
+#function Col_map_by_depto
+  Col_map_by_depto<- function(data, data_id, var, low, high, na.values, legend_lab){
+    
+    figure<- colmap(departamentos, data = data, data_id = data_id, var = var)+
+      scale_fill_continuous(low = low , high = high, na.value = na.values)
+    labs(fill= legend_lab)
+    return(figure)
+  }
+```
+
+## Question 1: `r individual_surveys$question_in_english[1]`
+
+```{r question_1}
+#selecting only question 1----
+  personalized_question<- filter(individual_surveys, question_number==1)
+  #organizing the order of the levels
+  personalized_question$question_in_english<- factor(personalized_question$question_in_english,levels = c("1 to 2", "3 to 5","5 to 9","10 to 15","More than 15"))
+  #finding the number of levels per crop (banana and plantain)
+  levels_per_crop_Q1<- tapply(personalized_question$answer_in_english, personalized_question$crop, function(x){length(unique(x))})
+  #generating a ramp palette according to the number of levels per crop
+  colors_banana_question1<- palette_banana(levels_per_crop_Q1["Banana"])
+  colors_plantain_question1<- palette_plantain(levels_per_crop_Q1["Plantain"])
+  #Assigning the colors by crop and answer
+  personalized_question<- personalized_question %>%
+    mutate(group_color= case_when(
+      crop=="Banana" & answer_in_english == "1 to 2" ~ colors_banana_question1[5],
+      crop=="Banana" & answer_in_english == "3 to 5" ~ colors_banana_question1[4],
+      crop=="Banana" & answer_in_english == "5 to 9" ~ colors_banana_question1[3],
+      crop=="Banana" & answer_in_english == "10 to 15" ~ colors_banana_question1[2],
+      crop=="Banana" & answer_in_english == "More than 15" ~ colors_banana_question1[1],
+      crop=="Plantain" & answer_in_english == "1 to 2" ~ colors_plantain_question1[5],
+      crop=="Plantain" & answer_in_english == "3 to 5" ~ colors_plantain_question1[4],
+      crop=="Plantain" & answer_in_english == "5 to 9" ~ colors_plantain_question1[3],
+      crop=="Plantain" & answer_in_english == "10 to 15" ~ colors_plantain_question1[2],
+      crop=="Plantain" & answer_in_english == "More than 15" ~ colors_plantain_question1[1],
+    ))
+#tree map
+tree_map_3(data = personalized_question, "crop", "expert_in", "answer_in_english", "group_color", title="Experience of Experts by Department")
+#summarise to have the number of experts by departments
+data<- personalized_question %>%
+  group_by(expert_in, id_depto) %>%
+  summarise(Number_of_Experts= n())
+codes_department<- unique(data.frame(EKE.expert.in=homicidios$depto, id_depto=homicidios$id_depto))
+data<- full_join(codes_department, data)
+
+
+Col_map_by_depto(data = data, data_id = "id_depto", var = "Number_of_Experts", low = "#A58F65", high = "#654321", na.values = "#eeeeee", legend_lab = "Number \n of experts")
+```
