@@ -1,309 +1,309 @@
-﻿number,Category,trans_answer
-1,0,0
-1,1 a 2,1 to 2
-1,3 a 5,3 to 5
-1,5 a 9,5 to 9
-1,10 a 15,10 to 15
-1,más de15,More than 15
-2,Fitopatología,Plant Pathology
-2,Entomología,Entomology
-2,MIP,IPM (Integrated Pest Management)
-2,Sistemas de semillas,Seed Systems
-2,Agronomía,Agronomy
-2,Horticultura,Horticulture
-2,Economía,Economics
-2,Ciencias sociales,Social Sciences
-2,Extensión agrícola,Agricultural Extension
-2,Gestión de operaciones agrícolas/consultores de cultivos,Agricultural Operations Management/Crop Consultants
-2,Investigación,Research
-2,Productor,Producer
-2,otros,Others
-3,públicas,Public
-3,privadas,Private
-4,Sin educación formal,No Formal Education
-4,Educación primaria,Primary Education
-4,Educación secundaria,Secondary Education
-4,Licenciatura,Bachelor's Degree
-4,Maestría,Master's Degree
-4,"Doctorado (Ph.D., Ed.D., etc.)",Doctorate
-5,Moko o Madurabiche,Moko or Madurabiche
-5,Sigatoka Negra,Black Sigatoka
-5,Enfermedad del Mosaico del Banano,Banana Mosaic Disease
-5,Sigatoka Amarilla,Yellow Sigatoka
-5,Elefantiasis,Elephantiasis
-5,Fusarium,Fusarium
-5,Picudo Negro,Black Weevil
-5,Cochinilla,Scale Insect
-5,Arañita Roja,Red Spider Mite
-5,Escarabajo Cicatrizante,Scarab Beetle
-5,Nematodos,Nematodes
-5,Moscas Blancas,Whiteflies
-5,No estoy seguro,Not Sure
-6,Sin conocimiento,No Knowledge
-6,Muy bajo conocimiento,Very Low Knowledge
-6,Bajo conocimiento,Low Knowledge
-6,Moderado conocimiento,Moderate Knowledge
-6,Alto conocimiento,High Knowledge
-6,Muy alto conocimiento,Very High Knowledge
-6,No estoy seguro,Not Sure
-7,Extremadamente improbable,Extremely Unlikely
-7,Muy improbable,Very Unlikely
-7,Poco probable,Unlikely
-7,Algo improbable,Somewhat Unlikely
-7,Neutral,Neutral
-7,Algo probable,Somewhat Likely
-7,Probable,Likely
-7,Muy probable,Very Likely
-7,Extremadamente probable,Extremely Likely
-7,No estoy seguro,Not Sure
-8,No eficaz,Not Effective
-8,Poco eficaz,Slightly Effective
-8,Moderadamente eficaz,Moderately Effective
-8,Muy eficaz,Very Effective
-8,Extremadamente eficaz,Extremely Effective
-8,No estoy seguro,Not Sure
-9,Sin capacitación o información disponible,No Training or Information Available
-9,Deficiente,Poor
-9,Regular,Fair
-9,Adecuado,Adequate
-9,Bueno,Good
-9,Excelente,Excellent
-9,Inseguro,Unsure
-11,10 a 0,10 to 0
-11,9 a 1,9 to 1
-11,8 a 2,8 to 2
-11,7 a 3,7 to 3
-11,6 a 4,6 to 4
-11,5 a 5,5 to 5
-11,4 a 6,4 to 6
-11,3 a 7,3 to 7
-11,2 a 8,2 to 8
-11,1 a 9,1 to 9
-11,0 a 10,0 to 10
-13,Cada 1 o 2 ciclos,Every 1 or 2 cycles
-13,Cada 3 a 4 ciclos,Every 3 to 4 cycles
-13,Cada 5 a 6 ciclos,Every 5 to 6 cycles
-13,Cada 7 o más ciclos,Every 7 or more cycles
-13,No estoy seguro,Not Sure
-14,Inspección y pruebas,Inspection and Testing
-14,Tratamiento y desinfección,Treatment and Disinfection
-14,Cuarentena y aislamiento,Quarantine and Isolation
-14,Condiciones de almacenamiento,Storage Conditions
-14,Mantenimiento de registros,Record Keeping
-14,Capacitación y concientización,Training and Awareness
-14,Cumplimiento de regulaciones,Compliance with Regulations
-14,Participación comunitaria,Community Involvement
-14,Consulta con expertos,Consultation with Experts
-14,Monitoreo y presentación de informes,Monitoring and Reporting
-14,Ninguno,None
-14,Inseguro,Unsure
-15,"Control Químico (Pesticidas, Fungicidas)",Chemical Control
-15,"Control Biológico (Insectos Beneficiosos, Controles Microbianos)",Biological Control
-15,"Control Cultural (Rotación de Cultivos, Saneamiento)",Cultural Control
-15,"Control Físico (Trampas, Barreras)",Physical Control
-15,Manejo Integrado de Plagas y Enfermedades,Integrated Pest and Disease Management
-15,"Medidas de Bioseguridad (Cuarentena, Desinfección)",Biosecurity Measures
-15,Monitoreo y Reporte,Monitoring and Reporting
-15,Educación y Capacitación,Education and Training
-15,Cumplimiento Normativo,Regulatory Compliance
-15,Participación Comunitaria,Community Participation
-15,Inseguro,Unsure
-16,0%,0%
-16,1%-10%,1%-10%
-16,11%-20%,11%-20%
-16,21%-30%,21%-30%
-16,31%-40%,31%-40%
-16,41%-50%,41%-50%
-16,51%-60%,51%-60%
-16,61%-70%,61%-70%
-16,71%-80%,71%-80%
-16,81%-90%,81%-90%
-16,91%-100%,91%-100%
-16,No seguro,Not Sure
-17,0%,0%
-17,1%-10%,1%-10%
-17,11%-20%,11%-20%
-17,21%-30%,21%-30%
-17,31%-40%,31%-40%
-17,41%-50%,41%-50%
-17,51%-60%,51%-60%
-17,61%-70%,61%-70%
-17,71%-80%,71%-80%
-17,81%-90%,81%-90%
-17,91%-100%,91%-100%
-17,No seguro,Not Sure
-18,0%,0%
-18,1%-10%,1%-10%
-18,11%-20%,11%-20%
-18,21%-30%,21%-30%
-18,31%-40%,31%-40%
-18,41%-50%,41%-50%
-18,51%-60%,51%-60%
-18,61%-70%,61%-70%
-18,71%-80%,71%-80%
-18,81%-90%,81%-90%
-18,91%-100%,91%-100%
-18,No seguro,Not Sure
-19,0%,0%
-19,1%-10%,1%-10%
-19,11%-20%,11%-20%
-19,21%-30%,21%-30%
-19,31%-40%,31%-40%
-19,41%-50%,41%-50%
-19,51%-60%,51%-60%
-19,61%-70%,61%-70%
-19,71%-80%,71%-80%
-19,81%-90%,81%-90%
-19,91%-100%,91%-100%
-19,No seguro,Not Sure
-20,0%,0%
-20,1%-10%,1%-10%
-20,11%-20%,11%-20%
-20,21%-30%,21%-30%
-20,31%-40%,31%-40%
-20,41%-50%,41%-50%
-20,51%-60%,51%-60%
-20,61%-70%,61%-70%
-20,71%-80%,71%-80%
-20,81%-90%,81%-90%
-20,91%-100%,91%-100%
-20,No seguro,Not Sure
-21,Diario,Daily
-21,Semanal,Weekly
-21,Quincenal,Biweekly
-21,Mensual,Monthly
-21,Bimestral,Bimonthly
-21,Trimestral,Quarterly
-21,Semestral,Semiannually
-21,Anual,Annually
-21,Según sea necesario,As Needed
-21,No supervisado,Unsupervised
-21,No estoy seguro,Not Sure
-22,No eficaz,Not Effective
-22,Poco eficaz,Slightly Effective
-22,Moderadamente eficaz,Moderately Effective
-22,Muy eficaz,Very Effective
-22,Extremadamente eficaz,Extremely Effective
-22,Inseguro,Unsure
-23,No eficaz,Not Effective
-23,Poco eficaz,Slightly Effective
-23,Moderadamente eficaz,Moderately Effective
-23,Muy eficaz,Very Effective
-23,Extremadamente eficaz,Extremely Effective
-23,Inseguro,Unsure
-24,No eficaz,Not Effective
-24,Poco eficaz,Slightly Effective
-24,Moderadamente eficaz,Moderately Effective
-24,Muy eficaz,Very Effective
-24,Extremadamente eficaz,Extremely Effective
-24,Inseguro,Unsure
-25,No eficaz,Not Effective
-25,Poco eficaz,Slightly Effective
-25,Moderadamente eficaz,Moderately Effective
-25,Muy eficaz,Very Effective
-25,Extremadamente eficaz,Extremely Effective
-25,Inseguro,Unsure
-26,No eficaz,Not Effective
-26,Poco eficaz,Slightly Effective
-26,Moderadamente eficaz,Moderately Effective
-26,Muy eficaz,Very Effective
-26,Extremadamente eficaz,Extremely Effective
-26,Inseguro,Unsure
-27,Recursos Financieros,Financial Resources
-27,Conocimiento Técnico,Technical Knowledge
-27,Acceso a Material de Siembra de Calidad,Access to Quality Planting Material
-27,Disponibilidad de Mano de Obra,Availability of Labor
-27,Políticas y Regulaciones Gubernamentales,Government Policies and Regulations
-27,Aceptación Social/Apoyo Comunitario,Social Acceptance/Community Support
-27,Acceso al Mercado,Market Access
-27,Condiciones Ambientales,Environmental Conditions
-27,Impactos del Cambio Climático,Impacts of Climate Change
-27,Presión de Plagas y Enfermedades,Pest and Disease Pressure
-27,Acceso a Servicios de Capacitación y Extensión,Access to Training and Extension Services
-27,Disponibilidad de Infraestructura y Equipo,Availability of Infrastructure and Equipment
-27,Inseguro,Unsure
-28,No significativo,Not Significant
-28,Algo significativo ,Somewhat Significant
-28,Muy significativo,Very Significant
-28,No estoy seguro,Not Sure
-29,Ninguna medida,No Measures
-29,Algunas medidas,Some Measures
-29,Medidas significativas,Significant Measures
-29,No estoy seguro,Not Sure
-30,Sin limitación,No Limitation
-30,Poca limitación,Little Limitation
-30,Limitación moderada,Moderate Limitation
-30,Limitación extrema,Extreme Limitation
-30,Inseguro,Unsure
-31,Sin limitación,No Limitation
-31,Poca limitación,Little Limitation
-31,Limitación moderada,Moderate Limitation
-31,Limitación extrema,Extreme Limitation
-31,Inseguro,Unsure
-32,Aspersor,Sprinkler
-32,Goteo,Drip
-32,Cuenca,Basin
-32,Surco/zanja,Furrow/Trench
-32,Otro,Other
-32,Ninguno,None
-32,Inseguro,Unsure
-33,Aguas superficiales,Surface Water
-33,Aguas subterráneas,Groundwater
-33,Aguas residuales tratadas,Treated Wastewater
-33,Presas,Dams
-33,Distritos de riego comunales,Community Irrigation Districts
-33,Lluvias,Rainwater
-33,Otros ,Others
-33,Inseguro,Unsure
-33,Ninguno,None
-35,Filtración,Filtration
-35,Tratamiento químico,Chemical Treatment
-35,Tratamiento físico,Physical Treatment
-35,Sin tratamiento,No Treatment
-35,Inseguro,Unsure
-36,0%,0%
-36,1%-10%,1%-10%
-36,11%-20%,11%-20%
-36,21%-30%,21%-30%
-36,31%-40%,31%-40%
-36,41%-50%,41%-50%
-36,51%-60%,51%-60%
-36,61%-70%,61%-70%
-36,71%-80%,71%-80%
-36,81%-90%,81%-90%
-36,91%-100%,91%-100%
-36,No seguro,Not Sure
-37,Extremadamente improbable,Extremely Unlikely
-37,Muy improbable,Very Unlikely
-37,Poco probable,Unlikely
-37,Algo improbable,Somewhat Unlikely
-37,Neutral,Neutral
-37,Algo probable,Somewhat Likely
-37,Probable,Likely
-37,Muy probable,Very Likely
-37,Extremadamente probable,Extremely Likely
-37,Inseguro,Unsure
-39,Riesgo insignificante,Insignificant Risk
-39,Riesgo muy bajo,Very Low Risk
-39,Riesgo bajo,Low Risk
-39,Riesgo moderado,Moderate Risk
-39,Riesgo alto,High Risk
-39,No estoy seguro,Not Sure
-40,No Factible,Not Feasible
-40,Poco Factible,Slightly Feasible
-40,Moderadamente Factible,Moderately Feasible
-40,Muy Factible,Very Feasible
-40,Extremadamente Factible,Extremely Feasible
-41,Comercio de material vegetal infectado,Trade of Infected Plant Material
-41,Medidas de bioseguridad inadecuadas,Inadequate Biosecurity Measures
-41,Falta de aplicación de la cuarentena,Lack of Quarantine Enforcement
-41,Vigilancia limitada de enfermedades,Limited Disease Surveillance
-41,Conciencia comunitaria,Community Awareness
-41,Marco regulatorio débil,Weak Regulatory Framework
-41,Efectos del cambio climático,Effects of Climate Change
-41,Especies invasoras,Invasive Species
-41,Factores políticos,Political Factors
-41,Demanda del mercado,Market Demand
-41,Migración,Migration
-41,Inestabilidad social,Social Instability
-41,No estoy seguro,Not Sure
+"","number","Category","trans_answer","number_to_category"
+"1",1,"0","0",1
+"2",1,"1 a 2","1 to 2",2
+"3",1,"3 a 5","3 to 5",3
+"4",1,"5 a 9","5 to 9",4
+"5",1,"10 a 15","10 to 15",5
+"6",1,"más de15","More than 15",6
+"7",2,"Fitopatología","Plant Pathology",1
+"8",2,"Entomología","Entomology",2
+"9",2,"MIP","IPM (Integrated Pest Management)",3
+"10",2,"Sistemas de semillas","Seed Systems",4
+"11",2,"Agronomía","Agronomy",5
+"12",2,"Horticultura","Horticulture",6
+"13",2,"Economía","Economics",7
+"14",2,"Ciencias sociales","Social Sciences",8
+"15",2,"Extensión agrícola","Agricultural Extension",9
+"16",2,"Gestión de operaciones agrícolas/consultores de cultivos","Agricultural Operations Management/Crop Consultants",10
+"17",2,"Investigación","Research",11
+"18",2,"Productor","Producer",12
+"19",2,"otros","Others",13
+"20",3,"públicas","Public",1
+"21",3,"privadas","Private",2
+"22",4,"Sin educación formal","No Formal Education",1
+"23",4,"Educación primaria","Primary Education",2
+"24",4,"Educación secundaria","Secondary Education",3
+"25",4,"Licenciatura","Bachelor's Degree",4
+"26",4,"Maestría","Master's Degree",5
+"27",4,"Doctorado (Ph.D., Ed.D., etc.)","Doctorate",6
+"28",5,"Moko o Madurabiche","Moko or Madurabiche",1
+"29",5,"Sigatoka Negra","Black Sigatoka",2
+"30",5,"Enfermedad del Mosaico del Banano","Banana Mosaic Disease",3
+"31",5,"Sigatoka Amarilla","Yellow Sigatoka",4
+"32",5,"Elefantiasis","Elephantiasis",5
+"33",5,"Fusarium","Fusarium",6
+"34",5,"Picudo Negro","Black Weevil",7
+"35",5,"Cochinilla","Scale Insect",8
+"36",5,"Arañita Roja","Red Spider Mite",9
+"37",5,"Escarabajo Cicatrizante","Scarab Beetle",10
+"38",5,"Nematodos","Nematodes",11
+"39",5,"Moscas Blancas","Whiteflies",12
+"40",5,"No estoy seguro","Not Sure",13
+"41",6,"Sin conocimiento","No Knowledge",1
+"42",6,"Muy bajo conocimiento","Very Low Knowledge",2
+"43",6,"Bajo conocimiento","Low Knowledge",3
+"44",6,"Moderado conocimiento","Moderate Knowledge",4
+"45",6,"Alto conocimiento","High Knowledge",5
+"46",6,"Muy alto conocimiento","Very High Knowledge",6
+"47",6,"No estoy seguro","Not Sure",7
+"48",7,"Extremadamente improbable","Extremely Unlikely",1
+"49",7,"Muy improbable","Very Unlikely",2
+"50",7,"Poco probable","Unlikely",3
+"51",7,"Algo improbable","Somewhat Unlikely",4
+"52",7,"Neutral","Neutral",5
+"53",7,"Algo probable","Somewhat Likely",6
+"54",7,"Probable","Likely",7
+"55",7,"Muy probable","Very Likely",8
+"56",7,"Extremadamente probable","Extremely Likely",9
+"57",7,"No estoy seguro","Not Sure",10
+"58",8,"No eficaz","Not Effective",1
+"59",8,"Poco eficaz","Slightly Effective",2
+"60",8,"Moderadamente eficaz","Moderately Effective",3
+"61",8,"Muy eficaz","Very Effective",4
+"62",8,"Extremadamente eficaz","Extremely Effective",5
+"63",8,"No estoy seguro","Not Sure",6
+"64",9,"Sin capacitación o información disponible","No Training or Information Available",1
+"65",9,"Deficiente","Poor",2
+"66",9,"Regular","Fair",3
+"67",9,"Adecuado","Adequate",4
+"68",9,"Bueno","Good",5
+"69",9,"Excelente","Excellent",6
+"70",9,"Inseguro","Unsure",7
+"71",11,"10 a 0","10 to 0",1
+"72",11,"9 a 1","9 to 1",2
+"73",11,"8 a 2","8 to 2",3
+"74",11,"7 a 3","7 to 3",4
+"75",11,"6 a 4","6 to 4",5
+"76",11,"5 a 5","5 to 5",6
+"77",11,"4 a 6","4 to 6",7
+"78",11,"3 a 7","3 to 7",8
+"79",11,"2 a 8","2 to 8",9
+"80",11,"1 a 9","1 to 9",10
+"81",11,"0 a 10","0 to 10",11
+"82",13,"Cada 1 o 2 ciclos","Every 1 or 2 cycles",1
+"83",13,"Cada 3 a 4 ciclos","Every 3 to 4 cycles",2
+"84",13,"Cada 5 a 6 ciclos","Every 5 to 6 cycles",3
+"85",13,"Cada 7 o más ciclos","Every 7 or more cycles",4
+"86",13,"No estoy seguro","Not Sure",5
+"87",14,"Inspección y pruebas","Inspection and Testing",1
+"88",14,"Tratamiento y desinfección","Treatment and Disinfection",2
+"89",14,"Cuarentena y aislamiento","Quarantine and Isolation",3
+"90",14,"Condiciones de almacenamiento","Storage Conditions",4
+"91",14,"Mantenimiento de registros","Record Keeping",5
+"92",14,"Capacitación y concientización","Training and Awareness",6
+"93",14,"Cumplimiento de regulaciones","Compliance with Regulations",7
+"94",14,"Participación comunitaria","Community Involvement",8
+"95",14,"Consulta con expertos","Consultation with Experts",9
+"96",14,"Monitoreo y presentación de informes","Monitoring and Reporting",10
+"97",14,"Ninguno","None",11
+"98",14,"Inseguro","Unsure",12
+"99",15,"Control Químico (Pesticidas, Fungicidas)","Chemical Control",1
+"100",15,"Control Biológico (Insectos Beneficiosos, Controles Microbianos)","Biological Control",2
+"101",15,"Control Cultural (Rotación de Cultivos, Saneamiento)","Cultural Control",3
+"102",15,"Control Físico (Trampas, Barreras)","Physical Control",4
+"103",15,"Manejo Integrado de Plagas y Enfermedades","Integrated Pest and Disease Management",5
+"104",15,"Medidas de Bioseguridad (Cuarentena, Desinfección)","Biosecurity Measures",6
+"105",15,"Monitoreo y Reporte","Monitoring and Reporting",7
+"106",15,"Educación y Capacitación","Education and Training",8
+"107",15,"Cumplimiento Normativo","Regulatory Compliance",9
+"108",15,"Participación Comunitaria","Community Participation",10
+"109",15,"Inseguro","Unsure",11
+"110",16,"0%","0%",1
+"111",16,"1%-10%","1%-10%",2
+"112",16,"11%-20%","11%-20%",3
+"113",16,"21%-30%","21%-30%",4
+"114",16,"31%-40%","31%-40%",5
+"115",16,"41%-50%","41%-50%",6
+"116",16,"51%-60%","51%-60%",7
+"117",16,"61%-70%","61%-70%",8
+"118",16,"71%-80%","71%-80%",9
+"119",16,"81%-90%","81%-90%",10
+"120",16,"91%-100%","91%-100%",11
+"121",16,"No seguro","Not Sure",12
+"122",17,"0%","0%",1
+"123",17,"1%-10%","1%-10%",2
+"124",17,"11%-20%","11%-20%",3
+"125",17,"21%-30%","21%-30%",4
+"126",17,"31%-40%","31%-40%",5
+"127",17,"41%-50%","41%-50%",6
+"128",17,"51%-60%","51%-60%",7
+"129",17,"61%-70%","61%-70%",8
+"130",17,"71%-80%","71%-80%",9
+"131",17,"81%-90%","81%-90%",10
+"132",17,"91%-100%","91%-100%",11
+"133",17,"No seguro","Not Sure",12
+"134",18,"0%","0%",1
+"135",18,"1%-10%","1%-10%",2
+"136",18,"11%-20%","11%-20%",3
+"137",18,"21%-30%","21%-30%",4
+"138",18,"31%-40%","31%-40%",5
+"139",18,"41%-50%","41%-50%",6
+"140",18,"51%-60%","51%-60%",7
+"141",18,"61%-70%","61%-70%",8
+"142",18,"71%-80%","71%-80%",9
+"143",18,"81%-90%","81%-90%",10
+"144",18,"91%-100%","91%-100%",11
+"145",18,"No seguro","Not Sure",12
+"146",19,"0%","0%",1
+"147",19,"1%-10%","1%-10%",2
+"148",19,"11%-20%","11%-20%",3
+"149",19,"21%-30%","21%-30%",4
+"150",19,"31%-40%","31%-40%",5
+"151",19,"41%-50%","41%-50%",6
+"152",19,"51%-60%","51%-60%",7
+"153",19,"61%-70%","61%-70%",8
+"154",19,"71%-80%","71%-80%",9
+"155",19,"81%-90%","81%-90%",10
+"156",19,"91%-100%","91%-100%",11
+"157",19,"No seguro","Not Sure",12
+"158",20,"0%","0%",1
+"159",20,"1%-10%","1%-10%",2
+"160",20,"11%-20%","11%-20%",3
+"161",20,"21%-30%","21%-30%",4
+"162",20,"31%-40%","31%-40%",5
+"163",20,"41%-50%","41%-50%",6
+"164",20,"51%-60%","51%-60%",7
+"165",20,"61%-70%","61%-70%",8
+"166",20,"71%-80%","71%-80%",9
+"167",20,"81%-90%","81%-90%",10
+"168",20,"91%-100%","91%-100%",11
+"169",20,"No seguro","Not Sure",12
+"170",21,"Diario","Daily",1
+"171",21,"Semanal","Weekly",2
+"172",21,"Quincenal","Biweekly",3
+"173",21,"Mensual","Monthly",4
+"174",21,"Bimestral","Bimonthly",5
+"175",21,"Trimestral","Quarterly",6
+"176",21,"Semestral","Semiannually",7
+"177",21,"Anual","Annually",8
+"178",21,"Según sea necesario","As Needed",9
+"179",21,"No supervisado","Unsupervised",10
+"180",21,"No estoy seguro","Not Sure",11
+"181",22,"No eficaz","Not Effective",1
+"182",22,"Poco eficaz","Slightly Effective",2
+"183",22,"Moderadamente eficaz","Moderately Effective",3
+"184",22,"Muy eficaz","Very Effective",4
+"185",22,"Extremadamente eficaz","Extremely Effective",5
+"186",22,"Inseguro","Unsure",6
+"187",23,"No eficaz","Not Effective",1
+"188",23,"Poco eficaz","Slightly Effective",2
+"189",23,"Moderadamente eficaz","Moderately Effective",3
+"190",23,"Muy eficaz","Very Effective",4
+"191",23,"Extremadamente eficaz","Extremely Effective",5
+"192",23,"Inseguro","Unsure",6
+"193",24,"No eficaz","Not Effective",1
+"194",24,"Poco eficaz","Slightly Effective",2
+"195",24,"Moderadamente eficaz","Moderately Effective",3
+"196",24,"Muy eficaz","Very Effective",4
+"197",24,"Extremadamente eficaz","Extremely Effective",5
+"198",24,"Inseguro","Unsure",6
+"199",25,"No eficaz","Not Effective",1
+"200",25,"Poco eficaz","Slightly Effective",2
+"201",25,"Moderadamente eficaz","Moderately Effective",3
+"202",25,"Muy eficaz","Very Effective",4
+"203",25,"Extremadamente eficaz","Extremely Effective",5
+"204",25,"Inseguro","Unsure",6
+"205",26,"No eficaz","Not Effective",1
+"206",26,"Poco eficaz","Slightly Effective",2
+"207",26,"Moderadamente eficaz","Moderately Effective",3
+"208",26,"Muy eficaz","Very Effective",4
+"209",26,"Extremadamente eficaz","Extremely Effective",5
+"210",26,"Inseguro","Unsure",6
+"211",27,"Recursos Financieros","Financial Resources",1
+"212",27,"Conocimiento Técnico","Technical Knowledge",2
+"213",27,"Acceso a Material de Siembra de Calidad","Access to Quality Planting Material",3
+"214",27,"Disponibilidad de Mano de Obra","Availability of Labor",4
+"215",27,"Políticas y Regulaciones Gubernamentales","Government Policies and Regulations",5
+"216",27,"Aceptación Social/Apoyo Comunitario","Social Acceptance/Community Support",6
+"217",27,"Acceso al Mercado","Market Access",7
+"218",27,"Condiciones Ambientales","Environmental Conditions",8
+"219",27,"Impactos del Cambio Climático","Impacts of Climate Change",9
+"220",27,"Presión de Plagas y Enfermedades","Pest and Disease Pressure",10
+"221",27,"Acceso a Servicios de Capacitación y Extensión","Access to Training and Extension Services",11
+"222",27,"Disponibilidad de Infraestructura y Equipo","Availability of Infrastructure and Equipment",12
+"223",27,"Inseguro","Unsure",13
+"224",28,"No significativo","Not Significant",1
+"225",28,"Algo significativo ","Somewhat Significant",2
+"226",28,"Muy significativo","Very Significant",3
+"227",28,"No estoy seguro","Not Sure",4
+"228",29,"Ninguna medida","No Measures",1
+"229",29,"Algunas medidas","Some Measures",2
+"230",29,"Medidas significativas","Significant Measures",3
+"231",29,"No estoy seguro","Not Sure",4
+"232",30,"Sin limitación","No Limitation",1
+"233",30,"Poca limitación","Little Limitation",2
+"234",30,"Limitación moderada","Moderate Limitation",3
+"235",30,"Limitación extrema","Extreme Limitation",4
+"236",30,"Inseguro","Unsure",5
+"237",31,"Sin limitación","No Limitation",1
+"238",31,"Poca limitación","Little Limitation",2
+"239",31,"Limitación moderada","Moderate Limitation",3
+"240",31,"Limitación extrema","Extreme Limitation",4
+"241",31,"Inseguro","Unsure",5
+"242",32,"Aspersor","Sprinkler",1
+"243",32,"Goteo","Drip",2
+"244",32,"Cuenca","Basin",3
+"245",32,"Surco/zanja","Furrow/Trench",4
+"246",32,"Otro","Other",5
+"247",32,"Ninguno","None",6
+"248",32,"Inseguro","Unsure",7
+"249",33,"Aguas superficiales","Surface Water",1
+"250",33,"Aguas subterráneas","Groundwater",2
+"251",33,"Aguas residuales tratadas","Treated Wastewater",3
+"252",33,"Presas","Dams",4
+"253",33,"Distritos de riego comunales","Community Irrigation Districts",5
+"254",33,"Lluvias","Rainwater",6
+"255",33,"Otros ","Others",7
+"256",33,"Inseguro","Unsure",8
+"257",33,"Ninguno","None",9
+"258",35,"Filtración","Filtration",1
+"259",35,"Tratamiento químico","Chemical Treatment",2
+"260",35,"Tratamiento físico","Physical Treatment",3
+"261",35,"Sin tratamiento","No Treatment",4
+"262",35,"Inseguro","Unsure",5
+"263",36,"0%","0%",1
+"264",36,"1%-10%","1%-10%",2
+"265",36,"11%-20%","11%-20%",3
+"266",36,"21%-30%","21%-30%",4
+"267",36,"31%-40%","31%-40%",5
+"268",36,"41%-50%","41%-50%",6
+"269",36,"51%-60%","51%-60%",7
+"270",36,"61%-70%","61%-70%",8
+"271",36,"71%-80%","71%-80%",9
+"272",36,"81%-90%","81%-90%",10
+"273",36,"91%-100%","91%-100%",11
+"274",36,"No seguro","Not Sure",12
+"275",37,"Extremadamente improbable","Extremely Unlikely",1
+"276",37,"Muy improbable","Very Unlikely",2
+"277",37,"Poco probable","Unlikely",3
+"278",37,"Algo improbable","Somewhat Unlikely",4
+"279",37,"Neutral","Neutral",5
+"280",37,"Algo probable","Somewhat Likely",6
+"281",37,"Probable","Likely",7
+"282",37,"Muy probable","Very Likely",8
+"283",37,"Extremadamente probable","Extremely Likely",9
+"284",37,"Inseguro","Unsure",10
+"285",39,"Riesgo insignificante","Insignificant Risk",1
+"286",39,"Riesgo muy bajo","Very Low Risk",2
+"287",39,"Riesgo bajo","Low Risk",3
+"288",39,"Riesgo moderado","Moderate Risk",4
+"289",39,"Riesgo alto","High Risk",5
+"290",39,"No estoy seguro","Not Sure",6
+"291",40,"No Factible","Not Feasible",1
+"292",40,"Poco Factible","Slightly Feasible",2
+"293",40,"Moderadamente Factible","Moderately Feasible",3
+"294",40,"Muy Factible","Very Feasible",4
+"295",40,"Extremadamente Factible","Extremely Feasible",5
+"296",41,"Comercio de material vegetal infectado","Trade of Infected Plant Material",1
+"297",41,"Medidas de bioseguridad inadecuadas","Inadequate Biosecurity Measures",2
+"298",41,"Falta de aplicación de la cuarentena","Lack of Quarantine Enforcement",3
+"299",41,"Vigilancia limitada de enfermedades","Limited Disease Surveillance",4
+"300",41,"Conciencia comunitaria","Community Awareness",5
+"301",41,"Marco regulatorio débil","Weak Regulatory Framework",6
+"302",41,"Efectos del cambio climático","Effects of Climate Change",7
+"303",41,"Especies invasoras","Invasive Species",8
+"304",41,"Factores políticos","Political Factors",9
+"305",41,"Demanda del mercado","Market Demand",10
+"306",41,"Migración","Migration",11
+"307",41,"Inestabilidad social","Social Instability",12
+"308",41,"No estoy seguro","Not Sure",13
