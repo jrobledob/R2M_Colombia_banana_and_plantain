@@ -79,6 +79,74 @@ call:
 
 `R Col_map_by_depto(departamentos = my_map_layout, data = my_data, data_id = "depto_id", var = "population", low = "blue", high = "red", na.value = "grey", legend_lab = "Population")`
 
+#### `category_by_mean_by_question` Function
+
+**Description:**  
+This function retrieves the category corresponding to a given mean value
+for a specific question. It reads a dataset from a specified URL
+containing category information in both English and Spanish. The
+function allows the user to specify the language for the category
+description.
+
+**Parameters:**  
+- `question`: The question number for which the category needs to be
+found. - `mean`: The mean value whose corresponding category is to be
+retrieved. - `language`: A character vector specifying the language of
+the category description. Default is `c("en", "es")`.
+
+**Functionality:**  
+- The function first rounds the mean value to the nearest whole
+number. - It then reads a dataset from a given URL that contains
+categories in both English and Spanish. - Depending on the selected
+language, it filters the dataset to find the category corresponding to
+the provided question number and rounded mean value. - If the language
+is set to “en” (English), it retrieves the category from the
+`trans_answer` column; if “es” (Spanish), it retrieves from the
+`Category` column. - An error message is displayed if the specified
+language is not found.
+
+**Returns:**  
+The category corresponding to the specified mean and question in the
+chosen language.
+
+**Example Usage:**  
+Suppose you have a mean value of 3.6 for question number 5 and want the
+category in English. You could call:
+
+`R   category <- category_by_mean_by_question(question = 5, mean = 3.6, language = "en")`
+
+#### `count_elements_by_group` Function
+
+**Description:**  
+This function is designed to count the frequency of elements within a
+specified column that contains comma-separated values. It processes the
+data to convert it into a long format and then performs a count of each
+element within the specified groups.
+
+**Parameters:**  
+- `data`: The data frame containing the data to be analyzed. -
+`value_column`: The name of the column in `data` that contains the
+comma-separated values. - `group_columns`: A vector of column names in
+`data` used to define groups for aggregation.
+
+**Functionality:**  
+- The function first uses `separate_rows` to split the comma-separated
+values in `value_column` and convert the data into a long format. -
+`group_by` is then applied to group the data by the columns specified in
+`group_columns`. - `count` is used to count the occurrences of each
+unique element within these groups. - The result is a long-format data
+frame with the frequency count of each element in the specified groups.
+
+**Returns:**  
+A data frame in long format that contains the counts of each unique
+element within the specified groups.
+
+**Example Usage:**  
+Suppose you have a data frame `df` with a column `categories` containing
+comma-separated values and you want to count these values within groups
+defined by `column1` and `column2`. You could call:
+`R   result <- count_elements_by_group(df, "categories", c("column1", "column2"))`
+
 ``` r
 #libraries----
   library(treemap)
@@ -115,6 +183,12 @@ call:
 
 ``` r
   library("homicidios")
+  library(voronoiTreemap)
+```
+
+    ## Warning: package 'voronoiTreemap' was built under R version 4.3.2
+
+``` r
 #Global variables
   #set the color palette for bananas and plantains
   palette_banana <- colorRampPalette(c("#FFDA00","#FFF2CC" ))
@@ -127,7 +201,6 @@ call:
   individual_surveys<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", colClasses = col_classes)
   #reformat columns
   individual_surveys$question_number<- as.integer(individual_surveys$question_number)
-
 
 #function tree_map_3 
   tree_map_3<- function(data,group, subgroup_1, subgroup_2, color_column, title){
@@ -168,22 +241,47 @@ call:
     labs(fill= legend_lab)
     return(figure)
   }
+  
+#function category_by_mean_by_question
+category_by_mean_by_question<- function(question, mean, language=c("en","es")){
+  mean<-round(mean, 0)
+  data<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_DATA_Categories_that_can_be_chosen_in_every_question_of_the_individual_survey_English_and_Spanish.csv")
+  if (language=="en") {
+    category<- filter(data, number==question & number_to_category==mean)$trans_answer
+  }else{
+    if (language=="es") {
+      category<- filter(data, number==question & number_to_category==mean)$Category
+    }
+    cat("ERROR: Language not found")
+  }
+  return(category)
+}
+
+#Function count_elements_by_group
+count_elements_by_group <- function(data, value_column, group_columns) {
+  # Split the comma-separated values and convert to long format
+  data_long <- data %>%
+    separate_rows(!!sym(value_column), sep = ",\\s*") %>%
+    group_by(across(all_of(group_columns))) %>%
+    count(!!sym(value_column))
+  return(data_long)
+}
 ```
 
 ## Question 1: How many years of experience do you have in each department?
 
 ``` r
 #selecting only question 1----
-  personalized_question<- filter(individual_surveys, question_number==1)
+  question_1<- filter(individual_surveys, question_number==1)
   #organizing the order of the levels
-  personalized_question$question_in_english<- factor(personalized_question$question_in_english,levels = c("1 to 2", "3 to 5","5 to 9","10 to 15","More than 15"))
+  question_1$answer_in_english<- factor(question_1$answer_in_english,levels = c("1 to 2", "3 to 5","5 to 9","10 to 15","More than 15"))
   #finding the number of levels per crop (banana and plantain)
-  levels_per_crop_Q1<- tapply(personalized_question$answer_in_english, personalized_question$crop, function(x){length(unique(x))})
+  levels_per_crop_Q1<- tapply(question_1$answer_in_english, question_1$crop, function(x){length(unique(x))})
   #generating a ramp palette according to the number of levels per crop
   colors_banana_question1<- palette_banana(levels_per_crop_Q1["Banana"])
   colors_plantain_question1<- palette_plantain(levels_per_crop_Q1["Plantain"])
   #Assigning the colors by crop and answer
-  personalized_question<- personalized_question %>%
+  question_1<- question_1 %>%
     mutate(group_color= case_when(
       crop=="Banana" & answer_in_english == "1 to 2" ~ colors_banana_question1[5],
       crop=="Banana" & answer_in_english == "3 to 5" ~ colors_banana_question1[4],
@@ -197,7 +295,7 @@ call:
       crop=="Plantain" & answer_in_english == "More than 15" ~ colors_plantain_question1[1],
     ))
 #tree map
-tree_map_3(data = personalized_question, "crop", "expert_in", "answer_in_english", "group_color", title="Experience of Experts by Department")
+tree_map_3(data = question_1, "crop", "expert_in", "answer_in_english", "group_color", title="Experience of Experts by Department")
 ```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'answer_in_english'.
@@ -434,7 +532,7 @@ tree_map_3(data = personalized_question, "crop", "expert_in", "answer_in_english
 
 ``` r
 #summarise to have the number of experts by departments
-data<- personalized_question %>%
+data<- question_1 %>%
   group_by(expert_in, id_depto) %>%
   summarise(Number_of_Experts= n())
 ```
@@ -450,6 +548,7 @@ data<- full_join(codes_department, data)
     ## Joining with `by = join_by(id_depto)`
 
 ``` r
+#Map of Colombia
 Col_map_by_depto(data = data, data_id = "id_depto", var = "Number_of_Experts", low = "#A58F65", high = "#654321", na.values = "#eeeeee", legend_lab = "Number \n of experts")
 ```
 
@@ -465,3 +564,111 @@ Col_map_by_depto(data = data, data_id = "id_depto", var = "Number_of_Experts", l
     ## Adding another scale for fill, which will replace the existing scale.
 
 ![](README_files/figure-gfm/question_1-2.png)<!-- -->
+
+``` r
+#Total number of experts:
+total_experts_Q1<- length(unique(question_1$expert_ID))
+mode_Q1<- sort(table(question_1$answer_in_english), decreasing = T)
+question_1$numeric_answer<- as.numeric(question_1$numeric_answer)
+mean_q1<- mean(question_1$numeric_answer)
+mean_q1<- category_by_mean_by_question(1, mean_q1, language = "en")
+mean_q1_by_crops<- question_1 %>%
+  group_by(crop) %>%
+  summarise(mean_cat= mean(numeric_answer),
+            surveys_by_crop= length(unique(expert_ID)),
+            mode= names(sort(table(answer_in_english), decreasing = T))[1])
+mean_q1_by_crops$cat_english<- tapply(mean_q1_by_crops$mean_cat, mean_q1_by_crops$crop, function(x){
+  category_by_mean_by_question(1, mean = x, language = "en")}) 
+```
+
+#### Descriptive statistics:
+
+Total number of experts that answer this question= 46
+
+Mode in all the surveys= 5 to 9
+
+Mean in all the surveys=5 to 9
+
+Descriptive statistics by crop=
+
+| crop     | mean_cat | surveys_by_crop | mode   | cat_english |
+|:---------|---------:|----------------:|:-------|:------------|
+| Banana   | 3.555556 |              23 | 3 to 5 | 5 to 9      |
+| Plantain | 4.066092 |              25 | 5 to 9 | 5 to 9      |
+
+## Question 2: How many years of experience do you have in each department?
+
+``` r
+question_2<- filter(individual_surveys,question_number==2)
+question_2_frequencies <- count_elements_by_group(question_2, "answer_in_english", c("crop"))
+question_2_frequencies$answer_in_english<- as.factor(question_2_frequencies$answer_in_english)
+#finding the number of levels per crop (banana and plantain)
+levels_per_crop_Q2<- tapply(question_2_frequencies$answer_in_english, question_2_frequencies$crop, function(x){length(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question2<- palette_banana(levels_per_crop_Q2["Banana"])
+colors_plantain_question2<- palette_plantain(levels_per_crop_Q2["Plantain"])
+#Assignig a color per factor by crop
+question_2_frequencies <- question_2_frequencies %>%
+  mutate(group_color = case_when(
+    crop == "Banana" ~ colors_banana_question2[match(answer_in_english, c("Agricultural Extension", 
+                                                                          "Agricultural Operations Management/Crop Consultants", 
+                                                                          "Agronomy", "Economics", 
+                                                                          "Entomology", "Horticulture", 
+                                                                          "IPM (Integrated Pest Management)", 
+                                                                          "Others", "Plant Pathology", 
+                                                                          "Producer", "Research", 
+                                                                          "Seed Systems", "Social Sciences"))],
+    crop == "Plantain" ~ colors_plantain_question2[match(answer_in_english, c("Agricultural Extension", 
+                                                                              "Agricultural Operations Management/Crop Consultants", 
+                                                                              "Agronomy", "Economics", 
+                                                                              "Entomology", "Horticulture", 
+                                                                              "IPM (Integrated Pest Management)", 
+                                                                              "Others", "Plant Pathology", 
+                                                                              "Producer", "Research", 
+                                                                              "Seed Systems", "Social Sciences"))]
+  ))
+#Creating avreviations for the the plot 
+question_2_frequencies <- question_2_frequencies %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Agricultural Extension" ~ "AE",
+    answer_in_english == "Agricultural Operations Management/Crop Consultants" ~ "AOM/CC",
+    answer_in_english == "Agronomy" ~ "Agro",
+    answer_in_english == "Economics" ~ "Econ",
+    answer_in_english == "Entomology" ~ "Ento",
+    answer_in_english == "Horticulture" ~ "Hort",
+    answer_in_english == "IPM (Integrated Pest Management)" ~ "IPM",
+    answer_in_english == "Others" ~ "Oth",
+    answer_in_english == "Plant Pathology" ~ "PlPath",
+    answer_in_english == "Producer" ~ "Prod",
+    answer_in_english == "Research" ~ "Res",
+    answer_in_english == "Seed Systems" ~ "SS",
+    answer_in_english == "Social Sciences" ~ "SocSci",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#formating the data set to make the visualization, voronoiTreemap was quite picky...  
+colnames(question_2_frequencies)<- c('h2', "h3", "weight","color", "codes")
+question_2_frequencies$h1<- "Total"
+question_2_frequencies <- question_2_frequencies %>%
+  select(h1, h2, h3, color, weight, codes)
+question_2_frequencies$weight<- (question_2_frequencies$weight/sum(question_2_frequencies$weight))*100
+question_2_frequencies$h1<- as.factor(question_2_frequencies$h1)
+question_2_frequencies$h2<- as.factor(question_2_frequencies$h2)
+question_2_frequencies<- data.frame(h1= question_2_frequencies$h1,
+                                    h2= question_2_frequencies$h2,
+                                    h3= question_2_frequencies$h3,
+                                    color= question_2_frequencies$color,
+                                    weight= question_2_frequencies$weight,
+                                    codes= question_2_frequencies$codes)
+gdp_json <- vt_export_json(vt_input_from_df(question_2_frequencies))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3)
+```
+
+    ## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.
+
+![](README_files/figure-gfm/question_2-1.png)<!-- -->
+
+``` r
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3)
+```
+
+![](README_files/figure-gfm/question_2-2.png)<!-- -->
