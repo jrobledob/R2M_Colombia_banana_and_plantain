@@ -1,7 +1,7 @@
 Analisis of individual Questions EKE Colombia - Banano and Plantain 2023
 ================
 Jacobo Robledo
-2023-12-29
+2024-01-02
 
 ## Libraries, Functions, and Global Variables
 
@@ -147,6 +147,52 @@ comma-separated values and you want to count these values within groups
 defined by `column1` and `column2`. You could call:
 `R   result <- count_elements_by_group(df, "categories", c("column1", "column2"))`
 
+#### `bar_plot_banana_plantain` Function
+
+**Description:**  
+This function creates a bar plot specifically designed for visualizing
+data related to ‘Banana’ and ‘Plantain’ categories. It includes
+customizable aesthetics such as background color for highlighting, bar
+color coding, and an adjustable upper limit for the y-axis to enhance
+the proportional representation of data.
+
+**Parameters:**  
+- `data_set`: The data frame containing the data to be plotted. -
+`x_lab`: Label for the x-axis. - `y_lab`: Label for the y-axis. -
+`title`: The title of the plot. - `x`: The name of the column in
+`data_set` to be used as the x-axis variable. - `y`: The name of the
+column in `data_set` to be used as the y-axis variable. - `facet`: The
+name of the column in `data_set` to create facets for different panels
+in the plot. - `alpha`: The transparency level for the background color
+of the geom_rect. - `background_color`: The name of the column in
+`data_set` that contains the background colors for the rectangles. -
+`bar_color`: The name of the column in `data_set` that contains the
+colors for the bars. - `proportional_limit`: A numeric value to set the
+upper limit of the y-axis as a proportion of the maximum value of the y
+variable.
+
+**Functionality:**  
+- The function starts by converting provided column names into symbols
+for `ggplot2` aesthetics. - It calculates the new y-axis upper limit
+based on the provided `proportional_limit`. - A ggplot object is
+initialized, and layers are added for rectangles, text, and bars, with
+aesthetics mapped accordingly. - The plot’s appearance is customized,
+including colors for text and lines, and removing the grid lines for a
+cleaner look. - The y-axis is scaled with the calculated limit, and
+facet panels are created as per the `facet` column.
+
+**Returns:**  
+A ggplot object representing the bar plot with customized aesthetics and
+scales, ready for rendering or further modification.
+
+**Example Usage:**  
+To create a plot for a data frame `df` with background colors specified
+in `bg_colors` and bar colors in `bar_colors`, where we want to facet by
+the ‘type’ column and set the y-axis upper limit to be 20% higher than
+the max ‘value’ in `df`:
+
+`R result_plot <- bar_plot_banana_plantain(   data_set = df,   x_lab = "Type of Crop",   y_lab = "Value in Percentage",   title = "Crop Value Comparison",   x = "type",   y = "value",   facet = "category",   alpha = 0.3,   background_color = "bg_colors",   bar_color = "bar_colors",   proportional_limit = 1.2 ) # Print the result print(result_plot)`
+
 ``` r
 #libraries----
   library(treemap)
@@ -187,6 +233,28 @@ defined by `column1` and `column2`. You could call:
 ```
 
     ## Warning: package 'voronoiTreemap' was built under R version 4.3.2
+
+``` r
+  library(webshot)
+```
+
+    ## Warning: package 'webshot' was built under R version 4.3.2
+
+``` r
+  library(webshot2)
+```
+
+    ## Warning: package 'webshot2' was built under R version 4.3.2
+
+    ## Registered S3 method overwritten by 'webshot2':
+    ##   method        from   
+    ##   print.webshot webshot
+    ## 
+    ## Attaching package: 'webshot2'
+    ## 
+    ## The following objects are masked from 'package:webshot':
+    ## 
+    ##     appshot, resize, rmdshot, shrink, webshot
 
 ``` r
 #Global variables
@@ -265,6 +333,49 @@ count_elements_by_group <- function(data, value_column, group_columns) {
     group_by(across(all_of(group_columns))) %>%
     count(!!sym(value_column))
   return(data_long)
+}
+  
+#function bar_plot_banana_plantain
+bar_plot_banana_plantain <- function(data_set, x_lab, y_lab, title, x, y, alpha, background_color, bar_color, proportional_limit, facet = NULL) {
+  # Calculate new y-axis upper limit, 20% above the max value
+  ymax_limit <- max(data_set[[y]], na.rm = TRUE) * proportional_limit
+  
+  # Convert strings to symbols
+  x_sym <- rlang::sym(x)
+  y_sym <- rlang::sym(y)
+  background_color_sym <- rlang::sym(background_color)
+  bar_color_sym <- rlang::sym(bar_color)
+  
+  # Start the plot
+  p <- ggplot(data_set, aes(x = !!x_sym, y = !!y_sym)) +
+    geom_rect(aes(fill = !!background_color_sym), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = alpha) +
+    geom_text(aes(label = !!y_sym), vjust = -0.5, color = "#654321") +
+    geom_bar(aes(fill = !!bar_color_sym), stat = 'identity', position = position_dodge()) +
+    scale_fill_identity() +
+    labs(x = x_lab, y = y_lab, title = title) +
+    theme(
+      text = element_text(color = "#654321"),
+      axis.title = element_text(color = "#654321"),
+      axis.text = element_text(color = "#654321"),
+      axis.line = element_line(color = "#654321"),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_rect(color = "#654321", fill = NA),
+      strip.text = element_text(color = "#654321"),
+      strip.background = element_rect(fill = "#A58F65", colour = NA),
+      legend.position = "none"
+    ) +
+    ylim(0, ymax_limit)
+  
+  # Conditionally add facet grid if facet is provided
+  if (!is.null(facet) && facet != "") {
+    facet_sym <- rlang::sym(facet)
+    facet_formula <- as.formula(paste(". ~", facet))
+    p <- p + facet_grid(facet_formula)
+  }
+  
+  # Return the plot
+  return(p)
 }
 ```
 
@@ -672,3 +783,116 @@ vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, colo
 ```
 
 ![](README_files/figure-gfm/question_2-2.png)<!-- -->
+
+``` r
+kable(question_2_frequencies)
+```
+
+| h1    | h2       | h3                                                  | color    |    weight | codes  |
+|:------|:---------|:----------------------------------------------------|:---------|----------:|:-------|
+| Total | Banana   | Agricultural Extension                              | \#FFDA00 | 4.9450549 | AE     |
+| Total | Banana   | Agricultural Operations Management/Crop Consultants | \#FFDB11 | 1.6483516 | AOM/CC |
+| Total | Banana   | Agronomy                                            | \#FFDE22 | 6.0439560 | Agro   |
+| Total | Banana   | Economics                                           | \#FFE033 | 1.0989011 | Econ   |
+| Total | Banana   | Entomology                                          | \#FFE244 | 2.1978022 | Ento   |
+| Total | Banana   | Horticulture                                        | \#FFE355 | 3.2967033 | Hort   |
+| Total | Banana   | IPM (Integrated Pest Management)                    | \#FFE566 | 6.0439560 | IPM    |
+| Total | Banana   | Others                                              | \#FFE876 | 1.0989011 | Oth    |
+| Total | Banana   | Plant Pathology                                     | \#FFEA88 | 4.3956044 | PlPath |
+| Total | Banana   | Producer                                            | \#FFEB99 | 2.7472527 | Prod   |
+| Total | Banana   | Research                                            | \#FFEDAA | 3.2967033 | Res    |
+| Total | Banana   | Seed Systems                                        | \#FFF0BB | 4.3956044 | SS     |
+| Total | Banana   | Social Sciences                                     | \#FFF2CC | 0.5494505 | SocSci |
+| Total | Plantain | Agricultural Extension                              | \#28B463 | 7.1428571 | AE     |
+| Total | Plantain | Agricultural Operations Management/Crop Consultants | \#34B96A | 1.6483516 | AOM/CC |
+| Total | Plantain | Agronomy                                            | \#41BE72 | 8.7912088 | Agro   |
+| Total | Plantain | Economics                                           | \#4DC479 | 1.0989011 | Econ   |
+| Total | Plantain | Entomology                                          | \#59C981 | 5.4945055 | Ento   |
+| Total | Plantain | Horticulture                                        | \#66CE88 | 2.1978022 | Hort   |
+| Total | Plantain | IPM (Integrated Pest Management)                    | \#73D490 | 6.5934066 | IPM    |
+| Total | Plantain | Others                                              | \#7FD998 | 0.5494505 | Oth    |
+| Total | Plantain | Plant Pathology                                     | \#8CDE9F | 7.1428571 | PlPath |
+| Total | Plantain | Producer                                            | \#98E4A7 | 4.3956044 | Prod   |
+| Total | Plantain | Research                                            | \#A4E9AE | 5.4945055 | Res    |
+| Total | Plantain | Seed Systems                                        | \#B1EEB6 | 7.1428571 | SS     |
+| Total | Plantain | Social Sciences                                     | \#BEF4BE | 0.5494505 | SocSci |
+
+## Question 3: How many years of experience do you have in each department?
+
+``` r
+#selecting only question 1----
+  question_3<- filter(individual_surveys, question_number==3)
+#Counts by crop
+  question_3_frequencies <- count_elements_by_group(question_3, "answer_in_english", c("crop"))
+  #calculate the percentages by crop and question 
+  question_3_frequencies <- question_3_frequencies %>%
+  group_by(crop) %>%
+  mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) %>%
+  ungroup()
+  #Plot
+  #Add colors to each 
+  question_3_frequencies<- question_3_frequencies %>%
+  mutate(background_color= case_when(crop=="Banana" ~ "#FFF2CC",
+                     crop=="Plantain" ~ "#BEF4BE"))
+  #bars colors
+question_3_frequencies<- question_3_frequencies %>%
+  mutate(bar_color= case_when(crop=="Banana" & answer_in_english=="Public" ~ "#FFDA00",
+                              crop=="Banana" & answer_in_english=="Private" ~ "#FFEDA3",
+                              crop=="Plantain" & answer_in_english=="Public" ~ "#28B463",
+                              crop=="Plantain" & answer_in_english=="Private" ~ "#82DA99"))
+question_3_frequencies$percentage<- round(question_3_frequencies$percentage,0)
+#custom function
+question_3_plot<- bar_plot_banana_plantain(
+  data_set = question_3_frequencies,
+  x_lab = "Sector Affiliation of Experts",
+  y_lab = "Percent (%)",
+  title = "Expert Affiliation by Crop",
+  x = "answer_in_english",
+  y = "percentage",
+  facet = "crop",
+  alpha = 0.3,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_3_plot
+```
+
+![](README_files/figure-gfm/queestion_3-1.png)<!-- -->
+
+``` r
+#Counts national
+  question_3_frequencies_nal <- count_elements_by_group(question_3, "answer_in_english", c("answer_in_english"))
+  #calculate the percentages by crop and question 
+  question_3_frequencies_nal <- question_3_frequencies_nal %>%
+     ungroup() %>%
+    mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) 
+  #Plot
+  #Add colors to each 
+  question_3_frequencies_nal<- question_3_frequencies_nal %>%
+  mutate(background_color= case_when(answer_in_english=="Public" ~ "transparent",
+                     answer_in_english=="Private" ~ "transparent"))
+  #Add color to the bars
+ question_3_frequencies_nal<-  question_3_frequencies_nal %>%
+  mutate(bar_color= case_when(answer_in_english=="Public"~ "#654321",
+                              answer_in_english=="Private"~ "#d8c298"))
+question_3_frequencies_nal$percentage<- round(question_3_frequencies_nal$percentage,0)
+  #custom plot 
+question_3_plot_nal<- bar_plot_banana_plantain(
+  data_set = question_3_frequencies_nal,
+  x_lab = "Sector Affiliation of Experts",
+  y_lab = "Percent (%)",
+  title = "Expert Affiliation",
+  x = "answer_in_english",
+  y = "percentage",
+  alpha = 1,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_3_plot_nal
+```
+
+![](README_files/figure-gfm/queestion_3-2.png)<!-- -->

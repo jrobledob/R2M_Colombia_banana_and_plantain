@@ -105,28 +105,62 @@ You could call:
 `R   category <- category_by_mean_by_question(question = 5, mean = 3.6, language = "en")`
 
 #### `count_elements_by_group` Function
-**Description:**  
-  This function is designed to count the frequency of elements within a specified column that contains comma-separated values. It processes the data to convert it into a long format and then performs a count of each element within the specified groups.
 
-**Parameters:**  
-  - `data`: The data frame containing the data to be analyzed.
-  - `value_column`: The name of the column in `data` that contains the comma-separated values.
-  - `group_columns`: A vector of column names in `data` used to define groups for aggregation.
+**Description:**\
+This function is designed to count the frequency of elements within a specified column that contains comma-separated values.
+It processes the data to convert it into a long format and then performs a count of each element within the specified groups.
 
-**Functionality:**  
-  - The function first uses `separate_rows` to split the comma-separated values in `value_column` and convert the data into a long format.
-  - `group_by` is then applied to group the data by the columns specified in `group_columns`.
-  - `count` is used to count the occurrences of each unique element within these groups.
-  - The result is a long-format data frame with the frequency count of each element in the specified groups.
+**Parameters:**\
+- `data`: The data frame containing the data to be analyzed.
+- `value_column`: The name of the column in `data` that contains the comma-separated values.
+- `group_columns`: A vector of column names in `data` used to define groups for aggregation.
 
-**Returns:**  
-  A data frame in long format that contains the counts of each unique element within the specified groups.
+**Functionality:**\
+- The function first uses `separate_rows` to split the comma-separated values in `value_column` and convert the data into a long format.
+- `group_by` is then applied to group the data by the columns specified in `group_columns`.
+- `count` is used to count the occurrences of each unique element within these groups.
+- The result is a long-format data frame with the frequency count of each element in the specified groups.
 
-**Example Usage:**  
-  Suppose you have a data frame `df` with a column `categories` containing comma-separated values and you want to count these values within groups defined by `column1` and `column2`. You could call:
-  `R
-  result <- count_elements_by_group(df, "categories", c("column1", "column2"))`
+**Returns:**\
+A data frame in long format that contains the counts of each unique element within the specified groups.
 
+**Example Usage:**\
+Suppose you have a data frame `df` with a column `categories` containing comma-separated values and you want to count these values within groups defined by `column1` and `column2`.
+You could call: `R   result <- count_elements_by_group(df, "categories", c("column1", "column2"))`
+
+#### `bar_plot_banana_plantain` Function
+
+**Description:**\
+This function creates a bar plot specifically designed for visualizing data related to 'Banana' and 'Plantain' categories.
+It includes customizable aesthetics such as background color for highlighting, bar color coding, and an adjustable upper limit for the y-axis to enhance the proportional representation of data.
+
+**Parameters:**\
+- `data_set`: The data frame containing the data to be plotted.
+- `x_lab`: Label for the x-axis.
+- `y_lab`: Label for the y-axis.
+- `title`: The title of the plot.
+- `x`: The name of the column in `data_set` to be used as the x-axis variable.
+- `y`: The name of the column in `data_set` to be used as the y-axis variable.
+- `facet`: The name of the column in `data_set` to create facets for different panels in the plot.
+- `alpha`: The transparency level for the background color of the geom_rect.
+- `background_color`: The name of the column in `data_set` that contains the background colors for the rectangles.
+- `bar_color`: The name of the column in `data_set` that contains the colors for the bars.
+- `proportional_limit`: A numeric value to set the upper limit of the y-axis as a proportion of the maximum value of the y variable.
+
+**Functionality:**\
+- The function starts by converting provided column names into symbols for `ggplot2` aesthetics.
+- It calculates the new y-axis upper limit based on the provided `proportional_limit`.
+- A ggplot object is initialized, and layers are added for rectangles, text, and bars, with aesthetics mapped accordingly.
+- The plot's appearance is customized, including colors for text and lines, and removing the grid lines for a cleaner look.
+- The y-axis is scaled with the calculated limit, and facet panels are created as per the `facet` column.
+
+**Returns:**\
+A ggplot object representing the bar plot with customized aesthetics and scales, ready for rendering or further modification.
+
+**Example Usage:**\
+To create a plot for a data frame `df` with background colors specified in `bg_colors` and bar colors in `bar_colors`, where we want to facet by the 'type' column and set the y-axis upper limit to be 20% higher than the max 'value' in `df`:
+
+`R result_plot <- bar_plot_banana_plantain(   data_set = df,   x_lab = "Type of Crop",   y_lab = "Value in Percentage",   title = "Crop Value Comparison",   x = "type",   y = "value",   facet = "category",   alpha = 0.3,   background_color = "bg_colors",   bar_color = "bar_colors",   proportional_limit = 1.2 ) # Print the result print(result_plot)`
 
 ```{r libraries}
 #libraries----
@@ -217,6 +251,48 @@ count_elements_by_group <- function(data, value_column, group_columns) {
   return(data_long)
 }
   
+#function bar_plot_banana_plantain
+bar_plot_banana_plantain <- function(data_set, x_lab, y_lab, title, x, y, alpha, background_color, bar_color, proportional_limit, facet = NULL) {
+  # Calculate new y-axis upper limit, 20% above the max value
+  ymax_limit <- max(data_set[[y]], na.rm = TRUE) * proportional_limit
+  
+  # Convert strings to symbols
+  x_sym <- rlang::sym(x)
+  y_sym <- rlang::sym(y)
+  background_color_sym <- rlang::sym(background_color)
+  bar_color_sym <- rlang::sym(bar_color)
+  
+  # Start the plot
+  p <- ggplot(data_set, aes(x = !!x_sym, y = !!y_sym)) +
+    geom_rect(aes(fill = !!background_color_sym), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = alpha) +
+    geom_text(aes(label = !!y_sym), vjust = -0.5, color = "#654321") +
+    geom_bar(aes(fill = !!bar_color_sym), stat = 'identity', position = position_dodge()) +
+    scale_fill_identity() +
+    labs(x = x_lab, y = y_lab, title = title) +
+    theme(
+      text = element_text(color = "#654321"),
+      axis.title = element_text(color = "#654321"),
+      axis.text = element_text(color = "#654321"),
+      axis.line = element_line(color = "#654321"),
+      panel.grid.major = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.border = element_rect(color = "#654321", fill = NA),
+      strip.text = element_text(color = "#654321"),
+      strip.background = element_rect(fill = "#A58F65", colour = NA),
+      legend.position = "none"
+    ) +
+    ylim(0, ymax_limit)
+  
+  # Conditionally add facet grid if facet is provided
+  if (!is.null(facet) && facet != "") {
+    facet_sym <- rlang::sym(facet)
+    facet_formula <- as.formula(paste(". ~", facet))
+    p <- p + facet_grid(facet_formula)
+  }
+  
+  # Return the plot
+  return(p)
+}
 ```
 
 ## Question 1: `r individual_surveys$question_in_english[1]`
@@ -353,4 +429,77 @@ gdp_json <- vt_export_json(vt_input_from_df(question_2_frequencies))
 vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3)
 vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3)
 kable(question_2_frequencies)
+```
+
+## Question 3: `r individual_surveys$question_in_english[3]`
+
+```{r queestion_3}
+#selecting only question 1----
+  question_3<- filter(individual_surveys, question_number==3)
+#Counts by crop
+  question_3_frequencies <- count_elements_by_group(question_3, "answer_in_english", c("crop"))
+  #calculate the percentages by crop and question 
+  question_3_frequencies <- question_3_frequencies %>%
+  group_by(crop) %>%
+  mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) %>%
+  ungroup()
+  #Plot
+  #Add colors to each 
+  question_3_frequencies<- question_3_frequencies %>%
+  mutate(background_color= case_when(crop=="Banana" ~ "#FFF2CC",
+                     crop=="Plantain" ~ "#BEF4BE"))
+  #bars colors
+question_3_frequencies<- question_3_frequencies %>%
+  mutate(bar_color= case_when(crop=="Banana" & answer_in_english=="Public" ~ "#FFDA00",
+                              crop=="Banana" & answer_in_english=="Private" ~ "#FFEDA3",
+                              crop=="Plantain" & answer_in_english=="Public" ~ "#28B463",
+                              crop=="Plantain" & answer_in_english=="Private" ~ "#82DA99"))
+question_3_frequencies$percentage<- round(question_3_frequencies$percentage,0)
+#custom function
+question_3_plot<- bar_plot_banana_plantain(
+  data_set = question_3_frequencies,
+  x_lab = "Sector Affiliation of Experts",
+  y_lab = "Percent (%)",
+  title = "Expert Affiliation by Crop",
+  x = "answer_in_english",
+  y = "percentage",
+  facet = "crop",
+  alpha = 0.3,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_3_plot
+#Counts national
+  question_3_frequencies_nal <- count_elements_by_group(question_3, "answer_in_english", c("answer_in_english"))
+  #calculate the percentages by crop and question 
+  question_3_frequencies_nal <- question_3_frequencies_nal %>%
+     ungroup() %>%
+    mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) 
+  #Plot
+  #Add colors to each 
+  question_3_frequencies_nal<- question_3_frequencies_nal %>%
+  mutate(background_color= case_when(answer_in_english=="Public" ~ "transparent",
+                     answer_in_english=="Private" ~ "transparent"))
+  #Add color to the bars
+ question_3_frequencies_nal<-  question_3_frequencies_nal %>%
+  mutate(bar_color= case_when(answer_in_english=="Public"~ "#654321",
+                              answer_in_english=="Private"~ "#d8c298"))
+question_3_frequencies_nal$percentage<- round(question_3_frequencies_nal$percentage,0)
+  #custom plot 
+question_3_plot_nal<- bar_plot_banana_plantain(
+  data_set = question_3_frequencies_nal,
+  x_lab = "Sector Affiliation of Experts",
+  y_lab = "Percent (%)",
+  title = "Expert Affiliation",
+  x = "answer_in_english",
+  y = "percentage",
+  alpha = 1,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_3_plot_nal
 ```
