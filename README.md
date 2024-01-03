@@ -352,7 +352,7 @@ bar_plot_banana_plantain <- function(data_set, x_lab, y_lab, title, x, y, alpha,
   p <- ggplot(data_set, aes(x = !!x_sym, y = !!y_sym)) +
     geom_rect(aes(fill = !!background_color_sym), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = alpha) +
     geom_text(aes(label = !!y_sym), vjust = -0.5, color = "#654321") +
-    geom_bar(aes(fill = !!bar_color_sym, color="#654321"), stat = 'identity', position = position_dodge()) +
+    geom_bar(aes(fill = !!bar_color_sym), color = "#654321",stat = 'identity', position = position_dodge()) +
     scale_fill_identity() +
     labs(x = x_lab, y = y_lab, title = title) +
     theme(
