@@ -261,6 +261,8 @@ the max ‘value’ in `df`:
   #set the color palette for bananas and plantains
   palette_banana <- colorRampPalette(c("#FFDA00","#FFF2CC" ))
   palette_plantain <- colorRampPalette(c("#28B463","#BEF4BE"))
+  palette_soil<- colorRampPalette(c( "#654321","#d8c298"))
+    
   #data set: individual questions:
   #read individual surveys from GitHub
   num_cols <- length(read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", nrows = 1, header = TRUE))
@@ -350,7 +352,7 @@ bar_plot_banana_plantain <- function(data_set, x_lab, y_lab, title, x, y, alpha,
   p <- ggplot(data_set, aes(x = !!x_sym, y = !!y_sym)) +
     geom_rect(aes(fill = !!background_color_sym), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = alpha) +
     geom_text(aes(label = !!y_sym), vjust = -0.5, color = "#654321") +
-    geom_bar(aes(fill = !!bar_color_sym), stat = 'identity', position = position_dodge()) +
+    geom_bar(aes(fill = !!bar_color_sym, color="#654321"), stat = 'identity', position = position_dodge()) +
     scale_fill_identity() +
     labs(x = x_lab, y = y_lab, title = title) +
     theme(
@@ -820,7 +822,7 @@ kable(question_2_frequencies)
 ## Question 3: How many years of experience do you have in each department?
 
 ``` r
-#selecting only question 1----
+#selecting only question 3----
   question_3<- filter(individual_surveys, question_number==3)
 #Counts by crop
   question_3_frequencies <- count_elements_by_group(question_3, "answer_in_english", c("crop"))
@@ -896,3 +898,705 @@ question_3_plot_nal
 ```
 
 ![](README_files/figure-gfm/queestion_3-2.png)<!-- -->
+
+## Question 4: How many years of experience do you have in each department?
+
+``` r
+#selecting only question 4----
+  question_4<- filter(individual_surveys, question_number==4)
+#Counts by crop
+  question_4_frequencies <- count_elements_by_group(question_4, "answer_in_english", c("crop"))
+  #calculate the percentages by crop and question 
+  question_4_frequencies <- question_4_frequencies %>%
+  group_by(crop) %>%
+  mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) %>%
+  ungroup()
+  question_4_frequencies$answer_in_english <- factor(
+  question_4_frequencies$answer_in_english, 
+  levels = c("No Formal Education", "Secondary Education", "Bachelor's Degree", "Master's Degree", "Doctorate"),
+  labels = c("No Ed.", "Sec.", "Bac.", "Ms.C", "Ph.D")
+)
+  #Plot
+  #Add colors to each backgorund 
+  question_4_frequencies<- question_4_frequencies %>%
+  mutate(background_color= case_when(crop=="Banana" ~ "#FFF2CC",
+                     crop=="Plantain" ~ "#BEF4BE"))
+  #Colors of the bars
+  # Identify the levels by crop
+  levels_Q_4_banana<- question_4_frequencies$answer_in_english[which( question_4_frequencies$crop=="Banana")]
+  levels_Q_4_plantain<- question_4_frequencies$answer_in_english[which( question_4_frequencies$crop=="Plantain")]
+  #set the color. The +1 is to make a different color that background wich will be the last element in the vector
+  q_4_colors_banana<- palette_banana(length(levels_Q_4_banana)+1)
+  q_4_colors_plantain<- palette_plantain(length(levels_Q_4_plantain)+1)
+  names(q_4_colors_banana)<- levels_Q_4_banana
+  names(q_4_colors_plantain)<- levels_Q_4_plantain
+    # Modify the data_set to include the bar_color
+question_4_frequencies <- question_4_frequencies %>%
+  mutate(bar_color = case_when(
+    crop == "Banana" ~ q_4_colors_banana[answer_in_english],
+    crop == "Plantain" ~ q_4_colors_plantain[answer_in_english]
+  ))
+question_4_frequencies$percentage<- round(question_4_frequencies$percentage, 0)
+dput(unique(question_4_frequencies$answer_in_english))
+```
+
+    ## structure(c(3L, 5L, 4L, 1L, 2L), levels = c("No Ed.", "Sec.", 
+    ## "Bac.", "Ms.C", "Ph.D"), class = "factor")
+
+``` r
+#custom function
+question_4_plot<- bar_plot_banana_plantain(
+  data_set = question_4_frequencies,
+  x_lab = "Education Level of the Experts",
+  y_lab = "Percent (%)",
+  title = "Eucation Level of the Experts by Crop",
+  x = "answer_in_english",
+  y = "percentage",
+  facet = "crop",
+  alpha = 0.3,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_4_plot
+```
+
+![](README_files/figure-gfm/question_4-1.png)<!-- -->
+
+``` r
+#Counts national
+  question_4_frequencies_nal <- count_elements_by_group(question_4, "answer_in_english", c("answer_in_english"))
+  #calculate the percentages by crop and question 
+  question_4_frequencies_nal <- question_4_frequencies_nal %>%
+     ungroup() %>%
+    mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) 
+  #Plot
+  #Add colors to each background
+   question_4_frequencies_nal$answer_in_english <- factor(
+  question_4_frequencies_nal$answer_in_english, 
+  levels = c("No Formal Education", "Secondary Education", "Bachelor's Degree", "Master's Degree", "Doctorate"),
+  labels = c("No Ed.", "Sec.", "Bac.", "Ms.C", "Ph.D")
+)
+  question_4_frequencies_nal$background_color<-"transparent"
+   q_4_colors_soil_nal<- palette_soil(length(levels(question_4_frequencies_nal$answer_in_english)))
+    names(q_4_colors_soil_nal)<- levels(question_4_frequencies_nal)
+ # Modify the data_set to include the bar_color
+question_4_frequencies_nal <- question_4_frequencies_nal %>%
+  mutate(bar_color = q_4_colors_soil_nal[answer_in_english])
+question_4_frequencies_nal$percentage<- round(question_4_frequencies_nal$percentage, 0)
+  #custom plot 
+question_4_plot_nal<- bar_plot_banana_plantain(
+  data_set = question_4_frequencies_nal,
+  x_lab = "Education Level of the Experts",
+  y_lab = "Percent (%)",
+  title = "Education Level of the Experts",
+  x = "answer_in_english",
+  y = "percentage",
+  alpha = 1,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_4_plot_nal
+```
+
+![](README_files/figure-gfm/question_4-2.png)<!-- -->
+
+## Question 5: How many years of experience do you have in each department?
+
+``` r
+question_5<- filter(individual_surveys,question_number==5)
+question_5_frequencies <- count_elements_by_group(question_5, "answer_in_english", c("crop"))
+question_5_frequencies$answer_in_english<- as.factor(question_5_frequencies$answer_in_english)
+#finding the number of levels per crop (banana and plantain)
+levels_per_crop_Q5<- tapply(question_5_frequencies$answer_in_english, question_5_frequencies$crop, function(x){length(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question5<- palette_banana(levels_per_crop_Q5["Banana"])
+colors_plantain_question5<- palette_plantain(levels_per_crop_Q5["Plantain"])
+#Assignig a color per factor by crop
+question_5_frequencies <- question_5_frequencies %>%
+  mutate(group_color = case_when(
+    crop == "Banana" ~ colors_banana_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))],
+    crop == "Plantain" ~ colors_plantain_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))]
+  ))
+#Make the abbreviations
+question_5_frequencies <- question_5_frequencies %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
+    answer_in_english == "Black Sigatoka" ~ "BS",
+    answer_in_english == "Black Weevil" ~ "BW",
+    answer_in_english == "Elephantiasis" ~ "ELE",
+    answer_in_english == "Fusarium" ~ "FUS",
+    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
+    answer_in_english == "Nematodes" ~ "NEM",
+    answer_in_english == "Red Spider Mite" ~ "RSM",
+    answer_in_english == "Scale Insect" ~ "SI",
+    answer_in_english == "Scarab Beetle" ~ "SB",
+    answer_in_english == "Whiteflies" ~ "WF",
+    answer_in_english == "Yellow Sigatoka" ~ "YS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+
+#formating the data set to make the visualization, voronoiTreemap was quite picky...  
+colnames(question_5_frequencies)<- c('h2', "h3", "weight","color", "codes")
+question_5_frequencies$h1<- "Total"
+question_5_frequencies <- question_5_frequencies %>%
+  select(h1, h2, h3, color, weight, codes)
+question_5_frequencies$weight<- (question_5_frequencies$weight/sum(question_5_frequencies$weight))*100
+question_5_frequencies$h1<- as.factor(question_5_frequencies$h1)
+question_5_frequencies$h2<- as.factor(question_5_frequencies$h2)
+question_5_frequencies<- data.frame(h1= question_5_frequencies$h1,
+                                    h2= question_5_frequencies$h2,
+                                    h3= question_5_frequencies$h3,
+                                    color= question_5_frequencies$color,
+                                    weight= question_5_frequencies$weight,
+                                    codes= question_5_frequencies$codes)
+gdp_json <- vt_export_json(vt_input_from_df(question_5_frequencies))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3)
+```
+
+![](README_files/figure-gfm/question_5-1.png)<!-- -->
+
+``` r
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3)
+```
+
+![](README_files/figure-gfm/question_5-2.png)<!-- -->
+
+``` r
+kable(question_5_frequencies)
+```
+
+| h1    | h2       | h3                    | color    |     weight | codes |
+|:------|:---------|:----------------------|:---------|-----------:|:------|
+| Total | Banana   | Banana Mosaic Disease | \#FFDA00 |  0.4376368 | BMD   |
+| Total | Banana   | Black Sigatoka        | \#FFDC12 |  8.5339168 | BS    |
+| Total | Banana   | Black Weevil          | \#FFDE25 |  6.3457330 | BW    |
+| Total | Banana   | Elephantiasis         | \#FFE037 |  1.7505470 | ELE   |
+| Total | Banana   | Fusarium              | \#FFE24A |  4.3763676 | FUS   |
+| Total | Banana   | Moko or Madurabiche   | \#FFE45C |  7.8774617 | MOKO  |
+| Total | Banana   | Nematodes             | \#FFE76F |  2.1881838 | NEM   |
+| Total | Banana   | Red Spider Mite       | \#FFE981 |  2.4070022 | RSM   |
+| Total | Banana   | Scale Insect          | \#FFEB94 |  3.9387309 | SI    |
+| Total | Banana   | Scarab Beetle         | \#FFEDA6 |  1.3129103 | SB    |
+| Total | Banana   | Whiteflies            | \#FFEFB9 |  0.4376368 | WF    |
+| Total | Banana   | Yellow Sigatoka       | \#FFF2CC |  0.8752735 | YS    |
+| Total | Plantain | Banana Mosaic Disease | \#28B463 |  2.1881838 | BMD   |
+| Total | Plantain | Black Sigatoka        | \#35B96B |  9.4091904 | BS    |
+| Total | Plantain | Black Weevil          | \#43BF73 |  7.8774617 | BW    |
+| Total | Plantain | Elephantiasis         | \#50C57B |  5.2516411 | ELE   |
+| Total | Plantain | Fusarium              | \#5ECB84 |  3.9387309 | FUS   |
+| Total | Plantain | Moko or Madurabiche   | \#6CD18C | 10.2844639 | MOKO  |
+| Total | Plantain | Nematodes             | \#79D694 |  7.6586433 | NEM   |
+| Total | Plantain | Red Spider Mite       | \#87DC9C |  1.0940919 | RSM   |
+| Total | Plantain | Scale Insect          | \#95E2A5 |  4.5951860 | SI    |
+| Total | Plantain | Scarab Beetle         | \#A2E8AD |  0.2188184 | SB    |
+| Total | Plantain | Whiteflies            | \#B0EEB5 |  1.7505470 | WF    |
+| Total | Plantain | Yellow Sigatoka       | \#BEF4BE |  5.2516411 | YS    |
+
+``` r
+#select top 5
+question_5_frequencies <- question_5_frequencies %>%
+  group_by(h2) %>%
+  slice_max(order_by = weight, n = 5) 
+kable(question_5_frequencies, label = "TOP 5 pest and Diseases by Crop (banana and plantain")
+```
+
+| h1    | h2       | h3                  | color    |    weight | codes |
+|:------|:---------|:--------------------|:---------|----------:|:------|
+| Total | Banana   | Black Sigatoka      | \#FFDC12 |  8.533917 | BS    |
+| Total | Banana   | Moko or Madurabiche | \#FFE45C |  7.877462 | MOKO  |
+| Total | Banana   | Black Weevil        | \#FFDE25 |  6.345733 | BW    |
+| Total | Banana   | Fusarium            | \#FFE24A |  4.376368 | FUS   |
+| Total | Banana   | Scale Insect        | \#FFEB94 |  3.938731 | SI    |
+| Total | Plantain | Moko or Madurabiche | \#6CD18C | 10.284464 | MOKO  |
+| Total | Plantain | Black Sigatoka      | \#35B96B |  9.409190 | BS    |
+| Total | Plantain | Black Weevil        | \#43BF73 |  7.877462 | BW    |
+| Total | Plantain | Nematodes           | \#79D694 |  7.658643 | NEM   |
+| Total | Plantain | Elephantiasis       | \#50C57B |  5.251641 | ELE   |
+| Total | Plantain | Yellow Sigatoka     | \#BEF4BE |  5.251641 | YS    |
+
+``` r
+#Frequencies by department
+question_5_frequencies_by_depto <- count_elements_by_group(question_5, "answer_in_english", c("crop", "expert_in"))
+#colors by disease
+question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>%
+  mutate(group_color = case_when(
+    crop == "Banana" ~ colors_banana_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))],
+    crop == "Plantain" ~ colors_plantain_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))]
+  ))
+#Make the abbreviations
+question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
+    answer_in_english == "Black Sigatoka" ~ "BS",
+    answer_in_english == "Black Weevil" ~ "BW",
+    answer_in_english == "Elephantiasis" ~ "ELE",
+    answer_in_english == "Fusarium" ~ "FUS",
+    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
+    answer_in_english == "Nematodes" ~ "NEM",
+    answer_in_english == "Red Spider Mite" ~ "RSM",
+    answer_in_english == "Scale Insect" ~ "SI",
+    answer_in_english == "Scarab Beetle" ~ "SB",
+    answer_in_english == "Whiteflies" ~ "WF",
+    answer_in_english == "Yellow Sigatoka" ~ "YS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_5_frequencies_by_depto<- select(question_5_frequencies_by_depto,!answer_in_english)
+question_5_frequencies_by_depto<- question_5_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_5_frequencies_by_depto<- select(question_5_frequencies_by_depto,!n & !total)
+#put it in long format
+question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#only select top 5 for the tree map
+  #for banana
+  question_5_frequencies_by_depto_banana<- filter(question_5_frequencies_by_depto, cat_abbreviations %in% question_5_frequencies$codes[which(question_5_frequencies$h2=="Banana")], crop=="Banana")
+  #for plantain
+  question_5_frequencies_by_depto_plantain<- filter(question_5_frequencies_by_depto, cat_abbreviations %in% question_5_frequencies$codes[which(question_5_frequencies$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_5_frequencies_by_depto<- rbind(question_5_frequencies_by_depto_banana, question_5_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Top 5 Most Limiting Pests and Diseases in Plantains by Department")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_5-3.png)<!-- -->
+
+    ## $tm
+    ##         crop          expert_in cat_abbreviations vSize  vColor stdErr
+    ## 1   Plantain          Antioquia                BS    12 #35B96B     12
+    ## 2   Plantain          Antioquia                BW     6 #43BF73      6
+    ## 3   Plantain          Antioquia              MOKO    12 #6CD18C     12
+    ## 4   Plantain          Antioquia              <NA>    54 #35B96B     54
+    ## 5   Plantain          Antioquia               NEM    12 #79D694     12
+    ## 6   Plantain          Antioquia                YS    12 #BEF4BE     12
+    ## 7   Plantain             Arauca                BS    15 #35B96B     15
+    ## 8   Plantain             Arauca                BW    15 #43BF73     15
+    ## 9   Plantain             Arauca              MOKO    15 #6CD18C     15
+    ## 10  Plantain             Arauca              <NA>    60 #35B96B     60
+    ## 11  Plantain             Arauca               NEM    15 #79D694     15
+    ## 12  Plantain          Atlántico                BS    25 #35B96B     25
+    ## 13  Plantain          Atlántico               ELE    25 #50C57B     25
+    ## 14  Plantain          Atlántico              MOKO    25 #6CD18C     25
+    ## 15  Plantain          Atlántico              <NA>   100 #35B96B    100
+    ## 16  Plantain          Atlántico                YS    25 #BEF4BE     25
+    ## 17  Plantain            Bolívar                BS    25 #35B96B     25
+    ## 18  Plantain            Bolívar               ELE    25 #50C57B     25
+    ## 19  Plantain            Bolívar              MOKO    25 #6CD18C     25
+    ## 20  Plantain            Bolívar              <NA>   100 #35B96B    100
+    ## 21  Plantain            Bolívar                YS    25 #BEF4BE     25
+    ## 22  Plantain             Caldas                BS    12 #35B96B     12
+    ## 23  Plantain             Caldas                BW    21 #43BF73     21
+    ## 24  Plantain             Caldas               ELE    18 #50C57B     18
+    ## 25  Plantain             Caldas              MOKO    12 #6CD18C     12
+    ## 26  Plantain             Caldas              <NA>    90 #35B96B     90
+    ## 27  Plantain             Caldas               NEM    15 #79D694     15
+    ## 28  Plantain             Caldas                YS    12 #BEF4BE     12
+    ## 29  Plantain           Casanare                BS    17 #35B96B     17
+    ## 30  Plantain           Casanare                BW    17 #43BF73     17
+    ## 31  Plantain           Casanare              MOKO    17 #6CD18C     17
+    ## 32  Plantain           Casanare              <NA>    68 #35B96B     68
+    ## 33  Plantain           Casanare               NEM    17 #79D694     17
+    ## 34  Plantain              Chocó                BS    33 #35B96B     33
+    ## 35  Plantain              Chocó              MOKO    33 #6CD18C     33
+    ## 36  Plantain              Chocó              <NA>    99 #35B96B     99
+    ## 37  Plantain              Chocó               NEM    33 #79D694     33
+    ## 38  Plantain            Córdoba                BS    17 #35B96B     17
+    ## 39  Plantain            Córdoba                BW    17 #43BF73     17
+    ## 40  Plantain            Córdoba               ELE    17 #50C57B     17
+    ## 41  Plantain            Córdoba              MOKO    17 #6CD18C     17
+    ## 42  Plantain            Córdoba              <NA>    85 #35B96B     85
+    ## 43  Plantain            Córdoba                YS    17 #BEF4BE     17
+    ## 44  Plantain              Huila                BS    14 #35B96B     14
+    ## 45  Plantain              Huila                BW    14 #43BF73     14
+    ## 46  Plantain              Huila               ELE    14 #50C57B     14
+    ## 47  Plantain              Huila              MOKO    14 #6CD18C     14
+    ## 48  Plantain              Huila              <NA>    70 #35B96B     70
+    ## 49  Plantain              Huila               NEM    14 #79D694     14
+    ## 50  Plantain         La Guajira                BS    17 #35B96B     17
+    ## 51  Plantain         La Guajira                BW    11 #43BF73     11
+    ## 52  Plantain         La Guajira              MOKO    22 #6CD18C     22
+    ## 53  Plantain         La Guajira              <NA>    67 #35B96B     67
+    ## 54  Plantain         La Guajira               NEM    11 #79D694     11
+    ## 55  Plantain         La Guajira                YS     6 #BEF4BE      6
+    ## 56  Plantain          Magdalena                BS    20 #35B96B     20
+    ## 57  Plantain          Magdalena                BW    10 #43BF73     10
+    ## 58  Plantain          Magdalena              MOKO    30 #6CD18C     30
+    ## 59  Plantain          Magdalena              <NA>    80 #35B96B     80
+    ## 60  Plantain          Magdalena               NEM    10 #79D694     10
+    ## 61  Plantain          Magdalena                YS    10 #BEF4BE     10
+    ## 62  Plantain               Meta                BS    16 #35B96B     16
+    ## 63  Plantain               Meta                BW    14 #43BF73     14
+    ## 64  Plantain               Meta               ELE     2 #50C57B      2
+    ## 65  Plantain               Meta              MOKO    16 #6CD18C     16
+    ## 66  Plantain               Meta              <NA>    68 #35B96B     68
+    ## 67  Plantain               Meta               NEM    14 #79D694     14
+    ## 68  Plantain               Meta                YS     6 #BEF4BE      6
+    ## 69  Plantain               <NA>              <NA>  1478 #35B96B   1478
+    ## 70  Plantain Norte De Santander                BS    14 #35B96B     14
+    ## 71  Plantain Norte De Santander                BW    14 #43BF73     14
+    ## 72  Plantain Norte De Santander               ELE    14 #50C57B     14
+    ## 73  Plantain Norte De Santander              MOKO    14 #6CD18C     14
+    ## 74  Plantain Norte De Santander              <NA>    70 #35B96B     70
+    ## 75  Plantain Norte De Santander               NEM    14 #79D694     14
+    ## 76  Plantain            Quindío                BS    15 #35B96B     15
+    ## 77  Plantain            Quindío                BW    15 #43BF73     15
+    ## 78  Plantain            Quindío               ELE    15 #50C57B     15
+    ## 79  Plantain            Quindío              MOKO    15 #6CD18C     15
+    ## 80  Plantain            Quindío              <NA>    78 #35B96B     78
+    ## 81  Plantain            Quindío               NEM    11 #79D694     11
+    ## 82  Plantain            Quindío                YS     7 #BEF4BE      7
+    ## 83  Plantain          Risaralda                BS    13 #35B96B     13
+    ## 84  Plantain          Risaralda                BW    10 #43BF73     10
+    ## 85  Plantain          Risaralda               ELE    18 #50C57B     18
+    ## 86  Plantain          Risaralda              MOKO    21 #6CD18C     21
+    ## 87  Plantain          Risaralda              <NA>    90 #35B96B     90
+    ## 88  Plantain          Risaralda               NEM    15 #79D694     15
+    ## 89  Plantain          Risaralda                YS    13 #BEF4BE     13
+    ## 90  Plantain          Santander                BS    33 #35B96B     33
+    ## 91  Plantain          Santander                BW    33 #43BF73     33
+    ## 92  Plantain          Santander              MOKO    33 #6CD18C     33
+    ## 93  Plantain          Santander              <NA>    99 #35B96B     99
+    ## 94  Plantain              Sucre                BS    50 #35B96B     50
+    ## 95  Plantain              Sucre              <NA>   100 #35B96B    100
+    ## 96  Plantain              Sucre                YS    50 #BEF4BE     50
+    ## 97  Plantain             Tolima                BS    25 #35B96B     25
+    ## 98  Plantain             Tolima               ELE    25 #50C57B     25
+    ## 99  Plantain             Tolima              MOKO    25 #6CD18C     25
+    ## 100 Plantain             Tolima              <NA>   100 #35B96B    100
+    ## 101 Plantain             Tolima                YS    25 #BEF4BE     25
+    ##     vColorValue level        x0         y0          w          h   color
+    ## 1            NA     3 0.8284662 0.10649758 0.07623722 0.10649758 #35B96B
+    ## 2            NA     3 0.9682345 0.00000000 0.03176551 0.12779710 #43BF73
+    ## 3            NA     3 0.8284662 0.00000000 0.07623722 0.10649758 #6CD18C
+    ## 4            NA     2 0.8284662 0.00000000 0.17153375 0.21299516 #35B96B
+    ## 5            NA     3 0.9047035 0.12779710 0.09529653 0.08519806 #79D694
+    ## 6            NA     3 0.9047035 0.00000000 0.06353102 0.12779710 #BEF4BE
+    ## 7            NA     3 0.8284662 0.33132580 0.08576688 0.11833064 #35B96B
+    ## 8            NA     3 0.8284662 0.21299516 0.08576688 0.11833064 #43BF73
+    ## 9            NA     3 0.9142331 0.33132580 0.08576688 0.11833064 #6CD18C
+    ## 10           NA     2 0.8284662 0.21299516 0.17153375 0.23666129 #35B96B
+    ## 11           NA     3 0.9142331 0.21299516 0.08576688 0.11833064 #79D694
+    ## 12           NA     3 0.0000000 0.83333333 0.10148850 0.16666667 #35B96B
+    ## 13           NA     3 0.1014885 0.83333333 0.10148850 0.16666667 #50C57B
+    ## 14           NA     3 0.0000000 0.66666667 0.10148850 0.16666667 #6CD18C
+    ## 15           NA     2 0.0000000 0.66666667 0.20297700 0.33333333 #35B96B
+    ## 16           NA     3 0.1014885 0.66666667 0.10148850 0.16666667 #BEF4BE
+    ## 17           NA     3 0.0000000 0.50000000 0.10148850 0.16666667 #35B96B
+    ## 18           NA     3 0.1014885 0.50000000 0.10148850 0.16666667 #50C57B
+    ## 19           NA     3 0.0000000 0.33333333 0.10148850 0.16666667 #6CD18C
+    ## 20           NA     2 0.0000000 0.33333333 0.20297700 0.33333333 #35B96B
+    ## 21           NA     3 0.1014885 0.33333333 0.10148850 0.16666667 #BEF4BE
+    ## 22           NA     3 0.4046008 0.69886364 0.10705291 0.07584175 #35B96B
+    ## 23           NA     3 0.4046008 0.86950758 0.10888287 0.13049242 #43BF73
+    ## 24           NA     3 0.5134837 0.86950758 0.09332817 0.13049242 #50C57B
+    ## 25           NA     3 0.5116537 0.78418561 0.09515814 0.08532197 #6CD18C
+    ## 26           NA     2 0.4046008 0.69886364 0.20221105 0.30113636 #35B96B
+    ## 27           NA     3 0.4046008 0.77470539 0.10705291 0.09480219 #79D694
+    ## 28           NA     3 0.5116537 0.69886364 0.09515814 0.08532197 #BEF4BE
+    ## 29           NA     3 0.8153821 0.57426004 0.09230897 0.12460359 #35B96B
+    ## 30           NA     3 0.8153821 0.44965645 0.09230897 0.12460359 #43BF73
+    ## 31           NA     3 0.9076910 0.57426004 0.09230897 0.12460359 #6CD18C
+    ## 32           NA     2 0.8153821 0.44965645 0.18461795 0.24920719 #35B96B
+    ## 33           NA     3 0.9076910 0.44965645 0.09230897 0.12460359 #79D694
+    ## 34           NA     3 0.2029770 0.44295302 0.10081191 0.22147651 #35B96B
+    ## 35           NA     3 0.3037889 0.44295302 0.10081191 0.22147651 #6CD18C
+    ## 36           NA     2 0.2029770 0.33221477 0.20162382 0.33221477 #35B96B
+    ## 37           NA     3 0.2029770 0.33221477 0.20162382 0.11073826 #79D694
+    ## 38           NA     3 0.8090229 0.87954545 0.09548855 0.12045455 #35B96B
+    ## 39           NA     3 0.9045115 0.87954545 0.09548855 0.12045455 #43BF73
+    ## 40           NA     3 0.8090229 0.69886364 0.06365903 0.18068182 #50C57B
+    ## 41           NA     3 0.8726819 0.69886364 0.06365903 0.18068182 #6CD18C
+    ## 42           NA     2 0.8090229 0.69886364 0.19097710 0.30113636 #35B96B
+    ## 43           NA     3 0.9363410 0.69886364 0.06365903 0.18068182 #BEF4BE
+    ## 44           NA     3 0.4046008 0.10728170 0.08829334 0.10728170 #35B96B
+    ## 45           NA     3 0.4046008 0.00000000 0.08829334 0.10728170 #43BF73
+    ## 46           NA     3 0.4928942 0.07152113 0.06622001 0.14304226 #50C57B
+    ## 47           NA     3 0.5591142 0.07152113 0.06622001 0.14304226 #6CD18C
+    ## 48           NA     2 0.4046008 0.00000000 0.22073336 0.21456340 #35B96B
+    ## 49           NA     3 0.4928942 0.00000000 0.13244001 0.07152113 #79D694
+    ## 50           NA     3 0.6253342 0.00000000 0.11824106 0.09727611 #35B96B
+    ## 51           NA     3 0.7435752 0.13549172 0.08489102 0.08767111 #43BF73
+    ## 52           NA     3 0.6253342 0.09727611 0.11824106 0.12588672 #6CD18C
+    ## 53           NA     2 0.6253342 0.00000000 0.20313208 0.22316283 #35B96B
+    ## 54           NA     3 0.7435752 0.04782061 0.08489102 0.08767111 #79D694
+    ## 55           NA     3 0.7435752 0.00000000 0.08489102 0.04782061 #BEF4BE
+    ## 56           NA     3 0.4046008 0.45364833 0.13795835 0.09808612 #35B96B
+    ## 57           NA     3 0.5425592 0.61712520 0.08277501 0.08173844 #43BF73
+    ## 58           NA     3 0.4046008 0.55173445 0.13795835 0.14712919 #6CD18C
+    ## 59           NA     2 0.4046008 0.45364833 0.22073336 0.24521531 #35B96B
+    ## 60           NA     3 0.5425592 0.53538676 0.08277501 0.08173844 #79D694
+    ## 61           NA     3 0.5425592 0.45364833 0.08277501 0.08173844 #BEF4BE
+    ## 62           NA     3 0.6253342 0.33640964 0.09559157 0.11324681 #35B96B
+    ## 63           NA     3 0.7209257 0.36157560 0.10754051 0.08808085 #43BF73
+    ## 64           NA     3 0.7893606 0.22316283 0.03910564 0.03460319 #50C57B
+    ## 65           NA     3 0.6253342 0.22316283 0.09559157 0.11324681 #6CD18C
+    ## 66           NA     2 0.6253342 0.22316283 0.20313208 0.22649362 #35B96B
+    ## 67           NA     3 0.7209257 0.22316283 0.06843487 0.13841277 #79D694
+    ## 68           NA     3 0.7893606 0.25776602 0.03910564 0.10380958 #BEF4BE
+    ## 69           NA     1 0.0000000 0.00000000 1.00000000 1.00000000 #35B96B
+    ## 70           NA     3 0.6253342 0.57426004 0.07601915 0.12460359 #35B96B
+    ## 71           NA     3 0.6253342 0.44965645 0.07601915 0.12460359 #43BF73
+    ## 72           NA     3 0.7013533 0.53272551 0.05701437 0.16613813 #50C57B
+    ## 73           NA     3 0.7583677 0.53272551 0.05701437 0.16613813 #6CD18C
+    ## 74           NA     2 0.6253342 0.44965645 0.19004789 0.24920719 #35B96B
+    ## 75           NA     3 0.7013533 0.44965645 0.11402873 0.08306906 #79D694
+    ## 76           NA     3 0.4046008 0.33410586 0.08489745 0.11954246 #35B96B
+    ## 77           NA     3 0.4046008 0.21456340 0.08489745 0.11954246 #43BF73
+    ## 78           NA     3 0.4894983 0.30422025 0.06791796 0.14942808 #50C57B
+    ## 79           NA     3 0.5574162 0.30422025 0.06791796 0.14942808 #6CD18C
+    ## 80           NA     2 0.4046008 0.21456340 0.22073336 0.23908493 #35B96B
+    ## 81           NA     3 0.4894983 0.21456340 0.08301084 0.08965685 #79D694
+    ## 82           NA     3 0.5725091 0.21456340 0.05282508 0.08965685 #BEF4BE
+    ## 83           NA     3 0.6068119 0.69886364 0.11101783 0.07922754 #35B96B
+    ## 84           NA     3 0.7178297 0.69886364 0.09119322 0.07419302 #43BF73
+    ## 85           NA     3 0.7156947 0.86950758 0.09332817 0.13049242 #50C57B
+    ## 86           NA     3 0.6068119 0.86950758 0.10888287 0.13049242 #6CD18C
+    ## 87           NA     2 0.6068119 0.69886364 0.20221105 0.30113636 #35B96B
+    ## 88           NA     3 0.6068119 0.77809118 0.11101783 0.09141640 #79D694
+    ## 89           NA     3 0.7178297 0.77305665 0.09119322 0.09645092 #BEF4BE
+    ## 90           NA     3 0.2029770 0.11073826 0.10081191 0.22147651 #35B96B
+    ## 91           NA     3 0.3037889 0.11073826 0.10081191 0.22147651 #43BF73
+    ## 92           NA     3 0.2029770 0.00000000 0.20162382 0.11073826 #6CD18C
+    ## 93           NA     2 0.2029770 0.00000000 0.20162382 0.33221477 #35B96B
+    ## 94           NA     3 0.0000000 0.16666667 0.20297700 0.16666667 #35B96B
+    ## 95           NA     2 0.0000000 0.00000000 0.20297700 0.33333333 #35B96B
+    ## 96           NA     3 0.0000000 0.00000000 0.20297700 0.16666667 #BEF4BE
+    ## 97           NA     3 0.2029770 0.83221477 0.10081191 0.16778523 #35B96B
+    ## 98           NA     3 0.3037889 0.83221477 0.10081191 0.16778523 #50C57B
+    ## 99           NA     3 0.2029770 0.66442953 0.10081191 0.16778523 #6CD18C
+    ## 100          NA     2 0.2029770 0.66442953 0.20162382 0.33557047 #35B96B
+    ## 101          NA     3 0.3037889 0.66442953 0.10081191 0.16778523 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#tree map only banana
+tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Top 5 Most Limiting Pests and Diseases in Bananas by Department")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_5-4.png)<!-- -->
+
+    ## $tm
+    ##      crop  expert_in cat_abbreviations vSize  vColor stdErr vColorValue level
+    ## 1  Banana  Antioquia                BS    17 #FFDC12     17          NA     3
+    ## 2  Banana  Antioquia                BW    13 #FFDE25     13          NA     3
+    ## 3  Banana  Antioquia               FUS     1 #FFE24A      1          NA     3
+    ## 4  Banana  Antioquia              MOKO    17 #FFE45C     17          NA     3
+    ## 5  Banana  Antioquia              <NA>    61 #FFDC12     61          NA     2
+    ## 6  Banana  Antioquia                SI    13 #FFEB94     13          NA     3
+    ## 7  Banana     Caldas                BS    20 #FFDC12     20          NA     3
+    ## 8  Banana     Caldas                BW    20 #FFDE25     20          NA     3
+    ## 9  Banana     Caldas               FUS    20 #FFE24A     20          NA     3
+    ## 10 Banana     Caldas              MOKO    20 #FFE45C     20          NA     3
+    ## 11 Banana     Caldas              <NA>    80 #FFDC12     80          NA     2
+    ## 12 Banana      Cesar                BS   100 #FFDC12    100          NA     3
+    ## 13 Banana      Cesar              <NA>   100 #FFDC12    100          NA     2
+    ## 14 Banana      Chocó                BS    25 #FFDC12     25          NA     3
+    ## 15 Banana      Chocó              MOKO    25 #FFE45C     25          NA     3
+    ## 16 Banana      Chocó              <NA>    62 #FFDC12     62          NA     2
+    ## 17 Banana      Chocó                SI    12 #FFEB94     12          NA     3
+    ## 18 Banana    Córdoba                BS    25 #FFDC12     25          NA     3
+    ## 19 Banana    Córdoba                BW    12 #FFDE25     12          NA     3
+    ## 20 Banana    Córdoba              MOKO    25 #FFE45C     25          NA     3
+    ## 21 Banana    Córdoba              <NA>    62 #FFDC12     62          NA     2
+    ## 22 Banana      Huila                BS    20 #FFDC12     20          NA     3
+    ## 23 Banana      Huila                BW    20 #FFDE25     20          NA     3
+    ## 24 Banana      Huila               FUS    20 #FFE24A     20          NA     3
+    ## 25 Banana      Huila              MOKO    20 #FFE45C     20          NA     3
+    ## 26 Banana      Huila              <NA>    80 #FFDC12     80          NA     2
+    ## 27 Banana La Guajira                BS    23 #FFDC12     23          NA     3
+    ## 28 Banana La Guajira                BW    20 #FFDE25     20          NA     3
+    ## 29 Banana La Guajira               FUS    23 #FFE24A     23          NA     3
+    ## 30 Banana La Guajira              MOKO    17 #FFE45C     17          NA     3
+    ## 31 Banana La Guajira              <NA>    93 #FFDC12     93          NA     2
+    ## 32 Banana La Guajira                SI    10 #FFEB94     10          NA     3
+    ## 33 Banana  Magdalena                BS    21 #FFDC12     21          NA     3
+    ## 34 Banana  Magdalena                BW    19 #FFDE25     19          NA     3
+    ## 35 Banana  Magdalena               FUS    17 #FFE24A     17          NA     3
+    ## 36 Banana  Magdalena              MOKO    23 #FFE45C     23          NA     3
+    ## 37 Banana  Magdalena              <NA>    90 #FFDC12     90          NA     2
+    ## 38 Banana  Magdalena                SI    10 #FFEB94     10          NA     3
+    ## 39 Banana       <NA>              <NA>   788 #FFDC12    788          NA     1
+    ## 40 Banana    Quindío                BS    20 #FFDC12     20          NA     3
+    ## 41 Banana    Quindío                BW    20 #FFDE25     20          NA     3
+    ## 42 Banana    Quindío               FUS    20 #FFE24A     20          NA     3
+    ## 43 Banana    Quindío              MOKO    20 #FFE45C     20          NA     3
+    ## 44 Banana    Quindío              <NA>    80 #FFDC12     80          NA     2
+    ## 45 Banana  Risaralda                BS    20 #FFDC12     20          NA     3
+    ## 46 Banana  Risaralda                BW    20 #FFDE25     20          NA     3
+    ## 47 Banana  Risaralda               FUS    20 #FFE24A     20          NA     3
+    ## 48 Banana  Risaralda              MOKO    20 #FFE45C     20          NA     3
+    ## 49 Banana  Risaralda              <NA>    80 #FFDC12     80          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.8556386 0.38679021 0.14436137 0.14944167 #FFDC12
+    ## 2  0.8556386 0.12306961 0.14436137 0.11427893 #FFDE25
+    ## 3  0.9896885 0.00000000 0.01031153 0.12306961 #FFE24A
+    ## 4  0.8556386 0.23734854 0.14436137 0.14944167 #FFE45C
+    ## 5  0.8556386 0.00000000 0.14436137 0.53623188 #FFDC12
+    ## 6  0.8556386 0.00000000 0.13404984 0.12306961 #FFEB94
+    ## 7  0.2449239 0.48000000 0.15862944 0.16000000 #FFDC12
+    ## 8  0.2449239 0.32000000 0.15862944 0.16000000 #FFDE25
+    ## 9  0.4035533 0.48000000 0.15862944 0.16000000 #FFE24A
+    ## 10 0.4035533 0.32000000 0.15862944 0.16000000 #FFE45C
+    ## 11 0.2449239 0.32000000 0.31725888 0.32000000 #FFDC12
+    ## 12 0.0000000 0.48186528 0.24492386 0.51813472 #FFDC12
+    ## 13 0.0000000 0.48186528 0.24492386 0.51813472 #FFDC12
+    ## 14 0.5621827 0.26811594 0.11832899 0.26811594 #FFDC12
+    ## 15 0.6805117 0.35507246 0.17512690 0.18115942 #FFE45C
+    ## 16 0.5621827 0.26811594 0.29345589 0.26811594 #FFDC12
+    ## 17 0.6805117 0.26811594 0.17512690 0.08695652 #FFEB94
+    ## 18 0.5621827 0.00000000 0.11832899 0.26811594 #FFDC12
+    ## 19 0.6805117 0.00000000 0.17512690 0.08695652 #FFDE25
+    ## 20 0.6805117 0.08695652 0.17512690 0.18115942 #FFE45C
+    ## 21 0.5621827 0.00000000 0.29345589 0.26811594 #FFDC12
+    ## 22 0.2449239 0.16000000 0.15862944 0.16000000 #FFDC12
+    ## 23 0.2449239 0.00000000 0.15862944 0.16000000 #FFDE25
+    ## 24 0.4035533 0.16000000 0.15862944 0.16000000 #FFE24A
+    ## 25 0.4035533 0.00000000 0.15862944 0.16000000 #FFE45C
+    ## 26 0.2449239 0.00000000 0.31725888 0.32000000 #FFDC12
+    ## 27 0.0000000 0.24352332 0.12246193 0.23834197 #FFDC12
+    ## 28 0.0000000 0.00000000 0.10422292 0.24352332 #FFDE25
+    ## 29 0.1224619 0.24352332 0.12246193 0.23834197 #FFE24A
+    ## 30 0.1042229 0.09019382 0.14070094 0.15332950 #FFE45C
+    ## 31 0.0000000 0.00000000 0.24492386 0.48186528 #FFDC12
+    ## 32 0.1042229 0.00000000 0.14070094 0.09019382 #FFEB94
+    ## 33 0.2449239 0.64000000 0.15510434 0.17181818 #FFDC12
+    ## 34 0.4000282 0.85130435 0.16215454 0.14869565 #FFDE25
+    ## 35 0.4000282 0.64000000 0.10209730 0.21130435 #FFE24A
+    ## 36 0.2449239 0.81181818 0.15510434 0.18818182 #FFE45C
+    ## 37 0.2449239 0.64000000 0.31725888 0.36000000 #FFDC12
+    ## 38 0.5021255 0.64000000 0.06005724 0.21130435 #FFEB94
+    ## 39 0.0000000 0.00000000 1.00000000 1.00000000 #FFDC12
+    ## 40 0.5621827 0.76811594 0.10945431 0.23188406 #FFDC12
+    ## 41 0.6716371 0.76811594 0.10945431 0.23188406 #FFDE25
+    ## 42 0.5621827 0.53623188 0.10945431 0.23188406 #FFE24A
+    ## 43 0.6716371 0.53623188 0.10945431 0.23188406 #FFE45C
+    ## 44 0.5621827 0.53623188 0.21890863 0.46376812 #FFDC12
+    ## 45 0.7810914 0.76811594 0.10945431 0.23188406 #FFDC12
+    ## 46 0.8905457 0.76811594 0.10945431 0.23188406 #FFDE25
+    ## 47 0.7810914 0.53623188 0.10945431 0.23188406 #FFE24A
+    ## 48 0.8905457 0.53623188 0.10945431 0.23188406 #FFE45C
+    ## 49 0.7810914 0.53623188 0.21890863 0.46376812 #FFDC12
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Additional top 5 diseases and pest in Colombia
+q5_top_5Colobia<- count_elements_by_group(question_5, "answer_in_english", c("answer_in_english"))
+q5_top_5Colobia$mean<-round((q5_top_5Colobia$n/sum(q5_top_5Colobia$n)*100),0)
+q5_top_5Colobia$background_color<- "white"
+q5_top_5Colobia$color<- palette_soil(length(unique(q5_top_5Colobia$answer_in_english)))
+#Make abbreviations 
+q5_top_5Colobia <- q5_top_5Colobia %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
+    answer_in_english == "Black Sigatoka" ~ "BS",
+    answer_in_english == "Black Weevil" ~ "BW",
+    answer_in_english == "Elephantiasis" ~ "ELE",
+    answer_in_english == "Fusarium" ~ "FUS",
+    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
+    answer_in_english == "Nematodes" ~ "NEM",
+    answer_in_english == "Red Spider Mite" ~ "RSM",
+    answer_in_english == "Scale Insect" ~ "SI",
+    answer_in_english == "Scarab Beetle" ~ "SB",
+    answer_in_english == "Whiteflies" ~ "WF",
+    answer_in_english == "Yellow Sigatoka" ~ "YS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#sort the results by mean
+q5_top_5Colobia <- q5_top_5Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q5_top_5Colobia$cat_abbreviations<- factor(q5_top_5Colobia$cat_abbreviations, levels = q5_top_5Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q5_top_5Colobia,x_lab = "Pest and Diseases", y_lab ="Proportion of Experts (%)", title = "
+Important Pests and Diseases in Musaceae Identified by Experts" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
+![](README_files/figure-gfm/question_5-5.png)<!-- -->

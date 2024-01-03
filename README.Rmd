@@ -177,6 +177,8 @@ To create a plot for a data frame `df` with background colors specified in `bg_c
   #set the color palette for bananas and plantains
   palette_banana <- colorRampPalette(c("#FFDA00","#FFF2CC" ))
   palette_plantain <- colorRampPalette(c("#28B463","#BEF4BE"))
+  palette_soil<- colorRampPalette(c( "#654321","#d8c298"))
+    
   #data set: individual questions:
   #read individual surveys from GitHub
   num_cols <- length(read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", nrows = 1, header = TRUE))
@@ -266,7 +268,7 @@ bar_plot_banana_plantain <- function(data_set, x_lab, y_lab, title, x, y, alpha,
   p <- ggplot(data_set, aes(x = !!x_sym, y = !!y_sym)) +
     geom_rect(aes(fill = !!background_color_sym), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = alpha) +
     geom_text(aes(label = !!y_sym), vjust = -0.5, color = "#654321") +
-    geom_bar(aes(fill = !!bar_color_sym), stat = 'identity', position = position_dodge()) +
+    geom_bar(aes(fill = !!bar_color_sym, color="#654321"), stat = 'identity', position = position_dodge()) +
     scale_fill_identity() +
     labs(x = x_lab, y = y_lab, title = title) +
     theme(
@@ -434,7 +436,7 @@ kable(question_2_frequencies)
 ## Question 3: `r individual_surveys$question_in_english[3]`
 
 ```{r queestion_3}
-#selecting only question 1----
+#selecting only question 3----
   question_3<- filter(individual_surveys, question_number==3)
 #Counts by crop
   question_3_frequencies <- count_elements_by_group(question_3, "answer_in_english", c("crop"))
@@ -503,3 +505,246 @@ question_3_plot_nal<- bar_plot_banana_plantain(
 )
 question_3_plot_nal
 ```
+
+## Question 4: `r individual_surveys$question_in_english[4]`
+
+```{r question_4}
+#selecting only question 4----
+  question_4<- filter(individual_surveys, question_number==4)
+#Counts by crop
+  question_4_frequencies <- count_elements_by_group(question_4, "answer_in_english", c("crop"))
+  #calculate the percentages by crop and question 
+  question_4_frequencies <- question_4_frequencies %>%
+  group_by(crop) %>%
+  mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) %>%
+  ungroup()
+  question_4_frequencies$answer_in_english <- factor(
+  question_4_frequencies$answer_in_english, 
+  levels = c("No Formal Education", "Secondary Education", "Bachelor's Degree", "Master's Degree", "Doctorate"),
+  labels = c("No Ed.", "Sec.", "Bac.", "Ms.C", "Ph.D")
+)
+  #Plot
+  #Add colors to each backgorund 
+  question_4_frequencies<- question_4_frequencies %>%
+  mutate(background_color= case_when(crop=="Banana" ~ "#FFF2CC",
+                     crop=="Plantain" ~ "#BEF4BE"))
+  #Colors of the bars
+  # Identify the levels by crop
+  levels_Q_4_banana<- question_4_frequencies$answer_in_english[which( question_4_frequencies$crop=="Banana")]
+  levels_Q_4_plantain<- question_4_frequencies$answer_in_english[which( question_4_frequencies$crop=="Plantain")]
+  #set the color. The +1 is to make a different color that background wich will be the last element in the vector
+  q_4_colors_banana<- palette_banana(length(levels_Q_4_banana)+1)
+  q_4_colors_plantain<- palette_plantain(length(levels_Q_4_plantain)+1)
+  names(q_4_colors_banana)<- levels_Q_4_banana
+  names(q_4_colors_plantain)<- levels_Q_4_plantain
+    # Modify the data_set to include the bar_color
+question_4_frequencies <- question_4_frequencies %>%
+  mutate(bar_color = case_when(
+    crop == "Banana" ~ q_4_colors_banana[answer_in_english],
+    crop == "Plantain" ~ q_4_colors_plantain[answer_in_english]
+  ))
+question_4_frequencies$percentage<- round(question_4_frequencies$percentage, 0)
+dput(unique(question_4_frequencies$answer_in_english))
+#custom function
+question_4_plot<- bar_plot_banana_plantain(
+  data_set = question_4_frequencies,
+  x_lab = "Education Level of the Experts",
+  y_lab = "Percent (%)",
+  title = "Eucation Level of the Experts by Crop",
+  x = "answer_in_english",
+  y = "percentage",
+  facet = "crop",
+  alpha = 0.3,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_4_plot
+#Counts national
+  question_4_frequencies_nal <- count_elements_by_group(question_4, "answer_in_english", c("answer_in_english"))
+  #calculate the percentages by crop and question 
+  question_4_frequencies_nal <- question_4_frequencies_nal %>%
+     ungroup() %>%
+    mutate(total = sum(n),          # Calculate total for each crop group
+         percentage = (n / total) * 100) 
+  #Plot
+  #Add colors to each background
+   question_4_frequencies_nal$answer_in_english <- factor(
+  question_4_frequencies_nal$answer_in_english, 
+  levels = c("No Formal Education", "Secondary Education", "Bachelor's Degree", "Master's Degree", "Doctorate"),
+  labels = c("No Ed.", "Sec.", "Bac.", "Ms.C", "Ph.D")
+)
+  question_4_frequencies_nal$background_color<-"transparent"
+   q_4_colors_soil_nal<- palette_soil(length(levels(question_4_frequencies_nal$answer_in_english)))
+    names(q_4_colors_soil_nal)<- levels(question_4_frequencies_nal)
+ # Modify the data_set to include the bar_color
+question_4_frequencies_nal <- question_4_frequencies_nal %>%
+  mutate(bar_color = q_4_colors_soil_nal[answer_in_english])
+question_4_frequencies_nal$percentage<- round(question_4_frequencies_nal$percentage, 0)
+  #custom plot 
+question_4_plot_nal<- bar_plot_banana_plantain(
+  data_set = question_4_frequencies_nal,
+  x_lab = "Education Level of the Experts",
+  y_lab = "Percent (%)",
+  title = "Education Level of the Experts",
+  x = "answer_in_english",
+  y = "percentage",
+  alpha = 1,
+  background_color = "background_color",
+  bar_color = "bar_color",
+  proportional_limit= 1.05
+)
+question_4_plot_nal
+```
+
+
+## Question 5: `r individual_surveys$question_in_english[5]`
+
+```{r question_5}
+question_5<- filter(individual_surveys,question_number==5)
+question_5_frequencies <- count_elements_by_group(question_5, "answer_in_english", c("crop"))
+question_5_frequencies$answer_in_english<- as.factor(question_5_frequencies$answer_in_english)
+#finding the number of levels per crop (banana and plantain)
+levels_per_crop_Q5<- tapply(question_5_frequencies$answer_in_english, question_5_frequencies$crop, function(x){length(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question5<- palette_banana(levels_per_crop_Q5["Banana"])
+colors_plantain_question5<- palette_plantain(levels_per_crop_Q5["Plantain"])
+#Assignig a color per factor by crop
+question_5_frequencies <- question_5_frequencies %>%
+  mutate(group_color = case_when(
+    crop == "Banana" ~ colors_banana_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))],
+    crop == "Plantain" ~ colors_plantain_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))]
+  ))
+#Make the abbreviations
+question_5_frequencies <- question_5_frequencies %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
+    answer_in_english == "Black Sigatoka" ~ "BS",
+    answer_in_english == "Black Weevil" ~ "BW",
+    answer_in_english == "Elephantiasis" ~ "ELE",
+    answer_in_english == "Fusarium" ~ "FUS",
+    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
+    answer_in_english == "Nematodes" ~ "NEM",
+    answer_in_english == "Red Spider Mite" ~ "RSM",
+    answer_in_english == "Scale Insect" ~ "SI",
+    answer_in_english == "Scarab Beetle" ~ "SB",
+    answer_in_english == "Whiteflies" ~ "WF",
+    answer_in_english == "Yellow Sigatoka" ~ "YS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+
+#formating the data set to make the visualization, voronoiTreemap was quite picky...  
+colnames(question_5_frequencies)<- c('h2', "h3", "weight","color", "codes")
+question_5_frequencies$h1<- "Total"
+question_5_frequencies <- question_5_frequencies %>%
+  select(h1, h2, h3, color, weight, codes)
+question_5_frequencies$weight<- (question_5_frequencies$weight/sum(question_5_frequencies$weight))*100
+question_5_frequencies$h1<- as.factor(question_5_frequencies$h1)
+question_5_frequencies$h2<- as.factor(question_5_frequencies$h2)
+question_5_frequencies<- data.frame(h1= question_5_frequencies$h1,
+                                    h2= question_5_frequencies$h2,
+                                    h3= question_5_frequencies$h3,
+                                    color= question_5_frequencies$color,
+                                    weight= question_5_frequencies$weight,
+                                    codes= question_5_frequencies$codes)
+gdp_json <- vt_export_json(vt_input_from_df(question_5_frequencies))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3)
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3)
+kable(question_5_frequencies)
+#select top 5
+question_5_frequencies <- question_5_frequencies %>%
+  group_by(h2) %>%
+  slice_max(order_by = weight, n = 5) 
+kable(question_5_frequencies, label = "TOP 5 pest and Diseases by Crop (banana and plantain")
+#Frequencies by department
+question_5_frequencies_by_depto <- count_elements_by_group(question_5, "answer_in_english", c("crop", "expert_in"))
+#colors by disease
+question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>%
+  mutate(group_color = case_when(
+    crop == "Banana" ~ colors_banana_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))],
+    crop == "Plantain" ~ colors_plantain_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
+"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
+"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
+"Whiteflies", "Yellow Sigatoka"))]
+  ))
+#Make the abbreviations
+question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
+    answer_in_english == "Black Sigatoka" ~ "BS",
+    answer_in_english == "Black Weevil" ~ "BW",
+    answer_in_english == "Elephantiasis" ~ "ELE",
+    answer_in_english == "Fusarium" ~ "FUS",
+    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
+    answer_in_english == "Nematodes" ~ "NEM",
+    answer_in_english == "Red Spider Mite" ~ "RSM",
+    answer_in_english == "Scale Insect" ~ "SI",
+    answer_in_english == "Scarab Beetle" ~ "SB",
+    answer_in_english == "Whiteflies" ~ "WF",
+    answer_in_english == "Yellow Sigatoka" ~ "YS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_5_frequencies_by_depto<- select(question_5_frequencies_by_depto,!answer_in_english)
+question_5_frequencies_by_depto<- question_5_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_5_frequencies_by_depto<- select(question_5_frequencies_by_depto,!n & !total)
+#put it in long format
+question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#only select top 5 for the tree map
+  #for banana
+  question_5_frequencies_by_depto_banana<- filter(question_5_frequencies_by_depto, cat_abbreviations %in% question_5_frequencies$codes[which(question_5_frequencies$h2=="Banana")], crop=="Banana")
+  #for plantain
+  question_5_frequencies_by_depto_plantain<- filter(question_5_frequencies_by_depto, cat_abbreviations %in% question_5_frequencies$codes[which(question_5_frequencies$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_5_frequencies_by_depto<- rbind(question_5_frequencies_by_depto_banana, question_5_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Top 5 Most Limiting Pests and Diseases in Plantains by Department")
+#tree map only banana
+tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Top 5 Most Limiting Pests and Diseases in Bananas by Department")
+#Additional top 5 diseases and pest in Colombia
+q5_top_5Colobia<- count_elements_by_group(question_5, "answer_in_english", c("answer_in_english"))
+q5_top_5Colobia$mean<-round((q5_top_5Colobia$n/sum(q5_top_5Colobia$n)*100),0)
+q5_top_5Colobia$background_color<- "white"
+q5_top_5Colobia$color<- palette_soil(length(unique(q5_top_5Colobia$answer_in_english)))
+#Make abbreviations 
+q5_top_5Colobia <- q5_top_5Colobia %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
+    answer_in_english == "Black Sigatoka" ~ "BS",
+    answer_in_english == "Black Weevil" ~ "BW",
+    answer_in_english == "Elephantiasis" ~ "ELE",
+    answer_in_english == "Fusarium" ~ "FUS",
+    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
+    answer_in_english == "Nematodes" ~ "NEM",
+    answer_in_english == "Red Spider Mite" ~ "RSM",
+    answer_in_english == "Scale Insect" ~ "SI",
+    answer_in_english == "Scarab Beetle" ~ "SB",
+    answer_in_english == "Whiteflies" ~ "WF",
+    answer_in_english == "Yellow Sigatoka" ~ "YS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#sort the results by mean
+q5_top_5Colobia <- q5_top_5Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q5_top_5Colobia$cat_abbreviations<- factor(q5_top_5Colobia$cat_abbreviations, levels = q5_top_5Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q5_top_5Colobia,x_lab = "Pest and Diseases", y_lab ="Proportion of Experts (%)", title = "
+Important Pests and Diseases in Musaceae Identified by Experts" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+```
+
