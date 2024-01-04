@@ -1,7 +1,7 @@
 Analisis of individual Questions EKE Colombia - Banano and Plantain 2023
 ================
 Jacobo Robledo
-2024-01-03
+2024-01-04
 
 ## Libraries, Functions, and Global Variables
 
@@ -4393,3 +4393,9440 @@ colmap(departamentos, data = nal_q13_weight, data_id = "id_depto", var = "cat_we
     ## Adding another scale for fill, which will replace the existing scale.
 
 ![](README_files/figure-gfm/questoin_13-4.png)<!-- -->
+
+## Question 16: What percentage of chemical control practices (insecticides, fungicides, etc.) are implemented correctly in banana production systems in the places where you are an expert?
+
+``` r
+#selecting only question 16----
+question_16<- filter(individual_surveys, question_number==16)
+#unique(question_16$numeric_answer)
+#dput(unique(question_16$answer_in_english))
+#organizing the order of the levels
+level_16<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_16$answer_in_english<- factor(question_16$answer_in_english,levels = level_16)
+question_16<- filter(question_16, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_16<- question_16 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(16, mean =average, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(16, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_16<- inner_join(question_16, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_16<- add_weights_question_16 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(16, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 5 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(16, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q16_no_weighted<- tapply(avg_dept_no_weight_16$ave_cat, avg_dept_no_weight_16$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question16_no_weighted<- palette_banana(length(levels_per_crop_Q16_no_weighted$Banana))
+colors_plantain_question16_no_weighted<- palette_plantain(length(levels_per_crop_Q16_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_16 <- list(
+  Banana = levels_per_crop_Q16_no_weighted$Banana,
+  Plantain = levels_per_crop_Q16_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_16 <- list(
+  Banana = colors_banana_question16_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question16_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_16 <- assign_group_color(data = avg_dept_no_weight_16, levels_by_crop = levels_by_crop_no_weighted_16, colors_by_crop = colors_by_crop_no_weighted_16,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q16_weighted<- tapply(avg_dept_weight_16$ave_cat_weighted, avg_dept_weight_16$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question16_weighted<- palette_banana(length(levels_per_crop_Q16_weighted$Banana))
+colors_plantain_question16_weighted<- palette_plantain(length(levels_per_crop_Q16_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_16 <- list(
+  Banana = levels_per_crop_Q16_weighted$Banana,
+  Plantain = levels_per_crop_Q16_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_16 <- list(
+  Banana = colors_banana_question16_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question16_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_16 <- assign_group_color(data = avg_dept_weight_16, levels_by_crop = levels_by_crop_weighted_16, colors_by_crop = colors_by_crop_weighted_16,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_16, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/questoin_16-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia 71%-80%    11 #FFF2CC     11          NA     3
+    ## 2    Banana          Antioquia    <NA>    11 #FFF2CC     11          NA     2
+    ## 3    Banana             Caldas 51%-60%     1 #FFDA00      1          NA     3
+    ## 4    Banana             Caldas    <NA>     1 #FFDA00      1          NA     2
+    ## 5    Banana              Cesar 21%-30%     1 #FFEA88      1          NA     3
+    ## 6    Banana              Cesar    <NA>     1 #FFEA88      1          NA     2
+    ## 7    Banana              Chocó 51%-60%     2 #FFDA00      2          NA     3
+    ## 8    Banana              Chocó    <NA>     2 #FFDA00      2          NA     2
+    ## 9    Banana            Córdoba 21%-30%     1 #FFEA88      1          NA     3
+    ## 10   Banana            Córdoba    <NA>     1 #FFEA88      1          NA     2
+    ## 11   Banana              Huila 51%-60%     1 #FFDA00      1          NA     3
+    ## 12   Banana              Huila    <NA>     1 #FFDA00      1          NA     2
+    ## 13   Banana         La Guajira 51%-60%    10 #FFDA00     10          NA     3
+    ## 14   Banana         La Guajira    <NA>    10 #FFDA00     10          NA     2
+    ## 15   Banana          Magdalena 61%-70%    13 #FFE244     13          NA     3
+    ## 16   Banana          Magdalena    <NA>    13 #FFE244     13          NA     2
+    ## 17   Banana               <NA>    <NA>    42 #FFDA00     42          NA     1
+    ## 18   Banana            Quindío 51%-60%     1 #FFDA00      1          NA     3
+    ## 19   Banana            Quindío    <NA>     1 #FFDA00      1          NA     2
+    ## 20   Banana          Risaralda 51%-60%     1 #FFDA00      1          NA     3
+    ## 21   Banana          Risaralda    <NA>     1 #FFDA00      1          NA     2
+    ## 22 Plantain          Antioquia 41%-50%     2 #28B463      2          NA     3
+    ## 23 Plantain          Antioquia    <NA>     2 #28B463      2          NA     2
+    ## 24 Plantain             Arauca 41%-50%     2 #28B463      2          NA     3
+    ## 25 Plantain             Arauca    <NA>     2 #28B463      2          NA     2
+    ## 26 Plantain          Atlántico 21%-30%     1 #BEF4BE      1          NA     3
+    ## 27 Plantain          Atlántico    <NA>     1 #BEF4BE      1          NA     2
+    ## 28 Plantain            Bolívar 21%-30%     1 #BEF4BE      1          NA     3
+    ## 29 Plantain            Bolívar    <NA>     1 #BEF4BE      1          NA     2
+    ## 30 Plantain             Caldas 41%-50%     7 #28B463      7          NA     3
+    ## 31 Plantain             Caldas    <NA>     7 #28B463      7          NA     2
+    ## 32 Plantain           Casanare 31%-40%     2 #59C981      2          NA     3
+    ## 33 Plantain           Casanare    <NA>     2 #59C981      2          NA     2
+    ## 34 Plantain            Córdoba 21%-30%     1 #BEF4BE      1          NA     3
+    ## 35 Plantain            Córdoba    <NA>     1 #BEF4BE      1          NA     2
+    ## 36 Plantain              Huila 31%-40%     1 #59C981      1          NA     3
+    ## 37 Plantain              Huila    <NA>     1 #59C981      1          NA     2
+    ## 38 Plantain         La Guajira 41%-50%     4 #28B463      4          NA     3
+    ## 39 Plantain         La Guajira    <NA>     4 #28B463      4          NA     2
+    ## 40 Plantain          Magdalena 31%-40%     3 #59C981      3          NA     3
+    ## 41 Plantain          Magdalena    <NA>     3 #59C981      3          NA     2
+    ## 42 Plantain               Meta 71%-80%    11 #8CDE9F     11          NA     3
+    ## 43 Plantain               Meta    <NA>    11 #8CDE9F     11          NA     2
+    ## 44 Plantain               <NA>    <NA>    55 #59C981     55          NA     1
+    ## 45 Plantain Norte De Santander 21%-30%     1 #BEF4BE      1          NA     3
+    ## 46 Plantain Norte De Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 47 Plantain            Quindío 41%-50%     6 #28B463      6          NA     3
+    ## 48 Plantain            Quindío    <NA>     6 #28B463      6          NA     2
+    ## 49 Plantain          Risaralda 31%-40%    10 #59C981     10          NA     3
+    ## 50 Plantain          Risaralda    <NA>    10 #59C981     10          NA     2
+    ## 51 Plantain          Santander 31%-40%     1 #59C981      1          NA     3
+    ## 52 Plantain          Santander    <NA>     1 #59C981      1          NA     2
+    ## 53 Plantain              Sucre 21%-30%     1 #BEF4BE      1          NA     3
+    ## 54 Plantain              Sucre    <NA>     1 #BEF4BE      1          NA     2
+    ## 55 Plantain             Tolima 31%-40%     1 #59C981      1          NA     3
+    ## 56 Plantain             Tolima    <NA>     1 #59C981      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.8015464 0.42857143 0.19845361 0.57142857 #FFF2CC
+    ## 2  0.8015464 0.42857143 0.19845361 0.57142857 #FFF2CC
+    ## 3  0.8556701 0.28571429 0.07216495 0.14285714 #FFDA00
+    ## 4  0.8556701 0.28571429 0.07216495 0.14285714 #FFDA00
+    ## 5  0.9278351 0.28571429 0.07216495 0.14285714 #FFEA88
+    ## 6  0.9278351 0.28571429 0.07216495 0.14285714 #FFEA88
+    ## 7  0.5670103 0.00000000 0.28865979 0.07142857 #FFDA00
+    ## 8  0.5670103 0.00000000 0.28865979 0.07142857 #FFDA00
+    ## 9  0.8556701 0.14285714 0.07216495 0.14285714 #FFEA88
+    ## 10 0.8556701 0.14285714 0.07216495 0.14285714 #FFEA88
+    ## 11 0.9278351 0.14285714 0.07216495 0.14285714 #FFDA00
+    ## 12 0.9278351 0.14285714 0.07216495 0.14285714 #FFDA00
+    ## 13 0.5670103 0.07142857 0.28865979 0.35714286 #FFDA00
+    ## 14 0.5670103 0.07142857 0.28865979 0.35714286 #FFDA00
+    ## 15 0.5670103 0.42857143 0.23453608 0.57142857 #FFE244
+    ## 16 0.5670103 0.42857143 0.23453608 0.57142857 #FFE244
+    ## 17 0.5670103 0.00000000 0.43298969 1.00000000 #FFDA00
+    ## 18 0.8556701 0.00000000 0.07216495 0.14285714 #FFDA00
+    ## 19 0.8556701 0.00000000 0.07216495 0.14285714 #FFDA00
+    ## 20 0.9278351 0.00000000 0.07216495 0.14285714 #FFDA00
+    ## 21 0.9278351 0.00000000 0.07216495 0.14285714 #FFDA00
+    ## 22 0.4891854 0.35324675 0.07782494 0.26493506 #28B463
+    ## 23 0.4891854 0.35324675 0.07782494 0.26493506 #28B463
+    ## 24 0.2167981 0.17662338 0.11673742 0.17662338 #28B463
+    ## 25 0.2167981 0.17662338 0.11673742 0.17662338 #28B463
+    ## 26 0.3335355 0.22077922 0.07782494 0.13246753 #BEF4BE
+    ## 27 0.3335355 0.22077922 0.07782494 0.13246753 #BEF4BE
+    ## 28 0.4113604 0.22077922 0.07782494 0.13246753 #BEF4BE
+    ## 29 0.4113604 0.22077922 0.07782494 0.13246753 #BEF4BE
+    ## 30 0.0000000 0.28531469 0.21679806 0.33286713 #28B463
+    ## 31 0.0000000 0.28531469 0.21679806 0.33286713 #28B463
+    ## 32 0.2167981 0.00000000 0.11673742 0.17662338 #59C981
+    ## 33 0.2167981 0.00000000 0.11673742 0.17662338 #59C981
+    ## 34 0.4891854 0.22077922 0.07782494 0.13246753 #BEF4BE
+    ## 35 0.4891854 0.22077922 0.07782494 0.13246753 #BEF4BE
+    ## 36 0.3335355 0.11038961 0.09338993 0.11038961 #59C981
+    ## 37 0.3335355 0.11038961 0.09338993 0.11038961 #59C981
+    ## 38 0.2167981 0.35324675 0.15564989 0.26493506 #28B463
+    ## 39 0.2167981 0.35324675 0.15564989 0.26493506 #28B463
+    ## 40 0.3724479 0.35324675 0.11673742 0.26493506 #59C981
+    ## 41 0.3724479 0.35324675 0.11673742 0.26493506 #59C981
+    ## 42 0.0000000 0.61818182 0.29700540 0.38181818 #8CDE9F
+    ## 43 0.0000000 0.61818182 0.29700540 0.38181818 #8CDE9F
+    ## 44 0.0000000 0.00000000 0.56701031 1.00000000 #59C981
+    ## 45 0.3335355 0.00000000 0.09338993 0.11038961 #BEF4BE
+    ## 46 0.3335355 0.00000000 0.09338993 0.11038961 #BEF4BE
+    ## 47 0.0000000 0.00000000 0.21679806 0.28531469 #28B463
+    ## 48 0.0000000 0.00000000 0.21679806 0.28531469 #28B463
+    ## 49 0.2970054 0.61818182 0.27000491 0.38181818 #59C981
+    ## 50 0.2970054 0.61818182 0.27000491 0.38181818 #59C981
+    ## 51 0.4269254 0.07359307 0.07004245 0.14718615 #59C981
+    ## 52 0.4269254 0.07359307 0.07004245 0.14718615 #59C981
+    ## 53 0.4969679 0.07359307 0.07004245 0.14718615 #BEF4BE
+    ## 54 0.4969679 0.07359307 0.07004245 0.14718615 #BEF4BE
+    ## 55 0.4269254 0.00000000 0.14008490 0.07359307 #59C981
+    ## 56 0.4269254 0.00000000 0.14008490 0.07359307 #59C981
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_16, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/questoin_16-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          71%-80%    11 #FFF2CC     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFF2CC     11
+    ## 3    Banana             Caldas          51%-60%     1 #FFDA00      1
+    ## 4    Banana             Caldas             <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar          21%-30%     1 #FFEA88      1
+    ## 6    Banana              Cesar             <NA>     1 #FFEA88      1
+    ## 7    Banana              Chocó          51%-60%     2 #FFDA00      2
+    ## 8    Banana              Chocó             <NA>     2 #FFDA00      2
+    ## 9    Banana            Córdoba          21%-30%     1 #FFEA88      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFEA88      1
+    ## 11   Banana              Huila          51%-60%     1 #FFDA00      1
+    ## 12   Banana              Huila             <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira          51%-60%     9 #FFDA00      9
+    ## 14   Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena          61%-70%    12 #FFE244     12
+    ## 16   Banana          Magdalena             <NA>    12 #FFE244     12
+    ## 17   Banana               <NA>             <NA>    40 #FFDA00     40
+    ## 18   Banana            Quindío          51%-60%     1 #FFDA00      1
+    ## 19   Banana            Quindío             <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda          51%-60%     1 #FFDA00      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia          61%-70%     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca          41%-50%     2 #4DC479      2
+    ## 25 Plantain             Arauca             <NA>     2 #4DC479      2
+    ## 26 Plantain          Atlántico          21%-30%     1 #98E4A7      1
+    ## 27 Plantain          Atlántico             <NA>     1 #98E4A7      1
+    ## 28 Plantain            Bolívar          21%-30%     1 #98E4A7      1
+    ## 29 Plantain            Bolívar             <NA>     1 #98E4A7      1
+    ## 30 Plantain             Caldas          41%-50%     7 #4DC479      7
+    ## 31 Plantain             Caldas             <NA>     7 #4DC479      7
+    ## 32 Plantain           Casanare          21%-30%     2 #98E4A7      2
+    ## 33 Plantain           Casanare             <NA>     2 #98E4A7      2
+    ## 34 Plantain            Córdoba          21%-30%     1 #98E4A7      1
+    ## 35 Plantain            Córdoba             <NA>     1 #98E4A7      1
+    ## 36 Plantain              Huila          31%-40%     1 #BEF4BE      1
+    ## 37 Plantain              Huila             <NA>     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira          41%-50%     4 #4DC479      4
+    ## 39 Plantain         La Guajira             <NA>     4 #4DC479      4
+    ## 40 Plantain          Magdalena          31%-40%     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena             <NA>     3 #BEF4BE      3
+    ## 42 Plantain               Meta          71%-80%    10 #73D490     10
+    ## 43 Plantain               Meta             <NA>    10 #73D490     10
+    ## 44 Plantain               <NA>             <NA>    54 #98E4A7     54
+    ## 45 Plantain Norte De Santander          21%-30%     1 #98E4A7      1
+    ## 46 Plantain Norte De Santander             <NA>     1 #98E4A7      1
+    ## 47 Plantain            Quindío          41%-50%     6 #4DC479      6
+    ## 48 Plantain            Quindío             <NA>     6 #4DC479      6
+    ## 49 Plantain          Risaralda          41%-50%    10 #4DC479     10
+    ## 50 Plantain          Risaralda             <NA>    10 #4DC479     10
+    ## 51 Plantain          Santander          31%-40%     1 #BEF4BE      1
+    ## 52 Plantain          Santander             <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre          21%-30%     1 #98E4A7      1
+    ## 54 Plantain              Sucre             <NA>     1 #98E4A7      1
+    ## 55 Plantain             Tolima          31%-40%     1 #BEF4BE      1
+    ## 56 Plantain             Tolima             <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7964847 0.42500000 0.20351526 0.57500000 #FFF2CC
+    ## 2           NA     2 0.7964847 0.42500000 0.20351526 0.57500000 #FFF2CC
+    ## 3           NA     3 0.8498123 0.28333333 0.07509387 0.14166667 #FFDA00
+    ## 4           NA     2 0.8498123 0.28333333 0.07509387 0.14166667 #FFDA00
+    ## 5           NA     3 0.9249061 0.28333333 0.07509387 0.14166667 #FFEA88
+    ## 6           NA     2 0.9249061 0.28333333 0.07509387 0.14166667 #FFEA88
+    ## 7           NA     3 0.5744681 0.00000000 0.27534418 0.07727273 #FFDA00
+    ## 8           NA     2 0.5744681 0.00000000 0.27534418 0.07727273 #FFDA00
+    ## 9           NA     3 0.8498123 0.14166667 0.07509387 0.14166667 #FFEA88
+    ## 10          NA     2 0.8498123 0.14166667 0.07509387 0.14166667 #FFEA88
+    ## 11          NA     3 0.9249061 0.14166667 0.07509387 0.14166667 #FFDA00
+    ## 12          NA     2 0.9249061 0.14166667 0.07509387 0.14166667 #FFDA00
+    ## 13          NA     3 0.5744681 0.07727273 0.27534418 0.34772727 #FFDA00
+    ## 14          NA     2 0.5744681 0.07727273 0.27534418 0.34772727 #FFDA00
+    ## 15          NA     3 0.5744681 0.42500000 0.22201665 0.57500000 #FFE244
+    ## 16          NA     2 0.5744681 0.42500000 0.22201665 0.57500000 #FFE244
+    ## 17          NA     1 0.5744681 0.00000000 0.42553191 1.00000000 #FFDA00
+    ## 18          NA     3 0.8498123 0.00000000 0.07509387 0.14166667 #FFDA00
+    ## 19          NA     2 0.8498123 0.00000000 0.07509387 0.14166667 #FFDA00
+    ## 20          NA     3 0.9249061 0.00000000 0.07509387 0.14166667 #FFDA00
+    ## 21          NA     2 0.9249061 0.00000000 0.07509387 0.14166667 #FFDA00
+    ## 22          NA     3 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 23          NA     2 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 24          NA     3 0.2196496 0.17989418 0.11827284 0.17989418 #4DC479
+    ## 25          NA     2 0.2196496 0.17989418 0.11827284 0.17989418 #4DC479
+    ## 26          NA     3 0.3379224 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 27          NA     2 0.3379224 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 28          NA     3 0.4167710 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 29          NA     2 0.4167710 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 30          NA     3 0.0000000 0.29059829 0.21964956 0.33903134 #4DC479
+    ## 31          NA     2 0.0000000 0.29059829 0.21964956 0.33903134 #4DC479
+    ## 32          NA     3 0.2196496 0.00000000 0.11827284 0.17989418 #98E4A7
+    ## 33          NA     2 0.2196496 0.00000000 0.11827284 0.17989418 #98E4A7
+    ## 34          NA     3 0.4956195 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 35          NA     2 0.4956195 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 36          NA     3 0.3379224 0.11243386 0.09461827 0.11243386 #BEF4BE
+    ## 37          NA     2 0.3379224 0.11243386 0.09461827 0.11243386 #BEF4BE
+    ## 38          NA     3 0.2196496 0.35978836 0.15769712 0.26984127 #4DC479
+    ## 39          NA     2 0.2196496 0.35978836 0.15769712 0.26984127 #4DC479
+    ## 40          NA     3 0.3773467 0.35978836 0.11827284 0.26984127 #BEF4BE
+    ## 41          NA     2 0.3773467 0.35978836 0.11827284 0.26984127 #BEF4BE
+    ## 42          NA     3 0.0000000 0.62962963 0.28723404 0.37037037 #73D490
+    ## 43          NA     2 0.0000000 0.62962963 0.28723404 0.37037037 #73D490
+    ## 44          NA     1 0.0000000 0.00000000 0.57446809 1.00000000 #98E4A7
+    ## 45          NA     3 0.3379224 0.00000000 0.09461827 0.11243386 #98E4A7
+    ## 46          NA     2 0.3379224 0.00000000 0.09461827 0.11243386 #98E4A7
+    ## 47          NA     3 0.0000000 0.00000000 0.21964956 0.29059829 #4DC479
+    ## 48          NA     2 0.0000000 0.00000000 0.21964956 0.29059829 #4DC479
+    ## 49          NA     3 0.2872340 0.62962963 0.28723404 0.37037037 #4DC479
+    ## 50          NA     2 0.2872340 0.62962963 0.28723404 0.37037037 #4DC479
+    ## 51          NA     3 0.4325407 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 52          NA     2 0.4325407 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 53          NA     3 0.5035044 0.07495591 0.07096370 0.14991182 #98E4A7
+    ## 54          NA     2 0.5035044 0.07495591 0.07096370 0.14991182 #98E4A7
+    ## 55          NA     3 0.4325407 0.00000000 0.14192741 0.07495591 #BEF4BE
+    ## 56          NA     2 0.4325407 0.00000000 0.14192741 0.07495591 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q16_no_weight<- question_16 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =16))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q16_no_weight<- full_join(codes_department, nal_q16_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q16_no_weight$cat<- factor(nal_q16_no_weight$cat, levels = level_16)
+colmap(departamentos, data = nal_q16_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q16_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/questoin_16-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q16_weight<- inner_join(question_16, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q16_weight<- nal_q16_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =16)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q16_weight<- full_join(codes_department, nal_q16_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q16_weight$cat_weighted<- factor(nal_q16_weight$cat_weighted, levels = level_16)
+colmap(departamentos, data = nal_q16_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q16_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/questoin_16-4.png)<!-- -->
+
+## Question 17: What percentage of biological control practices (beneficial insects, microbial controls) are implemented correctly in banana production systems where you have experience?
+
+``` r
+#selecting only question 17----
+question_17<- filter(individual_surveys, question_number==17)
+#unique(question_17$numeric_answer)
+#dput(unique(question_17$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_17 <- question_17 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "71%-80%,81%-90%" ~ "81%-90%",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_17 <- question_17 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "9,10" ~ "10.5",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_17<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_17$answer_in_english<- factor(question_17$answer_in_english,levels = level_17)
+question_17<- filter(question_17, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_17<- question_17 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(17, mean =average, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(17, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_17<- inner_join(question_17, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_17<- add_weights_question_17 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(17, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(17, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q17_no_weighted<- tapply(avg_dept_no_weight_17$ave_cat, avg_dept_no_weight_17$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question17_no_weighted<- palette_banana(length(levels_per_crop_Q17_no_weighted$Banana))
+colors_plantain_question17_no_weighted<- palette_plantain(length(levels_per_crop_Q17_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_17 <- list(
+  Banana = levels_per_crop_Q17_no_weighted$Banana,
+  Plantain = levels_per_crop_Q17_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_17 <- list(
+  Banana = colors_banana_question17_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question17_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_17 <- assign_group_color(data = avg_dept_no_weight_17, levels_by_crop = levels_by_crop_no_weighted_17, colors_by_crop = colors_by_crop_no_weighted_17,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q17_weighted<- tapply(avg_dept_weight_17$ave_cat_weighted, avg_dept_weight_17$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question17_weighted<- palette_banana(length(levels_per_crop_Q17_weighted$Banana))
+colors_plantain_question17_weighted<- palette_plantain(length(levels_per_crop_Q17_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_17 <- list(
+  Banana = levels_per_crop_Q17_weighted$Banana,
+  Plantain = levels_per_crop_Q17_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_17 <- list(
+  Banana = colors_banana_question17_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question17_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_17 <- assign_group_color(data = avg_dept_weight_17, levels_by_crop = levels_by_crop_weighted_17, colors_by_crop = colors_by_crop_weighted_17,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_17, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_17-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in  ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia  31%-40%    12 #FFE351     12          NA     3
+    ## 2    Banana          Antioquia     <NA>    12 #FFE351     12          NA     2
+    ## 3    Banana             Caldas  51%-60%     1 #FFF2CC      1          NA     3
+    ## 4    Banana             Caldas     <NA>     1 #FFF2CC      1          NA     2
+    ## 5    Banana              Cesar 91%-100%     1 #FFDE28      1          NA     3
+    ## 6    Banana              Cesar     <NA>     1 #FFDE28      1          NA     2
+    ## 7    Banana              Chocó   1%-10%     2 #FFE87A      2          NA     3
+    ## 8    Banana              Chocó     <NA>     2 #FFE87A      2          NA     2
+    ## 9    Banana            Córdoba       0%     1 #FFEDA3      1          NA     3
+    ## 10   Banana            Córdoba     <NA>     1 #FFEDA3      1          NA     2
+    ## 11   Banana              Huila  51%-60%     1 #FFF2CC      1          NA     3
+    ## 12   Banana              Huila     <NA>     1 #FFF2CC      1          NA     2
+    ## 13   Banana         La Guajira  61%-70%    10 #FFDA00     10          NA     3
+    ## 14   Banana         La Guajira     <NA>    10 #FFDA00     10          NA     2
+    ## 15   Banana          Magdalena  61%-70%    11 #FFDA00     11          NA     3
+    ## 16   Banana          Magdalena     <NA>    11 #FFDA00     11          NA     2
+    ## 17   Banana               <NA>     <NA>    41 #FFF2CC     41          NA     1
+    ## 18   Banana            Quindío  51%-60%     1 #FFF2CC      1          NA     3
+    ## 19   Banana            Quindío     <NA>     1 #FFF2CC      1          NA     2
+    ## 20   Banana          Risaralda  51%-60%     1 #FFF2CC      1          NA     3
+    ## 21   Banana          Risaralda     <NA>     1 #FFF2CC      1          NA     2
+    ## 22 Plantain          Antioquia  41%-50%     2 #28B463      2          NA     3
+    ## 23 Plantain          Antioquia     <NA>     2 #28B463      2          NA     2
+    ## 24 Plantain             Arauca   1%-10%     2 #A0E7AB      2          NA     3
+    ## 25 Plantain             Arauca     <NA>     2 #A0E7AB      2          NA     2
+    ## 26 Plantain          Atlántico   1%-10%     1 #A0E7AB      1          NA     3
+    ## 27 Plantain          Atlántico     <NA>     1 #A0E7AB      1          NA     2
+    ## 28 Plantain            Bolívar       0%     1 #BEF4BE      1          NA     3
+    ## 29 Plantain            Bolívar     <NA>     1 #BEF4BE      1          NA     2
+    ## 30 Plantain             Caldas  21%-30%     7 #64CD87      7          NA     3
+    ## 31 Plantain             Caldas     <NA>     7 #64CD87      7          NA     2
+    ## 32 Plantain           Casanare   1%-10%     2 #A0E7AB      2          NA     3
+    ## 33 Plantain           Casanare     <NA>     2 #A0E7AB      2          NA     2
+    ## 34 Plantain            Córdoba   1%-10%     1 #A0E7AB      1          NA     3
+    ## 35 Plantain            Córdoba     <NA>     1 #A0E7AB      1          NA     2
+    ## 36 Plantain              Huila   1%-10%     1 #A0E7AB      1          NA     3
+    ## 37 Plantain              Huila     <NA>     1 #A0E7AB      1          NA     2
+    ## 38 Plantain         La Guajira  11%-20%     4 #46C075      4          NA     3
+    ## 39 Plantain         La Guajira     <NA>     4 #46C075      4          NA     2
+    ## 40 Plantain          Magdalena  11%-20%     3 #46C075      3          NA     3
+    ## 41 Plantain          Magdalena     <NA>     3 #46C075      3          NA     2
+    ## 42 Plantain               Meta  31%-40%    10 #82DA99     10          NA     3
+    ## 43 Plantain               Meta     <NA>    10 #82DA99     10          NA     2
+    ## 44 Plantain               <NA>     <NA>    51 #A0E7AB     51          NA     1
+    ## 45 Plantain Norte De Santander       0%     1 #BEF4BE      1          NA     3
+    ## 46 Plantain Norte De Santander     <NA>     1 #BEF4BE      1          NA     2
+    ## 47 Plantain            Quindío  31%-40%     5 #82DA99      5          NA     3
+    ## 48 Plantain            Quindío     <NA>     5 #82DA99      5          NA     2
+    ## 49 Plantain          Risaralda  21%-30%     8 #64CD87      8          NA     3
+    ## 50 Plantain          Risaralda     <NA>     8 #64CD87      8          NA     2
+    ## 51 Plantain          Santander       0%     1 #BEF4BE      1          NA     3
+    ## 52 Plantain          Santander     <NA>     1 #BEF4BE      1          NA     2
+    ## 53 Plantain              Sucre   1%-10%     1 #A0E7AB      1          NA     3
+    ## 54 Plantain              Sucre     <NA>     1 #A0E7AB      1          NA     2
+    ## 55 Plantain             Tolima   1%-10%     1 #A0E7AB      1          NA     3
+    ## 56 Plantain             Tolima     <NA>     1 #A0E7AB      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.5543478 0.43902439 0.23251418 0.56097561 #FFE351
+    ## 2  0.5543478 0.43902439 0.23251418 0.56097561 #FFE351
+    ## 3  0.9339775 0.27439024 0.06602254 0.16463415 #FFF2CC
+    ## 4  0.9339775 0.27439024 0.06602254 0.16463415 #FFF2CC
+    ## 5  0.8019324 0.13719512 0.07922705 0.13719512 #FFDE28
+    ## 6  0.8019324 0.13719512 0.07922705 0.13719512 #FFDE28
+    ## 7  0.8019324 0.27439024 0.13204509 0.16463415 #FFE87A
+    ## 8  0.8019324 0.27439024 0.13204509 0.16463415 #FFE87A
+    ## 9  0.8019324 0.00000000 0.07922705 0.13719512 #FFEDA3
+    ## 10 0.8019324 0.00000000 0.07922705 0.13719512 #FFEDA3
+    ## 11 0.8811594 0.18292683 0.11884058 0.09146341 #FFF2CC
+    ## 12 0.8811594 0.18292683 0.11884058 0.09146341 #FFF2CC
+    ## 13 0.5543478 0.00000000 0.24758454 0.43902439 #FFDA00
+    ## 14 0.5543478 0.00000000 0.24758454 0.43902439 #FFDA00
+    ## 15 0.7868620 0.43902439 0.21313800 0.56097561 #FFDA00
+    ## 16 0.7868620 0.43902439 0.21313800 0.56097561 #FFDA00
+    ## 17 0.5543478 0.00000000 0.44565217 1.00000000 #FFF2CC
+    ## 18 0.8811594 0.09146341 0.11884058 0.09146341 #FFF2CC
+    ## 19 0.8811594 0.09146341 0.11884058 0.09146341 #FFF2CC
+    ## 20 0.8811594 0.00000000 0.11884058 0.09146341 #FFF2CC
+    ## 21 0.8811594 0.00000000 0.11884058 0.09146341 #FFF2CC
+    ## 22 0.4759552 0.36974790 0.07839262 0.27731092 #28B463
+    ## 23 0.4759552 0.36974790 0.07839262 0.27731092 #28B463
+    ## 24 0.2015810 0.18487395 0.11758893 0.18487395 #A0E7AB
+    ## 25 0.2015810 0.18487395 0.11758893 0.18487395 #A0E7AB
+    ## 26 0.3191700 0.23109244 0.07839262 0.13865546 #A0E7AB
+    ## 27 0.3191700 0.23109244 0.07839262 0.13865546 #A0E7AB
+    ## 28 0.3975626 0.23109244 0.07839262 0.13865546 #BEF4BE
+    ## 29 0.3975626 0.23109244 0.07839262 0.13865546 #BEF4BE
+    ## 30 0.0000000 0.26960784 0.20158103 0.37745098 #64CD87
+    ## 31 0.0000000 0.26960784 0.20158103 0.37745098 #64CD87
+    ## 32 0.2015810 0.00000000 0.11758893 0.18487395 #A0E7AB
+    ## 33 0.2015810 0.00000000 0.11758893 0.18487395 #A0E7AB
+    ## 34 0.4759552 0.23109244 0.07839262 0.13865546 #A0E7AB
+    ## 35 0.4759552 0.23109244 0.07839262 0.13865546 #A0E7AB
+    ## 36 0.3191700 0.11554622 0.09407115 0.11554622 #A0E7AB
+    ## 37 0.3191700 0.11554622 0.09407115 0.11554622 #A0E7AB
+    ## 38 0.2015810 0.36974790 0.15678524 0.27731092 #46C075
+    ## 39 0.2015810 0.36974790 0.15678524 0.27731092 #46C075
+    ## 40 0.3583663 0.36974790 0.11758893 0.27731092 #46C075
+    ## 41 0.3583663 0.36974790 0.11758893 0.27731092 #46C075
+    ## 42 0.0000000 0.64705882 0.30797101 0.35294118 #82DA99
+    ## 43 0.0000000 0.64705882 0.30797101 0.35294118 #82DA99
+    ## 44 0.0000000 0.00000000 0.55434783 1.00000000 #A0E7AB
+    ## 45 0.3191700 0.00000000 0.09407115 0.11554622 #BEF4BE
+    ## 46 0.3191700 0.00000000 0.09407115 0.11554622 #BEF4BE
+    ## 47 0.0000000 0.00000000 0.20158103 0.26960784 #82DA99
+    ## 48 0.0000000 0.00000000 0.20158103 0.26960784 #82DA99
+    ## 49 0.3079710 0.64705882 0.24637681 0.35294118 #64CD87
+    ## 50 0.3079710 0.64705882 0.24637681 0.35294118 #64CD87
+    ## 51 0.4132411 0.07703081 0.07055336 0.15406162 #BEF4BE
+    ## 52 0.4132411 0.07703081 0.07055336 0.15406162 #BEF4BE
+    ## 53 0.4837945 0.07703081 0.07055336 0.15406162 #A0E7AB
+    ## 54 0.4837945 0.07703081 0.07055336 0.15406162 #A0E7AB
+    ## 55 0.4132411 0.00000000 0.14110672 0.07703081 #A0E7AB
+    ## 56 0.4132411 0.00000000 0.14110672 0.07703081 #A0E7AB
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_17, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_17-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          31%-40%    11 #FFE351     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFE351     11
+    ## 3    Banana             Caldas          51%-60%     1 #FFF2CC      1
+    ## 4    Banana             Caldas             <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar         91%-100%     1 #FFDE28      1
+    ## 6    Banana              Cesar             <NA>     1 #FFDE28      1
+    ## 7    Banana              Chocó           1%-10%     2 #FFE87A      2
+    ## 8    Banana              Chocó             <NA>     2 #FFE87A      2
+    ## 9    Banana            Córdoba               0%     1 #FFEDA3      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFEDA3      1
+    ## 11   Banana              Huila          51%-60%     1 #FFF2CC      1
+    ## 12   Banana              Huila             <NA>     1 #FFF2CC      1
+    ## 13   Banana         La Guajira          61%-70%     9 #FFDA00      9
+    ## 14   Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena          61%-70%    11 #FFDA00     11
+    ## 16   Banana          Magdalena             <NA>    11 #FFDA00     11
+    ## 17   Banana               <NA>             <NA>    39 #FFF2CC     39
+    ## 18   Banana            Quindío          51%-60%     1 #FFF2CC      1
+    ## 19   Banana            Quindío             <NA>     1 #FFF2CC      1
+    ## 20   Banana          Risaralda          51%-60%     1 #FFF2CC      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia          21%-30%     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca           1%-10%     2 #98E4A7      2
+    ## 25 Plantain             Arauca             <NA>     2 #98E4A7      2
+    ## 26 Plantain          Atlántico           1%-10%     1 #98E4A7      1
+    ## 27 Plantain          Atlántico             <NA>     1 #98E4A7      1
+    ## 28 Plantain            Bolívar               0%     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar             <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas          21%-30%     7 #28B463      7
+    ## 31 Plantain             Caldas             <NA>     7 #28B463      7
+    ## 32 Plantain           Casanare               0%     2 #BEF4BE      2
+    ## 33 Plantain           Casanare             <NA>     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba           1%-10%     1 #98E4A7      1
+    ## 35 Plantain            Córdoba             <NA>     1 #98E4A7      1
+    ## 36 Plantain              Huila           1%-10%     1 #98E4A7      1
+    ## 37 Plantain              Huila             <NA>     1 #98E4A7      1
+    ## 38 Plantain         La Guajira          11%-20%     4 #4DC479      4
+    ## 39 Plantain         La Guajira             <NA>     4 #4DC479      4
+    ## 40 Plantain          Magdalena          11%-20%     3 #4DC479      3
+    ## 41 Plantain          Magdalena             <NA>     3 #4DC479      3
+    ## 42 Plantain               Meta          21%-30%    10 #28B463     10
+    ## 43 Plantain               Meta             <NA>    10 #28B463     10
+    ## 44 Plantain               <NA>             <NA>    51 #98E4A7     51
+    ## 45 Plantain Norte De Santander               0%     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander             <NA>     1 #BEF4BE      1
+    ## 47 Plantain            Quindío          31%-40%     5 #73D490      5
+    ## 48 Plantain            Quindío             <NA>     5 #73D490      5
+    ## 49 Plantain          Risaralda          21%-30%     8 #28B463      8
+    ## 50 Plantain          Risaralda             <NA>     8 #28B463      8
+    ## 51 Plantain          Santander               0%     1 #BEF4BE      1
+    ## 52 Plantain          Santander             <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre           1%-10%     1 #98E4A7      1
+    ## 54 Plantain              Sucre             <NA>     1 #98E4A7      1
+    ## 55 Plantain             Tolima           1%-10%     1 #98E4A7      1
+    ## 56 Plantain             Tolima             <NA>     1 #98E4A7      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5666667 0.43589744 0.21666667 0.56410256 #FFE351
+    ## 2           NA     2 0.5666667 0.43589744 0.21666667 0.56410256 #FFE351
+    ## 3           NA     3 0.8470588 0.29059829 0.07647059 0.14529915 #FFF2CC
+    ## 4           NA     2 0.8470588 0.29059829 0.07647059 0.14529915 #FFF2CC
+    ## 5           NA     3 0.9235294 0.29059829 0.07647059 0.14529915 #FFDE28
+    ## 6           NA     2 0.9235294 0.29059829 0.07647059 0.14529915 #FFDE28
+    ## 7           NA     3 0.5666667 0.00000000 0.28039216 0.07925408 #FFE87A
+    ## 8           NA     2 0.5666667 0.00000000 0.28039216 0.07925408 #FFE87A
+    ## 9           NA     3 0.8470588 0.14529915 0.07647059 0.14529915 #FFEDA3
+    ## 10          NA     2 0.8470588 0.14529915 0.07647059 0.14529915 #FFEDA3
+    ## 11          NA     3 0.9235294 0.14529915 0.07647059 0.14529915 #FFF2CC
+    ## 12          NA     2 0.9235294 0.14529915 0.07647059 0.14529915 #FFF2CC
+    ## 13          NA     3 0.5666667 0.07925408 0.28039216 0.35664336 #FFDA00
+    ## 14          NA     2 0.5666667 0.07925408 0.28039216 0.35664336 #FFDA00
+    ## 15          NA     3 0.7833333 0.43589744 0.21666667 0.56410256 #FFDA00
+    ## 16          NA     2 0.7833333 0.43589744 0.21666667 0.56410256 #FFDA00
+    ## 17          NA     1 0.5666667 0.00000000 0.43333333 1.00000000 #FFF2CC
+    ## 18          NA     3 0.8470588 0.00000000 0.07647059 0.14529915 #FFF2CC
+    ## 19          NA     2 0.8470588 0.00000000 0.07647059 0.14529915 #FFF2CC
+    ## 20          NA     3 0.9235294 0.00000000 0.07647059 0.14529915 #FFF2CC
+    ## 21          NA     2 0.9235294 0.00000000 0.07647059 0.14529915 #FFF2CC
+    ## 22          NA     3 0.4865320 0.36974790 0.08013468 0.27731092 #28B463
+    ## 23          NA     2 0.4865320 0.36974790 0.08013468 0.27731092 #28B463
+    ## 24          NA     3 0.2060606 0.18487395 0.12020202 0.18487395 #98E4A7
+    ## 25          NA     2 0.2060606 0.18487395 0.12020202 0.18487395 #98E4A7
+    ## 26          NA     3 0.3262626 0.23109244 0.08013468 0.13865546 #98E4A7
+    ## 27          NA     2 0.3262626 0.23109244 0.08013468 0.13865546 #98E4A7
+    ## 28          NA     3 0.4063973 0.23109244 0.08013468 0.13865546 #BEF4BE
+    ## 29          NA     2 0.4063973 0.23109244 0.08013468 0.13865546 #BEF4BE
+    ## 30          NA     3 0.0000000 0.26960784 0.20606061 0.37745098 #28B463
+    ## 31          NA     2 0.0000000 0.26960784 0.20606061 0.37745098 #28B463
+    ## 32          NA     3 0.2060606 0.00000000 0.12020202 0.18487395 #BEF4BE
+    ## 33          NA     2 0.2060606 0.00000000 0.12020202 0.18487395 #BEF4BE
+    ## 34          NA     3 0.4865320 0.23109244 0.08013468 0.13865546 #98E4A7
+    ## 35          NA     2 0.4865320 0.23109244 0.08013468 0.13865546 #98E4A7
+    ## 36          NA     3 0.3262626 0.11554622 0.09616162 0.11554622 #98E4A7
+    ## 37          NA     2 0.3262626 0.11554622 0.09616162 0.11554622 #98E4A7
+    ## 38          NA     3 0.2060606 0.36974790 0.16026936 0.27731092 #4DC479
+    ## 39          NA     2 0.2060606 0.36974790 0.16026936 0.27731092 #4DC479
+    ## 40          NA     3 0.3663300 0.36974790 0.12020202 0.27731092 #4DC479
+    ## 41          NA     2 0.3663300 0.36974790 0.12020202 0.27731092 #4DC479
+    ## 42          NA     3 0.0000000 0.64705882 0.31481481 0.35294118 #28B463
+    ## 43          NA     2 0.0000000 0.64705882 0.31481481 0.35294118 #28B463
+    ## 44          NA     1 0.0000000 0.00000000 0.56666667 1.00000000 #98E4A7
+    ## 45          NA     3 0.3262626 0.00000000 0.09616162 0.11554622 #BEF4BE
+    ## 46          NA     2 0.3262626 0.00000000 0.09616162 0.11554622 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.20606061 0.26960784 #73D490
+    ## 48          NA     2 0.0000000 0.00000000 0.20606061 0.26960784 #73D490
+    ## 49          NA     3 0.3148148 0.64705882 0.25185185 0.35294118 #28B463
+    ## 50          NA     2 0.3148148 0.64705882 0.25185185 0.35294118 #28B463
+    ## 51          NA     3 0.4224242 0.07703081 0.07212121 0.15406162 #BEF4BE
+    ## 52          NA     2 0.4224242 0.07703081 0.07212121 0.15406162 #BEF4BE
+    ## 53          NA     3 0.4945455 0.07703081 0.07212121 0.15406162 #98E4A7
+    ## 54          NA     2 0.4945455 0.07703081 0.07212121 0.15406162 #98E4A7
+    ## 55          NA     3 0.4224242 0.00000000 0.14424242 0.07703081 #98E4A7
+    ## 56          NA     2 0.4224242 0.00000000 0.14424242 0.07703081 #98E4A7
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q17_no_weight<- question_17 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =17))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+``` r
+nal_q17_no_weight<- full_join(codes_department, nal_q17_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q17_no_weight$cat<- factor(nal_q17_no_weight$cat, levels = level_17)
+colmap(departamentos, data = nal_q17_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q17_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_17-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q17_weight<- inner_join(question_17, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q17_weight<- nal_q17_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =17)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q17_weight<- full_join(codes_department, nal_q17_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q17_weight$cat_weighted<- factor(nal_q17_weight$cat_weighted, levels = level_17)
+colmap(departamentos, data = nal_q17_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q17_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_17-4.png)<!-- -->
+
+## Question 18: What percentage of cultural control practices (crop rotation, sanitation) are implemented correctly in banana production systems in the areas where you are an expert?
+
+``` r
+#selecting only question 18----
+question_18<- filter(individual_surveys, question_number==18)
+#unique(question_18$numeric_answer)
+#dput(unique(question_18$answer_in_english))
+#organizing the order of the levels
+level_18<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_18$answer_in_english<- factor(question_18$answer_in_english,levels = level_18)
+question_18<- filter(question_18, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_18<- question_18 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(18, mean =average, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(18, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_18<- inner_join(question_18, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_18<- add_weights_question_18 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(18, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 5 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(18, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q18_no_weighted<- tapply(avg_dept_no_weight_18$ave_cat, avg_dept_no_weight_18$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question18_no_weighted<- palette_banana(length(levels_per_crop_Q18_no_weighted$Banana))
+colors_plantain_question18_no_weighted<- palette_plantain(length(levels_per_crop_Q18_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_18 <- list(
+  Banana = levels_per_crop_Q18_no_weighted$Banana,
+  Plantain = levels_per_crop_Q18_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_18 <- list(
+  Banana = colors_banana_question18_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question18_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_18 <- assign_group_color(data = avg_dept_no_weight_18, levels_by_crop = levels_by_crop_no_weighted_18, colors_by_crop = colors_by_crop_no_weighted_18,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q18_weighted<- tapply(avg_dept_weight_18$ave_cat_weighted, avg_dept_weight_18$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question18_weighted<- palette_banana(length(levels_per_crop_Q18_weighted$Banana))
+colors_plantain_question18_weighted<- palette_plantain(length(levels_per_crop_Q18_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_18 <- list(
+  Banana = levels_per_crop_Q18_weighted$Banana,
+  Plantain = levels_per_crop_Q18_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_18 <- list(
+  Banana = colors_banana_question18_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question18_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_18 <- assign_group_color(data = avg_dept_weight_18, levels_by_crop = levels_by_crop_weighted_18, colors_by_crop = colors_by_crop_weighted_18,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_18, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_18-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia 51%-60%    11 #FFDE28     11          NA     3
+    ## 2    Banana          Antioquia    <NA>    11 #FFDE28     11          NA     2
+    ## 3    Banana             Caldas 61%-70%     1 #FFDA00      1          NA     3
+    ## 4    Banana             Caldas    <NA>     1 #FFDA00      1          NA     2
+    ## 5    Banana              Cesar      0%     1 #FFE351      1          NA     3
+    ## 6    Banana              Cesar    <NA>     1 #FFE351      1          NA     2
+    ## 7    Banana              Chocó 21%-30%     2 #FFEDA3      2          NA     3
+    ## 8    Banana              Chocó    <NA>     2 #FFEDA3      2          NA     2
+    ## 9    Banana            Córdoba  1%-10%     1 #FFF2CC      1          NA     3
+    ## 10   Banana            Córdoba    <NA>     1 #FFF2CC      1          NA     2
+    ## 11   Banana              Huila 61%-70%     1 #FFDA00      1          NA     3
+    ## 12   Banana              Huila    <NA>     1 #FFDA00      1          NA     2
+    ## 13   Banana         La Guajira 61%-70%     9 #FFDA00      9          NA     3
+    ## 14   Banana         La Guajira    <NA>     9 #FFDA00      9          NA     2
+    ## 15   Banana          Magdalena 51%-60%    12 #FFDE28     12          NA     3
+    ## 16   Banana          Magdalena    <NA>    12 #FFDE28     12          NA     2
+    ## 17   Banana               <NA>    <NA>    41 #FFDA00     41          NA     1
+    ## 18   Banana            Quindío 61%-70%     1 #FFDA00      1          NA     3
+    ## 19   Banana            Quindío    <NA>     1 #FFDA00      1          NA     2
+    ## 20   Banana          Risaralda 81%-90%     2 #FFE87A      2          NA     3
+    ## 21   Banana          Risaralda    <NA>     2 #FFE87A      2          NA     2
+    ## 22 Plantain          Antioquia 21%-30%     2 #28B463      2          NA     3
+    ## 23 Plantain          Antioquia    <NA>     2 #28B463      2          NA     2
+    ## 24 Plantain             Arauca 21%-30%     2 #28B463      2          NA     3
+    ## 25 Plantain             Arauca    <NA>     2 #28B463      2          NA     2
+    ## 26 Plantain          Atlántico 31%-40%     1 #73D490      1          NA     3
+    ## 27 Plantain          Atlántico    <NA>     1 #73D490      1          NA     2
+    ## 28 Plantain            Bolívar 31%-40%     1 #73D490      1          NA     3
+    ## 29 Plantain            Bolívar    <NA>     1 #73D490      1          NA     2
+    ## 30 Plantain             Caldas 31%-40%     7 #73D490      7          NA     3
+    ## 31 Plantain             Caldas    <NA>     7 #73D490      7          NA     2
+    ## 32 Plantain           Casanare 21%-30%     2 #28B463      2          NA     3
+    ## 33 Plantain           Casanare    <NA>     2 #28B463      2          NA     2
+    ## 34 Plantain            Córdoba 41%-50%     1 #BEF4BE      1          NA     3
+    ## 35 Plantain            Córdoba    <NA>     1 #BEF4BE      1          NA     2
+    ## 36 Plantain              Huila 31%-40%     1 #73D490      1          NA     3
+    ## 37 Plantain              Huila    <NA>     1 #73D490      1          NA     2
+    ## 38 Plantain         La Guajira 11%-20%     3 #4DC479      3          NA     3
+    ## 39 Plantain         La Guajira    <NA>     3 #4DC479      3          NA     2
+    ## 40 Plantain          Magdalena 21%-30%     2 #28B463      2          NA     3
+    ## 41 Plantain          Magdalena    <NA>     2 #28B463      2          NA     2
+    ## 42 Plantain               Meta 61%-70%    11 #98E4A7     11          NA     3
+    ## 43 Plantain               Meta    <NA>    11 #98E4A7     11          NA     2
+    ## 44 Plantain               <NA>    <NA>    52 #73D490     52          NA     1
+    ## 45 Plantain Norte De Santander 31%-40%     1 #73D490      1          NA     3
+    ## 46 Plantain Norte De Santander    <NA>     1 #73D490      1          NA     2
+    ## 47 Plantain            Quindío 31%-40%     6 #73D490      6          NA     3
+    ## 48 Plantain            Quindío    <NA>     6 #73D490      6          NA     2
+    ## 49 Plantain          Risaralda 21%-30%     9 #28B463      9          NA     3
+    ## 50 Plantain          Risaralda    <NA>     9 #28B463      9          NA     2
+    ## 51 Plantain          Santander 31%-40%     1 #73D490      1          NA     3
+    ## 52 Plantain          Santander    <NA>     1 #73D490      1          NA     2
+    ## 53 Plantain              Sucre 31%-40%     1 #73D490      1          NA     3
+    ## 54 Plantain              Sucre    <NA>     1 #73D490      1          NA     2
+    ## 55 Plantain             Tolima 31%-40%     1 #73D490      1          NA     3
+    ## 56 Plantain             Tolima    <NA>     1 #73D490      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.7891538 0.43902439 0.21084619 0.56097561 #FFDE28
+    ## 2  0.7891538 0.43902439 0.21084619 0.56097561 #FFDE28
+    ## 3  0.9428515 0.25087108 0.05714855 0.18815331 #FFDA00
+    ## 4  0.9428515 0.25087108 0.05714855 0.18815331 #FFDA00
+    ## 5  0.8285544 0.12543554 0.08572282 0.12543554 #FFE351
+    ## 6  0.8285544 0.12543554 0.08572282 0.12543554 #FFE351
+    ## 7  0.5591398 0.00000000 0.26941458 0.07982262 #FFEDA3
+    ## 8  0.5591398 0.00000000 0.26941458 0.07982262 #FFEDA3
+    ## 9  0.8285544 0.00000000 0.08572282 0.12543554 #FFF2CC
+    ## 10 0.8285544 0.00000000 0.08572282 0.12543554 #FFF2CC
+    ## 11 0.9142772 0.12543554 0.08572282 0.12543554 #FFDA00
+    ## 12 0.9142772 0.12543554 0.08572282 0.12543554 #FFDA00
+    ## 13 0.5591398 0.07982262 0.26941458 0.35920177 #FFDA00
+    ## 14 0.5591398 0.07982262 0.26941458 0.35920177 #FFDA00
+    ## 15 0.5591398 0.43902439 0.23001403 0.56097561 #FFDE28
+    ## 16 0.5591398 0.43902439 0.23001403 0.56097561 #FFDE28
+    ## 17 0.5591398 0.00000000 0.44086022 1.00000000 #FFDA00
+    ## 18 0.9142772 0.00000000 0.08572282 0.12543554 #FFDA00
+    ## 19 0.9142772 0.00000000 0.08572282 0.12543554 #FFDA00
+    ## 20 0.8285544 0.25087108 0.11429709 0.18815331 #FFE87A
+    ## 21 0.8285544 0.25087108 0.11429709 0.18815331 #FFE87A
+    ## 22 0.3694316 0.38866397 0.09485407 0.22672065 #28B463
+    ## 23 0.3694316 0.38866397 0.09485407 0.22672065 #28B463
+    ## 24 0.4642857 0.38866397 0.09485407 0.22672065 #28B463
+    ## 25 0.4642857 0.38866397 0.09485407 0.22672065 #28B463
+    ## 26 0.3378136 0.24291498 0.07377539 0.14574899 #73D490
+    ## 27 0.3378136 0.24291498 0.07377539 0.14574899 #73D490
+    ## 28 0.4115890 0.24291498 0.07377539 0.14574899 #73D490
+    ## 29 0.4115890 0.24291498 0.07377539 0.14574899 #73D490
+    ## 30 0.0000000 0.28402367 0.22715054 0.33136095 #73D490
+    ## 31 0.0000000 0.28402367 0.22715054 0.33136095 #73D490
+    ## 32 0.2271505 0.19433198 0.11066308 0.19433198 #28B463
+    ## 33 0.2271505 0.19433198 0.11066308 0.19433198 #28B463
+    ## 34 0.4853644 0.24291498 0.07377539 0.14574899 #BEF4BE
+    ## 35 0.4853644 0.24291498 0.07377539 0.14574899 #BEF4BE
+    ## 36 0.3378136 0.12145749 0.08853047 0.12145749 #73D490
+    ## 37 0.3378136 0.12145749 0.08853047 0.12145749 #73D490
+    ## 38 0.2271505 0.38866397 0.14228111 0.22672065 #4DC479
+    ## 39 0.2271505 0.38866397 0.14228111 0.22672065 #4DC479
+    ## 40 0.2271505 0.00000000 0.11066308 0.19433198 #28B463
+    ## 41 0.2271505 0.00000000 0.11066308 0.19433198 #28B463
+    ## 42 0.0000000 0.61538462 0.30752688 0.38461538 #98E4A7
+    ## 43 0.0000000 0.61538462 0.30752688 0.38461538 #98E4A7
+    ## 44 0.0000000 0.00000000 0.55913978 1.00000000 #73D490
+    ## 45 0.3378136 0.00000000 0.08853047 0.12145749 #73D490
+    ## 46 0.3378136 0.00000000 0.08853047 0.12145749 #73D490
+    ## 47 0.0000000 0.00000000 0.22715054 0.28402367 #73D490
+    ## 48 0.0000000 0.00000000 0.22715054 0.28402367 #73D490
+    ## 49 0.3075269 0.61538462 0.25161290 0.38461538 #28B463
+    ## 50 0.3075269 0.61538462 0.25161290 0.38461538 #28B463
+    ## 51 0.4263441 0.08097166 0.06639785 0.16194332 #73D490
+    ## 52 0.4263441 0.08097166 0.06639785 0.16194332 #73D490
+    ## 53 0.4927419 0.08097166 0.06639785 0.16194332 #73D490
+    ## 54 0.4927419 0.08097166 0.06639785 0.16194332 #73D490
+    ## 55 0.4263441 0.00000000 0.13279570 0.08097166 #73D490
+    ## 56 0.4263441 0.00000000 0.13279570 0.08097166 #73D490
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_18, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_18-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          51%-60%    11 #FFDA00     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas          61%-70%     1 #FFE033      1
+    ## 4    Banana             Caldas             <NA>     1 #FFE033      1
+    ## 5    Banana              Cesar               0%     1 #FFE566      1
+    ## 6    Banana              Cesar             <NA>     1 #FFE566      1
+    ## 7    Banana              Chocó          21%-30%     2 #FFEB99      2
+    ## 8    Banana              Chocó             <NA>     2 #FFEB99      2
+    ## 9    Banana            Córdoba           1%-10%     1 #FFF2CC      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFF2CC      1
+    ## 11   Banana              Huila          61%-70%     1 #FFE033      1
+    ## 12   Banana              Huila             <NA>     1 #FFE033      1
+    ## 13   Banana         La Guajira          51%-60%     8 #FFDA00      8
+    ## 14   Banana         La Guajira             <NA>     8 #FFDA00      8
+    ## 15   Banana          Magdalena          61%-70%    11 #FFE033     11
+    ## 16   Banana          Magdalena             <NA>    11 #FFE033     11
+    ## 17   Banana               <NA>             <NA>    38 #FFE033     38
+    ## 18   Banana            Quindío          61%-70%     1 #FFE033      1
+    ## 19   Banana            Quindío             <NA>     1 #FFE033      1
+    ## 20   Banana          Risaralda          61%-70%     1 #FFE033      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFE033      1
+    ## 22 Plantain          Antioquia          11%-20%     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca          11%-20%     2 #28B463      2
+    ## 25 Plantain             Arauca             <NA>     2 #28B463      2
+    ## 26 Plantain          Atlántico          31%-40%     1 #73D490      1
+    ## 27 Plantain          Atlántico             <NA>     1 #73D490      1
+    ## 28 Plantain            Bolívar          31%-40%     1 #73D490      1
+    ## 29 Plantain            Bolívar             <NA>     1 #73D490      1
+    ## 30 Plantain             Caldas          31%-40%     7 #73D490      7
+    ## 31 Plantain             Caldas             <NA>     7 #73D490      7
+    ## 32 Plantain           Casanare          11%-20%     2 #28B463      2
+    ## 33 Plantain           Casanare             <NA>     2 #28B463      2
+    ## 34 Plantain            Córdoba          41%-50%     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba             <NA>     1 #BEF4BE      1
+    ## 36 Plantain              Huila          31%-40%     1 #73D490      1
+    ## 37 Plantain              Huila             <NA>     1 #73D490      1
+    ## 38 Plantain         La Guajira          21%-30%     3 #4DC479      3
+    ## 39 Plantain         La Guajira             <NA>     3 #4DC479      3
+    ## 40 Plantain          Magdalena          21%-30%     2 #4DC479      2
+    ## 41 Plantain          Magdalena             <NA>     2 #4DC479      2
+    ## 42 Plantain               Meta          61%-70%    10 #98E4A7     10
+    ## 43 Plantain               Meta             <NA>    10 #98E4A7     10
+    ## 44 Plantain               <NA>             <NA>    51 #73D490     51
+    ## 45 Plantain Norte De Santander          31%-40%     1 #73D490      1
+    ## 46 Plantain Norte De Santander             <NA>     1 #73D490      1
+    ## 47 Plantain            Quindío          31%-40%     6 #73D490      6
+    ## 48 Plantain            Quindío             <NA>     6 #73D490      6
+    ## 49 Plantain          Risaralda          21%-30%     9 #4DC479      9
+    ## 50 Plantain          Risaralda             <NA>     9 #4DC479      9
+    ## 51 Plantain          Santander          31%-40%     1 #73D490      1
+    ## 52 Plantain          Santander             <NA>     1 #73D490      1
+    ## 53 Plantain              Sucre          31%-40%     1 #73D490      1
+    ## 54 Plantain              Sucre             <NA>     1 #73D490      1
+    ## 55 Plantain             Tolima          31%-40%     1 #73D490      1
+    ## 56 Plantain             Tolima             <NA>     1 #73D490      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5730337 0.42105263 0.21348315 0.57894737 #FFDA00
+    ## 2           NA     2 0.5730337 0.42105263 0.21348315 0.57894737 #FFDA00
+    ## 3           NA     3 0.8398876 0.28070175 0.08005618 0.14035088 #FFE033
+    ## 4           NA     2 0.8398876 0.28070175 0.08005618 0.14035088 #FFE033
+    ## 5           NA     3 0.9199438 0.28070175 0.08005618 0.14035088 #FFE566
+    ## 6           NA     2 0.9199438 0.28070175 0.08005618 0.14035088 #FFE566
+    ## 7           NA     3 0.5730337 0.00000000 0.26685393 0.08421053 #FFEB99
+    ## 8           NA     2 0.5730337 0.00000000 0.26685393 0.08421053 #FFEB99
+    ## 9           NA     3 0.8398876 0.14035088 0.08005618 0.14035088 #FFF2CC
+    ## 10          NA     2 0.8398876 0.14035088 0.08005618 0.14035088 #FFF2CC
+    ## 11          NA     3 0.9199438 0.14035088 0.08005618 0.14035088 #FFE033
+    ## 12          NA     2 0.9199438 0.14035088 0.08005618 0.14035088 #FFE033
+    ## 13          NA     3 0.5730337 0.08421053 0.26685393 0.33684211 #FFDA00
+    ## 14          NA     2 0.5730337 0.08421053 0.26685393 0.33684211 #FFDA00
+    ## 15          NA     3 0.7865169 0.42105263 0.21348315 0.57894737 #FFE033
+    ## 16          NA     2 0.7865169 0.42105263 0.21348315 0.57894737 #FFE033
+    ## 17          NA     1 0.5730337 0.00000000 0.42696629 1.00000000 #FFE033
+    ## 18          NA     3 0.8398876 0.00000000 0.08005618 0.14035088 #FFE033
+    ## 19          NA     2 0.8398876 0.00000000 0.08005618 0.14035088 #FFE033
+    ## 20          NA     3 0.9199438 0.00000000 0.08005618 0.14035088 #FFE033
+    ## 21          NA     2 0.9199438 0.00000000 0.08005618 0.14035088 #FFE033
+    ## 22          NA     3 0.3786116 0.39628483 0.09721108 0.23116615 #28B463
+    ## 23          NA     2 0.3786116 0.39628483 0.09721108 0.23116615 #28B463
+    ## 24          NA     3 0.4758226 0.39628483 0.09721108 0.23116615 #28B463
+    ## 25          NA     2 0.4758226 0.39628483 0.09721108 0.23116615 #28B463
+    ## 26          NA     3 0.3462079 0.24767802 0.07560861 0.14860681 #73D490
+    ## 27          NA     2 0.3462079 0.24767802 0.07560861 0.14860681 #73D490
+    ## 28          NA     3 0.4218165 0.24767802 0.07560861 0.14860681 #73D490
+    ## 29          NA     2 0.4218165 0.24767802 0.07560861 0.14860681 #73D490
+    ## 30          NA     3 0.0000000 0.28959276 0.23279494 0.33785822 #73D490
+    ## 31          NA     2 0.0000000 0.28959276 0.23279494 0.33785822 #73D490
+    ## 32          NA     3 0.2327949 0.19814241 0.11341292 0.19814241 #28B463
+    ## 33          NA     2 0.2327949 0.19814241 0.11341292 0.19814241 #28B463
+    ## 34          NA     3 0.4974251 0.24767802 0.07560861 0.14860681 #BEF4BE
+    ## 35          NA     2 0.4974251 0.24767802 0.07560861 0.14860681 #BEF4BE
+    ## 36          NA     3 0.3462079 0.12383901 0.09073034 0.12383901 #73D490
+    ## 37          NA     2 0.3462079 0.12383901 0.09073034 0.12383901 #73D490
+    ## 38          NA     3 0.2327949 0.39628483 0.14581661 0.23116615 #4DC479
+    ## 39          NA     2 0.2327949 0.39628483 0.14581661 0.23116615 #4DC479
+    ## 40          NA     3 0.2327949 0.00000000 0.11341292 0.19814241 #4DC479
+    ## 41          NA     2 0.2327949 0.00000000 0.11341292 0.19814241 #4DC479
+    ## 42          NA     3 0.0000000 0.62745098 0.30159669 0.37254902 #98E4A7
+    ## 43          NA     2 0.0000000 0.62745098 0.30159669 0.37254902 #98E4A7
+    ## 44          NA     1 0.0000000 0.00000000 0.57303371 1.00000000 #73D490
+    ## 45          NA     3 0.3462079 0.00000000 0.09073034 0.12383901 #73D490
+    ## 46          NA     2 0.3462079 0.00000000 0.09073034 0.12383901 #73D490
+    ## 47          NA     3 0.0000000 0.00000000 0.23279494 0.28959276 #73D490
+    ## 48          NA     2 0.0000000 0.00000000 0.23279494 0.28959276 #73D490
+    ## 49          NA     3 0.3015967 0.62745098 0.27143702 0.37254902 #4DC479
+    ## 50          NA     2 0.3015967 0.62745098 0.27143702 0.37254902 #4DC479
+    ## 51          NA     3 0.4369382 0.08255934 0.06804775 0.16511868 #73D490
+    ## 52          NA     2 0.4369382 0.08255934 0.06804775 0.16511868 #73D490
+    ## 53          NA     3 0.5049860 0.08255934 0.06804775 0.16511868 #73D490
+    ## 54          NA     2 0.5049860 0.08255934 0.06804775 0.16511868 #73D490
+    ## 55          NA     3 0.4369382 0.00000000 0.13609551 0.08255934 #73D490
+    ## 56          NA     2 0.4369382 0.00000000 0.13609551 0.08255934 #73D490
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q18_no_weight<- question_18 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =18))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q18_no_weight<- full_join(codes_department, nal_q18_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q18_no_weight$cat<- factor(nal_q18_no_weight$cat, levels = level_18)
+colmap(departamentos, data = nal_q18_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q18_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_18-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q18_weight<- inner_join(question_18, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q18_weight<- nal_q18_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =18)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q18_weight<- full_join(codes_department, nal_q18_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q18_weight$cat_weighted<- factor(nal_q18_weight$cat_weighted, levels = level_18)
+colmap(departamentos, data = nal_q18_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q18_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_18-4.png)<!-- -->
+
+## Question 19: What percentage of physical control practices (traps, barriers) are implemented correctly in banana production systems in the areas where you are an expert?
+
+``` r
+#selecting only question 19----
+question_19<- filter(individual_surveys, question_number==19)
+#unique(question_19$numeric_answer)
+#dput(unique(question_19$answer_in_english))
+#organizing the order of the levels
+level_19<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_19$answer_in_english<- factor(question_19$answer_in_english,levels = level_19)
+question_19<- filter(question_19, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_19<- question_19 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(19, mean =average, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(19, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_19<- inner_join(question_19, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_19<- add_weights_question_19 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(19, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(19, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q19_no_weighted<- tapply(avg_dept_no_weight_19$ave_cat, avg_dept_no_weight_19$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question19_no_weighted<- palette_banana(length(levels_per_crop_Q19_no_weighted$Banana))
+colors_plantain_question19_no_weighted<- palette_plantain(length(levels_per_crop_Q19_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_19 <- list(
+  Banana = levels_per_crop_Q19_no_weighted$Banana,
+  Plantain = levels_per_crop_Q19_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_19 <- list(
+  Banana = colors_banana_question19_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question19_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_19 <- assign_group_color(data = avg_dept_no_weight_19, levels_by_crop = levels_by_crop_no_weighted_19, colors_by_crop = colors_by_crop_no_weighted_19,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q19_weighted<- tapply(avg_dept_weight_19$ave_cat_weighted, avg_dept_weight_19$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question19_weighted<- palette_banana(length(levels_per_crop_Q19_weighted$Banana))
+colors_plantain_question19_weighted<- palette_plantain(length(levels_per_crop_Q19_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_19 <- list(
+  Banana = levels_per_crop_Q19_weighted$Banana,
+  Plantain = levels_per_crop_Q19_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_19 <- list(
+  Banana = colors_banana_question19_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question19_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_19 <- assign_group_color(data = avg_dept_weight_19, levels_by_crop = levels_by_crop_weighted_19, colors_by_crop = colors_by_crop_weighted_19,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_19, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_19-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia 41%-50%    11 #FFE033     11          NA     3
+    ## 2    Banana          Antioquia    <NA>    11 #FFE033     11          NA     2
+    ## 3    Banana             Caldas      0%     1 #FFF2CC      1          NA     3
+    ## 4    Banana             Caldas    <NA>     1 #FFF2CC      1          NA     2
+    ## 5    Banana              Cesar 31%-40%     1 #FFE566      1          NA     3
+    ## 6    Banana              Cesar    <NA>     1 #FFE566      1          NA     2
+    ## 7    Banana              Chocó 11%-20%     2 #FFEB99      2          NA     3
+    ## 8    Banana              Chocó    <NA>     2 #FFEB99      2          NA     2
+    ## 9    Banana            Córdoba      0%     1 #FFF2CC      1          NA     3
+    ## 10   Banana            Córdoba    <NA>     1 #FFF2CC      1          NA     2
+    ## 11   Banana              Huila      0%     1 #FFF2CC      1          NA     3
+    ## 12   Banana              Huila    <NA>     1 #FFF2CC      1          NA     2
+    ## 13   Banana         La Guajira 51%-60%    10 #FFDA00     10          NA     3
+    ## 14   Banana         La Guajira    <NA>    10 #FFDA00     10          NA     2
+    ## 15   Banana          Magdalena 41%-50%    13 #FFE033     13          NA     3
+    ## 16   Banana          Magdalena    <NA>    13 #FFE033     13          NA     2
+    ## 17   Banana               <NA>    <NA>    42 #FFF2CC     42          NA     1
+    ## 18   Banana            Quindío      0%     1 #FFF2CC      1          NA     3
+    ## 19   Banana            Quindío    <NA>     1 #FFF2CC      1          NA     2
+    ## 20   Banana          Risaralda      0%     1 #FFF2CC      1          NA     3
+    ## 21   Banana          Risaralda    <NA>     1 #FFF2CC      1          NA     2
+    ## 22 Plantain          Antioquia 61%-70%     2 #28B463      2          NA     3
+    ## 23 Plantain          Antioquia    <NA>     2 #28B463      2          NA     2
+    ## 24 Plantain             Arauca  1%-10%     2 #A0E7AB      2          NA     3
+    ## 25 Plantain             Arauca    <NA>     2 #A0E7AB      2          NA     2
+    ## 26 Plantain          Atlántico      0%     1 #BEF4BE      1          NA     3
+    ## 27 Plantain          Atlántico    <NA>     1 #BEF4BE      1          NA     2
+    ## 28 Plantain            Bolívar      0%     1 #BEF4BE      1          NA     3
+    ## 29 Plantain            Bolívar    <NA>     1 #BEF4BE      1          NA     2
+    ## 30 Plantain             Caldas 31%-40%     7 #64CD87      7          NA     3
+    ## 31 Plantain             Caldas    <NA>     7 #64CD87      7          NA     2
+    ## 32 Plantain           Casanare      0%     2 #BEF4BE      2          NA     3
+    ## 33 Plantain           Casanare    <NA>     2 #BEF4BE      2          NA     2
+    ## 34 Plantain            Córdoba      0%     1 #BEF4BE      1          NA     3
+    ## 35 Plantain            Córdoba    <NA>     1 #BEF4BE      1          NA     2
+    ## 36 Plantain              Huila      0%     1 #BEF4BE      1          NA     3
+    ## 37 Plantain              Huila    <NA>     1 #BEF4BE      1          NA     2
+    ## 38 Plantain         La Guajira 11%-20%     4 #46C075      4          NA     3
+    ## 39 Plantain         La Guajira    <NA>     4 #46C075      4          NA     2
+    ## 40 Plantain          Magdalena 21%-30%     3 #82DA99      3          NA     3
+    ## 41 Plantain          Magdalena    <NA>     3 #82DA99      3          NA     2
+    ## 42 Plantain               Meta 21%-30%    10 #82DA99     10          NA     3
+    ## 43 Plantain               Meta    <NA>    10 #82DA99     10          NA     2
+    ## 44 Plantain               <NA>    <NA>    52 #BEF4BE     52          NA     1
+    ## 45 Plantain Norte De Santander      0%     1 #BEF4BE      1          NA     3
+    ## 46 Plantain Norte De Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 47 Plantain            Quindío 31%-40%     5 #64CD87      5          NA     3
+    ## 48 Plantain            Quindío    <NA>     5 #64CD87      5          NA     2
+    ## 49 Plantain          Risaralda 31%-40%     9 #64CD87      9          NA     3
+    ## 50 Plantain          Risaralda    <NA>     9 #64CD87      9          NA     2
+    ## 51 Plantain          Santander      0%     1 #BEF4BE      1          NA     3
+    ## 52 Plantain          Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 53 Plantain              Sucre      0%     1 #BEF4BE      1          NA     3
+    ## 54 Plantain              Sucre    <NA>     1 #BEF4BE      1          NA     2
+    ## 55 Plantain             Tolima      0%     1 #BEF4BE      1          NA     3
+    ## 56 Plantain             Tolima    <NA>     1 #BEF4BE      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.7952128 0.42857143 0.20478723 0.57142857 #FFE033
+    ## 2  0.7952128 0.42857143 0.20478723 0.57142857 #FFE033
+    ## 3  0.9338061 0.26785714 0.06619385 0.16071429 #FFF2CC
+    ## 4  0.9338061 0.26785714 0.06619385 0.16071429 #FFF2CC
+    ## 5  0.8014184 0.13392857 0.07943262 0.13392857 #FFE566
+    ## 6  0.8014184 0.13392857 0.07943262 0.13392857 #FFE566
+    ## 7  0.8014184 0.26785714 0.13238771 0.16071429 #FFEB99
+    ## 8  0.8014184 0.26785714 0.13238771 0.16071429 #FFEB99
+    ## 9  0.8014184 0.00000000 0.07943262 0.13392857 #FFF2CC
+    ## 10 0.8014184 0.00000000 0.07943262 0.13392857 #FFF2CC
+    ## 11 0.8808511 0.17857143 0.11914894 0.08928571 #FFF2CC
+    ## 12 0.8808511 0.17857143 0.11914894 0.08928571 #FFF2CC
+    ## 13 0.5531915 0.00000000 0.24822695 0.42857143 #FFDA00
+    ## 14 0.5531915 0.00000000 0.24822695 0.42857143 #FFDA00
+    ## 15 0.5531915 0.42857143 0.24202128 0.57142857 #FFE033
+    ## 16 0.5531915 0.42857143 0.24202128 0.57142857 #FFE033
+    ## 17 0.5531915 0.00000000 0.44680851 1.00000000 #FFF2CC
+    ## 18 0.8808511 0.08928571 0.11914894 0.08928571 #FFF2CC
+    ## 19 0.8808511 0.08928571 0.11914894 0.08928571 #FFF2CC
+    ## 20 0.8808511 0.00000000 0.11914894 0.08928571 #FFF2CC
+    ## 21 0.8808511 0.00000000 0.11914894 0.08928571 #FFF2CC
+    ## 22 0.4749624 0.36263736 0.07822910 0.27197802 #28B463
+    ## 23 0.4749624 0.36263736 0.07822910 0.27197802 #28B463
+    ## 24 0.2011605 0.18131868 0.11734365 0.18131868 #A0E7AB
+    ## 25 0.2011605 0.18131868 0.11734365 0.18131868 #A0E7AB
+    ## 26 0.3185042 0.22664835 0.07822910 0.13598901 #BEF4BE
+    ## 27 0.3185042 0.22664835 0.07822910 0.13598901 #BEF4BE
+    ## 28 0.3967333 0.22664835 0.07822910 0.13598901 #BEF4BE
+    ## 29 0.3967333 0.22664835 0.07822910 0.13598901 #BEF4BE
+    ## 30 0.0000000 0.26442308 0.20116054 0.37019231 #64CD87
+    ## 31 0.0000000 0.26442308 0.20116054 0.37019231 #64CD87
+    ## 32 0.2011605 0.00000000 0.11734365 0.18131868 #BEF4BE
+    ## 33 0.2011605 0.00000000 0.11734365 0.18131868 #BEF4BE
+    ## 34 0.4749624 0.22664835 0.07822910 0.13598901 #BEF4BE
+    ## 35 0.4749624 0.22664835 0.07822910 0.13598901 #BEF4BE
+    ## 36 0.3185042 0.11332418 0.09387492 0.11332418 #BEF4BE
+    ## 37 0.3185042 0.11332418 0.09387492 0.11332418 #BEF4BE
+    ## 38 0.2011605 0.36263736 0.15645820 0.27197802 #46C075
+    ## 39 0.2011605 0.36263736 0.15645820 0.27197802 #46C075
+    ## 40 0.3576187 0.36263736 0.11734365 0.27197802 #82DA99
+    ## 41 0.3576187 0.36263736 0.11734365 0.27197802 #82DA99
+    ## 42 0.0000000 0.63461538 0.29115342 0.36538462 #82DA99
+    ## 43 0.0000000 0.63461538 0.29115342 0.36538462 #82DA99
+    ## 44 0.0000000 0.00000000 0.55319149 1.00000000 #BEF4BE
+    ## 45 0.3185042 0.00000000 0.09387492 0.11332418 #BEF4BE
+    ## 46 0.3185042 0.00000000 0.09387492 0.11332418 #BEF4BE
+    ## 47 0.0000000 0.00000000 0.20116054 0.26442308 #64CD87
+    ## 48 0.0000000 0.00000000 0.20116054 0.26442308 #64CD87
+    ## 49 0.2911534 0.63461538 0.26203807 0.36538462 #64CD87
+    ## 50 0.2911534 0.63461538 0.26203807 0.36538462 #64CD87
+    ## 51 0.4123791 0.07554945 0.07040619 0.15109890 #BEF4BE
+    ## 52 0.4123791 0.07554945 0.07040619 0.15109890 #BEF4BE
+    ## 53 0.4827853 0.07554945 0.07040619 0.15109890 #BEF4BE
+    ## 54 0.4827853 0.07554945 0.07040619 0.15109890 #BEF4BE
+    ## 55 0.4123791 0.00000000 0.14081238 0.07554945 #BEF4BE
+    ## 56 0.4123791 0.00000000 0.14081238 0.07554945 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_19, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_19-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          31%-40%    11 #FFE244     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFE244     11
+    ## 3    Banana             Caldas               0%     1 #FFF2CC      1
+    ## 4    Banana             Caldas             <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar          31%-40%     1 #FFE244      1
+    ## 6    Banana              Cesar             <NA>     1 #FFE244      1
+    ## 7    Banana              Chocó          11%-20%     2 #FFEA88      2
+    ## 8    Banana              Chocó             <NA>     2 #FFEA88      2
+    ## 9    Banana            Córdoba               0%     1 #FFF2CC      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFF2CC      1
+    ## 11   Banana              Huila               0%     1 #FFF2CC      1
+    ## 12   Banana              Huila             <NA>     1 #FFF2CC      1
+    ## 13   Banana         La Guajira          41%-50%     9 #FFDA00      9
+    ## 14   Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena          41%-50%    12 #FFDA00     12
+    ## 16   Banana          Magdalena             <NA>    12 #FFDA00     12
+    ## 17   Banana               <NA>             <NA>    40 #FFF2CC     40
+    ## 18   Banana            Quindío               0%     1 #FFF2CC      1
+    ## 19   Banana            Quindío             <NA>     1 #FFF2CC      1
+    ## 20   Banana          Risaralda               0%     1 #FFF2CC      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia          61%-70%     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca           1%-10%     2 #A0E7AB      2
+    ## 25 Plantain             Arauca             <NA>     2 #A0E7AB      2
+    ## 26 Plantain          Atlántico               0%     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico             <NA>     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar               0%     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar             <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas          31%-40%     7 #64CD87      7
+    ## 31 Plantain             Caldas             <NA>     7 #64CD87      7
+    ## 32 Plantain           Casanare               0%     2 #BEF4BE      2
+    ## 33 Plantain           Casanare             <NA>     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba               0%     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba             <NA>     1 #BEF4BE      1
+    ## 36 Plantain              Huila               0%     1 #BEF4BE      1
+    ## 37 Plantain              Huila             <NA>     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira          11%-20%     4 #46C075      4
+    ## 39 Plantain         La Guajira             <NA>     4 #46C075      4
+    ## 40 Plantain          Magdalena          11%-20%     3 #46C075      3
+    ## 41 Plantain          Magdalena             <NA>     3 #46C075      3
+    ## 42 Plantain               Meta          21%-30%    10 #82DA99     10
+    ## 43 Plantain               Meta             <NA>    10 #82DA99     10
+    ## 44 Plantain               <NA>             <NA>    52 #BEF4BE     52
+    ## 45 Plantain Norte De Santander               0%     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander             <NA>     1 #BEF4BE      1
+    ## 47 Plantain            Quindío          31%-40%     5 #64CD87      5
+    ## 48 Plantain            Quindío             <NA>     5 #64CD87      5
+    ## 49 Plantain          Risaralda          31%-40%     9 #64CD87      9
+    ## 50 Plantain          Risaralda             <NA>     9 #64CD87      9
+    ## 51 Plantain          Santander               0%     1 #BEF4BE      1
+    ## 52 Plantain          Santander             <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre               0%     1 #BEF4BE      1
+    ## 54 Plantain              Sucre             <NA>     1 #BEF4BE      1
+    ## 55 Plantain             Tolima               0%     1 #BEF4BE      1
+    ## 56 Plantain             Tolima             <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7920605 0.42500000 0.20793951 0.57500000 #FFE244
+    ## 2           NA     2 0.7920605 0.42500000 0.20793951 0.57500000 #FFE244
+    ## 3           NA     3 0.8465473 0.28333333 0.07672634 0.14166667 #FFF2CC
+    ## 4           NA     2 0.8465473 0.28333333 0.07672634 0.14166667 #FFF2CC
+    ## 5           NA     3 0.9232737 0.28333333 0.07672634 0.14166667 #FFE244
+    ## 6           NA     2 0.9232737 0.28333333 0.07672634 0.14166667 #FFE244
+    ## 7           NA     3 0.5652174 0.00000000 0.28132992 0.07727273 #FFEA88
+    ## 8           NA     2 0.5652174 0.00000000 0.28132992 0.07727273 #FFEA88
+    ## 9           NA     3 0.8465473 0.14166667 0.07672634 0.14166667 #FFF2CC
+    ## 10          NA     2 0.8465473 0.14166667 0.07672634 0.14166667 #FFF2CC
+    ## 11          NA     3 0.9232737 0.14166667 0.07672634 0.14166667 #FFF2CC
+    ## 12          NA     2 0.9232737 0.14166667 0.07672634 0.14166667 #FFF2CC
+    ## 13          NA     3 0.5652174 0.07727273 0.28132992 0.34772727 #FFDA00
+    ## 14          NA     2 0.5652174 0.07727273 0.28132992 0.34772727 #FFDA00
+    ## 15          NA     3 0.5652174 0.42500000 0.22684310 0.57500000 #FFDA00
+    ## 16          NA     2 0.5652174 0.42500000 0.22684310 0.57500000 #FFDA00
+    ## 17          NA     1 0.5652174 0.00000000 0.43478261 1.00000000 #FFF2CC
+    ## 18          NA     3 0.8465473 0.00000000 0.07672634 0.14166667 #FFF2CC
+    ## 19          NA     2 0.8465473 0.00000000 0.07672634 0.14166667 #FFF2CC
+    ## 20          NA     3 0.9232737 0.00000000 0.07672634 0.14166667 #FFF2CC
+    ## 21          NA     2 0.9232737 0.00000000 0.07672634 0.14166667 #FFF2CC
+    ## 22          NA     3 0.4852877 0.36263736 0.07992973 0.27197802 #28B463
+    ## 23          NA     2 0.4852877 0.36263736 0.07992973 0.27197802 #28B463
+    ## 24          NA     3 0.2055336 0.18131868 0.11989460 0.18131868 #A0E7AB
+    ## 25          NA     2 0.2055336 0.18131868 0.11989460 0.18131868 #A0E7AB
+    ## 26          NA     3 0.3254282 0.22664835 0.07992973 0.13598901 #BEF4BE
+    ## 27          NA     2 0.3254282 0.22664835 0.07992973 0.13598901 #BEF4BE
+    ## 28          NA     3 0.4053579 0.22664835 0.07992973 0.13598901 #BEF4BE
+    ## 29          NA     2 0.4053579 0.22664835 0.07992973 0.13598901 #BEF4BE
+    ## 30          NA     3 0.0000000 0.26442308 0.20553360 0.37019231 #64CD87
+    ## 31          NA     2 0.0000000 0.26442308 0.20553360 0.37019231 #64CD87
+    ## 32          NA     3 0.2055336 0.00000000 0.11989460 0.18131868 #BEF4BE
+    ## 33          NA     2 0.2055336 0.00000000 0.11989460 0.18131868 #BEF4BE
+    ## 34          NA     3 0.4852877 0.22664835 0.07992973 0.13598901 #BEF4BE
+    ## 35          NA     2 0.4852877 0.22664835 0.07992973 0.13598901 #BEF4BE
+    ## 36          NA     3 0.3254282 0.11332418 0.09591568 0.11332418 #BEF4BE
+    ## 37          NA     2 0.3254282 0.11332418 0.09591568 0.11332418 #BEF4BE
+    ## 38          NA     3 0.2055336 0.36263736 0.15985946 0.27197802 #46C075
+    ## 39          NA     2 0.2055336 0.36263736 0.15985946 0.27197802 #46C075
+    ## 40          NA     3 0.3653931 0.36263736 0.11989460 0.27197802 #46C075
+    ## 41          NA     2 0.3653931 0.36263736 0.11989460 0.27197802 #46C075
+    ## 42          NA     3 0.0000000 0.63461538 0.29748284 0.36538462 #82DA99
+    ## 43          NA     2 0.0000000 0.63461538 0.29748284 0.36538462 #82DA99
+    ## 44          NA     1 0.0000000 0.00000000 0.56521739 1.00000000 #BEF4BE
+    ## 45          NA     3 0.3254282 0.00000000 0.09591568 0.11332418 #BEF4BE
+    ## 46          NA     2 0.3254282 0.00000000 0.09591568 0.11332418 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.20553360 0.26442308 #64CD87
+    ## 48          NA     2 0.0000000 0.00000000 0.20553360 0.26442308 #64CD87
+    ## 49          NA     3 0.2974828 0.63461538 0.26773455 0.36538462 #64CD87
+    ## 50          NA     2 0.2974828 0.63461538 0.26773455 0.36538462 #64CD87
+    ## 51          NA     3 0.4213439 0.07554945 0.07193676 0.15109890 #BEF4BE
+    ## 52          NA     2 0.4213439 0.07554945 0.07193676 0.15109890 #BEF4BE
+    ## 53          NA     3 0.4932806 0.07554945 0.07193676 0.15109890 #BEF4BE
+    ## 54          NA     2 0.4932806 0.07554945 0.07193676 0.15109890 #BEF4BE
+    ## 55          NA     3 0.4213439 0.00000000 0.14387352 0.07554945 #BEF4BE
+    ## 56          NA     2 0.4213439 0.00000000 0.14387352 0.07554945 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q19_no_weight<- question_19 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =19))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q19_no_weight<- full_join(codes_department, nal_q19_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q19_no_weight$cat<- factor(nal_q19_no_weight$cat, levels = level_19)
+colmap(departamentos, data = nal_q19_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q19_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_19-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q19_weight<- inner_join(question_19, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q19_weight<- nal_q19_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =19)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q19_weight<- full_join(codes_department, nal_q19_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q19_weight$cat_weighted<- factor(nal_q19_weight$cat_weighted, levels = level_19)
+colmap(departamentos, data = nal_q19_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q19_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_19-4.png)<!-- -->
+
+## Question 20: What percentage of biosecurity management practices (quarantine, disinfection) are implemented correctly in banana production systems in the areas where you are an expert?
+
+``` r
+#selecting only question 20----
+question_20<- filter(individual_surveys, question_number==20)
+#unique(question_20$numeric_answer)
+#dput(unique(question_20$answer_in_english))
+#organizing the order of the levels
+level_20<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_20$answer_in_english<- factor(question_20$answer_in_english,levels = level_20)
+question_20<- filter(question_20, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_20<- question_20 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(20, mean =average, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(20, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_20<- inner_join(question_20, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_20<- add_weights_question_20 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(20, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(20, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q20_no_weighted<- tapply(avg_dept_no_weight_20$ave_cat, avg_dept_no_weight_20$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question20_no_weighted<- palette_banana(length(levels_per_crop_Q20_no_weighted$Banana))
+colors_plantain_question20_no_weighted<- palette_plantain(length(levels_per_crop_Q20_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_20 <- list(
+  Banana = levels_per_crop_Q20_no_weighted$Banana,
+  Plantain = levels_per_crop_Q20_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_20 <- list(
+  Banana = colors_banana_question20_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question20_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_20 <- assign_group_color(data = avg_dept_no_weight_20, levels_by_crop = levels_by_crop_no_weighted_20, colors_by_crop = colors_by_crop_no_weighted_20,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q20_weighted<- tapply(avg_dept_weight_20$ave_cat_weighted, avg_dept_weight_20$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question20_weighted<- palette_banana(length(levels_per_crop_Q20_weighted$Banana))
+colors_plantain_question20_weighted<- palette_plantain(length(levels_per_crop_Q20_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_20 <- list(
+  Banana = levels_per_crop_Q20_weighted$Banana,
+  Plantain = levels_per_crop_Q20_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_20 <- list(
+  Banana = colors_banana_question20_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question20_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_20 <- assign_group_color(data = avg_dept_weight_20, levels_by_crop = levels_by_crop_weighted_20, colors_by_crop = colors_by_crop_weighted_20,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_20, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_20-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia 51%-60%    11 #FFE566     11          NA     3
+    ## 2    Banana          Antioquia    <NA>    11 #FFE566     11          NA     2
+    ## 3    Banana             Caldas  1%-10%     1 #FFEB99      1          NA     3
+    ## 4    Banana             Caldas    <NA>     1 #FFEB99      1          NA     2
+    ## 5    Banana              Cesar 61%-70%     2 #FFE033      2          NA     3
+    ## 6    Banana              Cesar    <NA>     2 #FFE033      2          NA     2
+    ## 7    Banana              Chocó  1%-10%     2 #FFEB99      2          NA     3
+    ## 8    Banana              Chocó    <NA>     2 #FFEB99      2          NA     2
+    ## 9    Banana            Córdoba      0%     1 #FFF2CC      1          NA     3
+    ## 10   Banana            Córdoba    <NA>     1 #FFF2CC      1          NA     2
+    ## 11   Banana              Huila  1%-10%     1 #FFEB99      1          NA     3
+    ## 12   Banana              Huila    <NA>     1 #FFEB99      1          NA     2
+    ## 13   Banana         La Guajira 71%-80%    11 #FFDA00     11          NA     3
+    ## 14   Banana         La Guajira    <NA>    11 #FFDA00     11          NA     2
+    ## 15   Banana          Magdalena 71%-80%    12 #FFDA00     12          NA     3
+    ## 16   Banana          Magdalena    <NA>    12 #FFDA00     12          NA     2
+    ## 17   Banana               <NA>    <NA>    43 #FFEB99     43          NA     1
+    ## 18   Banana            Quindío  1%-10%     1 #FFEB99      1          NA     3
+    ## 19   Banana            Quindío    <NA>     1 #FFEB99      1          NA     2
+    ## 20   Banana          Risaralda  1%-10%     1 #FFEB99      1          NA     3
+    ## 21   Banana          Risaralda    <NA>     1 #FFEB99      1          NA     2
+    ## 22 Plantain          Antioquia 61%-70%     2 #28B463      2          NA     3
+    ## 23 Plantain          Antioquia    <NA>     2 #28B463      2          NA     2
+    ## 24 Plantain             Arauca  1%-10%     2 #64CD87      2          NA     3
+    ## 25 Plantain             Arauca    <NA>     2 #64CD87      2          NA     2
+    ## 26 Plantain          Atlántico      0%     1 #BEF4BE      1          NA     3
+    ## 27 Plantain          Atlántico    <NA>     1 #BEF4BE      1          NA     2
+    ## 28 Plantain            Bolívar      0%     1 #BEF4BE      1          NA     3
+    ## 29 Plantain            Bolívar    <NA>     1 #BEF4BE      1          NA     2
+    ## 30 Plantain             Caldas  1%-10%     7 #64CD87      7          NA     3
+    ## 31 Plantain             Caldas    <NA>     7 #64CD87      7          NA     2
+    ## 32 Plantain           Casanare  1%-10%     2 #64CD87      2          NA     3
+    ## 33 Plantain           Casanare    <NA>     2 #64CD87      2          NA     2
+    ## 34 Plantain            Córdoba      0%     1 #BEF4BE      1          NA     3
+    ## 35 Plantain            Córdoba    <NA>     1 #BEF4BE      1          NA     2
+    ## 36 Plantain              Huila      0%     1 #BEF4BE      1          NA     3
+    ## 37 Plantain              Huila    <NA>     1 #BEF4BE      1          NA     2
+    ## 38 Plantain         La Guajira 31%-40%     4 #46C075      4          NA     3
+    ## 39 Plantain         La Guajira    <NA>     4 #46C075      4          NA     2
+    ## 40 Plantain          Magdalena 41%-50%     3 #A0E7AB      3          NA     3
+    ## 41 Plantain          Magdalena    <NA>     3 #A0E7AB      3          NA     2
+    ## 42 Plantain               Meta 21%-30%    10 #82DA99     10          NA     3
+    ## 43 Plantain               Meta    <NA>    10 #82DA99     10          NA     2
+    ## 44 Plantain               <NA>    <NA>    54 #BEF4BE     54          NA     1
+    ## 45 Plantain Norte De Santander      0%     1 #BEF4BE      1          NA     3
+    ## 46 Plantain Norte De Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 47 Plantain            Quindío 21%-30%     6 #82DA99      6          NA     3
+    ## 48 Plantain            Quindío    <NA>     6 #82DA99      6          NA     2
+    ## 49 Plantain          Risaralda 21%-30%    10 #82DA99     10          NA     3
+    ## 50 Plantain          Risaralda    <NA>    10 #82DA99     10          NA     2
+    ## 51 Plantain          Santander      0%     1 #BEF4BE      1          NA     3
+    ## 52 Plantain          Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 53 Plantain              Sucre      0%     1 #BEF4BE      1          NA     3
+    ## 54 Plantain              Sucre    <NA>     1 #BEF4BE      1          NA     2
+    ## 55 Plantain             Tolima      0%     1 #BEF4BE      1          NA     3
+    ## 56 Plantain             Tolima    <NA>     1 #BEF4BE      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.7879874 0.46511628 0.21201255 0.53488372 #FFE566
+    ## 2  0.7879874 0.46511628 0.21201255 0.53488372 #FFE566
+    ## 3  0.9482818 0.26578073 0.05171821 0.19933555 #FFEB99
+    ## 4  0.9482818 0.26578073 0.05171821 0.19933555 #FFEB99
+    ## 5  0.5567010 0.00000000 0.28814433 0.07155635 #FFE033
+    ## 6  0.5567010 0.00000000 0.28814433 0.07155635 #FFE033
+    ## 7  0.8448454 0.26578073 0.10343643 0.19933555 #FFEB99
+    ## 8  0.8448454 0.26578073 0.10343643 0.19933555 #FFEB99
+    ## 9  0.8448454 0.13289037 0.07757732 0.13289037 #FFF2CC
+    ## 10 0.8448454 0.13289037 0.07757732 0.13289037 #FFF2CC
+    ## 11 0.9224227 0.13289037 0.07757732 0.13289037 #FFEB99
+    ## 12 0.9224227 0.13289037 0.07757732 0.13289037 #FFEB99
+    ## 13 0.5567010 0.07155635 0.28814433 0.39355993 #FFDA00
+    ## 14 0.5567010 0.07155635 0.28814433 0.39355993 #FFDA00
+    ## 15 0.5567010 0.46511628 0.23128642 0.53488372 #FFDA00
+    ## 16 0.5567010 0.46511628 0.23128642 0.53488372 #FFDA00
+    ## 17 0.5567010 0.00000000 0.44329897 1.00000000 #FFEB99
+    ## 18 0.8448454 0.00000000 0.07757732 0.13289037 #FFEB99
+    ## 19 0.8448454 0.00000000 0.07757732 0.13289037 #FFEB99
+    ## 20 0.9224227 0.00000000 0.07757732 0.13289037 #FFEB99
+    ## 21 0.9224227 0.00000000 0.07757732 0.13289037 #FFEB99
+    ## 22 0.4802911 0.35978836 0.07640995 0.26984127 #28B463
+    ## 23 0.4802911 0.35978836 0.07640995 0.26984127 #28B463
+    ## 24 0.2128563 0.17989418 0.11461492 0.17989418 #64CD87
+    ## 25 0.2128563 0.17989418 0.11461492 0.17989418 #64CD87
+    ## 26 0.3274712 0.22486772 0.07640995 0.13492063 #BEF4BE
+    ## 27 0.3274712 0.22486772 0.07640995 0.13492063 #BEF4BE
+    ## 28 0.4038811 0.22486772 0.07640995 0.13492063 #BEF4BE
+    ## 29 0.4038811 0.22486772 0.07640995 0.13492063 #BEF4BE
+    ## 30 0.0000000 0.29059829 0.21285628 0.33903134 #64CD87
+    ## 31 0.0000000 0.29059829 0.21285628 0.33903134 #64CD87
+    ## 32 0.2128563 0.00000000 0.11461492 0.17989418 #64CD87
+    ## 33 0.2128563 0.00000000 0.11461492 0.17989418 #64CD87
+    ## 34 0.4802911 0.22486772 0.07640995 0.13492063 #BEF4BE
+    ## 35 0.4802911 0.22486772 0.07640995 0.13492063 #BEF4BE
+    ## 36 0.3274712 0.11243386 0.09169193 0.11243386 #BEF4BE
+    ## 37 0.3274712 0.11243386 0.09169193 0.11243386 #BEF4BE
+    ## 38 0.2128563 0.35978836 0.15281989 0.26984127 #46C075
+    ## 39 0.2128563 0.35978836 0.15281989 0.26984127 #46C075
+    ## 40 0.3656762 0.35978836 0.11461492 0.26984127 #A0E7AB
+    ## 41 0.3656762 0.35978836 0.11461492 0.26984127 #A0E7AB
+    ## 42 0.0000000 0.62962963 0.27835052 0.37037037 #82DA99
+    ## 43 0.0000000 0.62962963 0.27835052 0.37037037 #82DA99
+    ## 44 0.0000000 0.00000000 0.55670103 1.00000000 #BEF4BE
+    ## 45 0.3274712 0.00000000 0.09169193 0.11243386 #BEF4BE
+    ## 46 0.3274712 0.00000000 0.09169193 0.11243386 #BEF4BE
+    ## 47 0.0000000 0.00000000 0.21285628 0.29059829 #82DA99
+    ## 48 0.0000000 0.00000000 0.21285628 0.29059829 #82DA99
+    ## 49 0.2783505 0.62962963 0.27835052 0.37037037 #82DA99
+    ## 50 0.2783505 0.62962963 0.27835052 0.37037037 #82DA99
+    ## 51 0.4191631 0.07495591 0.06876895 0.14991182 #BEF4BE
+    ## 52 0.4191631 0.07495591 0.06876895 0.14991182 #BEF4BE
+    ## 53 0.4879321 0.07495591 0.06876895 0.14991182 #BEF4BE
+    ## 54 0.4879321 0.07495591 0.06876895 0.14991182 #BEF4BE
+    ## 55 0.4191631 0.00000000 0.13753790 0.07495591 #BEF4BE
+    ## 56 0.4191631 0.00000000 0.13753790 0.07495591 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_20, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_20-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          51%-60%    11 #FFE566     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFE566     11
+    ## 3    Banana             Caldas           1%-10%     1 #FFEB99      1
+    ## 4    Banana             Caldas             <NA>     1 #FFEB99      1
+    ## 5    Banana              Cesar          61%-70%     2 #FFE033      2
+    ## 6    Banana              Cesar             <NA>     2 #FFE033      2
+    ## 7    Banana              Chocó           1%-10%     2 #FFEB99      2
+    ## 8    Banana              Chocó             <NA>     2 #FFEB99      2
+    ## 9    Banana            Córdoba               0%     1 #FFF2CC      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFF2CC      1
+    ## 11   Banana              Huila           1%-10%     1 #FFEB99      1
+    ## 12   Banana              Huila             <NA>     1 #FFEB99      1
+    ## 13   Banana         La Guajira          71%-80%     9 #FFDA00      9
+    ## 14   Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena          71%-80%    11 #FFDA00     11
+    ## 16   Banana          Magdalena             <NA>    11 #FFDA00     11
+    ## 17   Banana               <NA>             <NA>    40 #FFEB99     40
+    ## 18   Banana            Quindío           1%-10%     1 #FFEB99      1
+    ## 19   Banana            Quindío             <NA>     1 #FFEB99      1
+    ## 20   Banana          Risaralda           1%-10%     1 #FFEB99      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFEB99      1
+    ## 22 Plantain          Antioquia          51%-60%     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca          11%-20%     2 #73D490      2
+    ## 25 Plantain             Arauca             <NA>     2 #73D490      2
+    ## 26 Plantain          Atlántico               0%     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico             <NA>     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar               0%     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar             <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas           1%-10%     7 #59C981      7
+    ## 31 Plantain             Caldas             <NA>     7 #59C981      7
+    ## 32 Plantain           Casanare          11%-20%     2 #73D490      2
+    ## 33 Plantain           Casanare             <NA>     2 #73D490      2
+    ## 34 Plantain            Córdoba               0%     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba             <NA>     1 #BEF4BE      1
+    ## 36 Plantain              Huila               0%     1 #BEF4BE      1
+    ## 37 Plantain              Huila             <NA>     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira          31%-40%     4 #41BE72      4
+    ## 39 Plantain         La Guajira             <NA>     4 #41BE72      4
+    ## 40 Plantain          Magdalena          41%-50%     3 #A4E9AE      3
+    ## 41 Plantain          Magdalena             <NA>     3 #A4E9AE      3
+    ## 42 Plantain               Meta          21%-30%    10 #8CDE9F     10
+    ## 43 Plantain               Meta             <NA>    10 #8CDE9F     10
+    ## 44 Plantain               <NA>             <NA>    54 #BEF4BE     54
+    ## 45 Plantain Norte De Santander               0%     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander             <NA>     1 #BEF4BE      1
+    ## 47 Plantain            Quindío          21%-30%     6 #8CDE9F      6
+    ## 48 Plantain            Quindío             <NA>     6 #8CDE9F      6
+    ## 49 Plantain          Risaralda          11%-20%    10 #73D490     10
+    ## 50 Plantain          Risaralda             <NA>    10 #73D490     10
+    ## 51 Plantain          Santander               0%     1 #BEF4BE      1
+    ## 52 Plantain          Santander             <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre               0%     1 #BEF4BE      1
+    ## 54 Plantain              Sucre             <NA>     1 #BEF4BE      1
+    ## 55 Plantain             Tolima               0%     1 #BEF4BE      1
+    ## 56 Plantain             Tolima             <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5744681 0.45000000 0.21276596 0.55000000 #FFE566
+    ## 2           NA     2 0.5744681 0.45000000 0.21276596 0.55000000 #FFE566
+    ## 3           NA     3 0.9448385 0.25714286 0.05516154 0.19285714 #FFEB99
+    ## 4           NA     2 0.9448385 0.25714286 0.05516154 0.19285714 #FFEB99
+    ## 5           NA     3 0.5744681 0.00000000 0.26004728 0.08181818 #FFE033
+    ## 6           NA     2 0.5744681 0.00000000 0.26004728 0.08181818 #FFE033
+    ## 7           NA     3 0.8345154 0.25714286 0.11032309 0.19285714 #FFEB99
+    ## 8           NA     2 0.8345154 0.25714286 0.11032309 0.19285714 #FFEB99
+    ## 9           NA     3 0.8345154 0.12857143 0.08274232 0.12857143 #FFF2CC
+    ## 10          NA     2 0.8345154 0.12857143 0.08274232 0.12857143 #FFF2CC
+    ## 11          NA     3 0.9172577 0.12857143 0.08274232 0.12857143 #FFEB99
+    ## 12          NA     2 0.9172577 0.12857143 0.08274232 0.12857143 #FFEB99
+    ## 13          NA     3 0.5744681 0.08181818 0.26004728 0.36818182 #FFDA00
+    ## 14          NA     2 0.5744681 0.08181818 0.26004728 0.36818182 #FFDA00
+    ## 15          NA     3 0.7872340 0.45000000 0.21276596 0.55000000 #FFDA00
+    ## 16          NA     2 0.7872340 0.45000000 0.21276596 0.55000000 #FFDA00
+    ## 17          NA     1 0.5744681 0.00000000 0.42553191 1.00000000 #FFEB99
+    ## 18          NA     3 0.8345154 0.00000000 0.08274232 0.12857143 #FFEB99
+    ## 19          NA     2 0.8345154 0.00000000 0.08274232 0.12857143 #FFEB99
+    ## 20          NA     3 0.9172577 0.00000000 0.08274232 0.12857143 #FFEB99
+    ## 21          NA     2 0.9172577 0.00000000 0.08274232 0.12857143 #FFEB99
+    ## 22          NA     3 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 23          NA     2 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 24          NA     3 0.2196496 0.17989418 0.11827284 0.17989418 #73D490
+    ## 25          NA     2 0.2196496 0.17989418 0.11827284 0.17989418 #73D490
+    ## 26          NA     3 0.3379224 0.22486772 0.07884856 0.13492063 #BEF4BE
+    ## 27          NA     2 0.3379224 0.22486772 0.07884856 0.13492063 #BEF4BE
+    ## 28          NA     3 0.4167710 0.22486772 0.07884856 0.13492063 #BEF4BE
+    ## 29          NA     2 0.4167710 0.22486772 0.07884856 0.13492063 #BEF4BE
+    ## 30          NA     3 0.0000000 0.29059829 0.21964956 0.33903134 #59C981
+    ## 31          NA     2 0.0000000 0.29059829 0.21964956 0.33903134 #59C981
+    ## 32          NA     3 0.2196496 0.00000000 0.11827284 0.17989418 #73D490
+    ## 33          NA     2 0.2196496 0.00000000 0.11827284 0.17989418 #73D490
+    ## 34          NA     3 0.4956195 0.22486772 0.07884856 0.13492063 #BEF4BE
+    ## 35          NA     2 0.4956195 0.22486772 0.07884856 0.13492063 #BEF4BE
+    ## 36          NA     3 0.3379224 0.11243386 0.09461827 0.11243386 #BEF4BE
+    ## 37          NA     2 0.3379224 0.11243386 0.09461827 0.11243386 #BEF4BE
+    ## 38          NA     3 0.2196496 0.35978836 0.15769712 0.26984127 #41BE72
+    ## 39          NA     2 0.2196496 0.35978836 0.15769712 0.26984127 #41BE72
+    ## 40          NA     3 0.3773467 0.35978836 0.11827284 0.26984127 #A4E9AE
+    ## 41          NA     2 0.3773467 0.35978836 0.11827284 0.26984127 #A4E9AE
+    ## 42          NA     3 0.0000000 0.62962963 0.28723404 0.37037037 #8CDE9F
+    ## 43          NA     2 0.0000000 0.62962963 0.28723404 0.37037037 #8CDE9F
+    ## 44          NA     1 0.0000000 0.00000000 0.57446809 1.00000000 #BEF4BE
+    ## 45          NA     3 0.3379224 0.00000000 0.09461827 0.11243386 #BEF4BE
+    ## 46          NA     2 0.3379224 0.00000000 0.09461827 0.11243386 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.21964956 0.29059829 #8CDE9F
+    ## 48          NA     2 0.0000000 0.00000000 0.21964956 0.29059829 #8CDE9F
+    ## 49          NA     3 0.2872340 0.62962963 0.28723404 0.37037037 #73D490
+    ## 50          NA     2 0.2872340 0.62962963 0.28723404 0.37037037 #73D490
+    ## 51          NA     3 0.4325407 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 52          NA     2 0.4325407 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 53          NA     3 0.5035044 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 54          NA     2 0.5035044 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 55          NA     3 0.4325407 0.00000000 0.14192741 0.07495591 #BEF4BE
+    ## 56          NA     2 0.4325407 0.00000000 0.14192741 0.07495591 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q20_no_weight<- question_20 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =20))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q20_no_weight<- full_join(codes_department, nal_q20_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q20_no_weight$cat<- factor(nal_q20_no_weight$cat, levels = level_20)
+colmap(departamentos, data = nal_q20_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q20_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_20-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q20_weight<- inner_join(question_20, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q20_weight<- nal_q20_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =20)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q20_weight<- full_join(codes_department, nal_q20_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q20_weight$cat_weighted<- factor(nal_q20_weight$cat_weighted, levels = level_20)
+colmap(departamentos, data = nal_q20_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q20_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_20-4.png)<!-- -->
+
+## Question 21: What is the average frequency of monitoring for pests and diseases in banana production systems in the areas where you have experience?
+
+``` r
+#selecting only question 21----
+question_21<- filter(individual_surveys, question_number==21)
+#unique(question_21$numeric_answer)
+#dput(unique(question_21$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_21 <- question_21 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "Daily,Weekly,Biweekly,Monthly,Quarterly,As Needed" ~ "As Needed",
+    answer_in_english == "Bimonthly,Quarterly" ~ "Quarterly",
+    answer_in_english == "Biweekly,Monthly" ~ "Monthly",
+    answer_in_english == "Weekly,Biweekly" ~ "Biweekly",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_21 <- question_21 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "1,2,3,4,6,9" ~ "9",
+    numeric_answer == "5,6" ~ "5.5",
+    numeric_answer == "3,4" ~ "3.5",
+    numeric_answer == "2,3" ~ "2.5",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_21<- c("Daily", "Weekly", "Biweekly", "Monthly", "Bimonthly", "Quarterly", "Semiannually", "Annually", "As Needed", "Unsupervised", "Not Sure")
+question_21$answer_in_english<- factor(question_21$answer_in_english,levels = level_21)
+question_21<- filter(question_21, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_21<- question_21 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(21, mean =average, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(21, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_21<- inner_join(question_21, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_21<- add_weights_question_21 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(21, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(21, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q21_no_weighted<- tapply(avg_dept_no_weight_21$ave_cat, avg_dept_no_weight_21$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question21_no_weighted<- palette_banana(length(levels_per_crop_Q21_no_weighted$Banana))
+colors_plantain_question21_no_weighted<- palette_plantain(length(levels_per_crop_Q21_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_21 <- list(
+  Banana = levels_per_crop_Q21_no_weighted$Banana,
+  Plantain = levels_per_crop_Q21_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_21 <- list(
+  Banana = colors_banana_question21_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question21_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_21 <- assign_group_color(data = avg_dept_no_weight_21, levels_by_crop = levels_by_crop_no_weighted_21, colors_by_crop = colors_by_crop_no_weighted_21,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q21_weighted<- tapply(avg_dept_weight_21$ave_cat_weighted, avg_dept_weight_21$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question21_weighted<- palette_banana(length(levels_per_crop_Q21_weighted$Banana))
+colors_plantain_question21_weighted<- palette_plantain(length(levels_per_crop_Q21_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_21 <- list(
+  Banana = levels_per_crop_Q21_weighted$Banana,
+  Plantain = levels_per_crop_Q21_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_21 <- list(
+  Banana = colors_banana_question21_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question21_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_21 <- assign_group_color(data = avg_dept_weight_21, levels_by_crop = levels_by_crop_weighted_21, colors_by_crop = colors_by_crop_weighted_21,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_21, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_21-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in   ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia  Biweekly    12 #FFDA00     12          NA     3
+    ## 2    Banana          Antioquia      <NA>    12 #FFDA00     12          NA     2
+    ## 3    Banana             Caldas   Monthly     1 #FFF2CC      1          NA     3
+    ## 4    Banana             Caldas      <NA>     1 #FFF2CC      1          NA     2
+    ## 5    Banana              Cesar      <NA>     1 #FFE566      1          NA     2
+    ## 6    Banana              Cesar    Weekly     1 #FFE566      1          NA     3
+    ## 7    Banana              Huila   Monthly     1 #FFF2CC      1          NA     3
+    ## 8    Banana              Huila      <NA>     1 #FFF2CC      1          NA     2
+    ## 9    Banana         La Guajira  Biweekly    11 #FFDA00     11          NA     3
+    ## 10   Banana         La Guajira      <NA>    11 #FFDA00     11          NA     2
+    ## 11   Banana          Magdalena  Biweekly    12 #FFDA00     12          NA     3
+    ## 12   Banana          Magdalena      <NA>    12 #FFDA00     12          NA     2
+    ## 13   Banana               <NA>      <NA>    40 #FFF2CC     40          NA     1
+    ## 14   Banana            Quindío   Monthly     1 #FFF2CC      1          NA     3
+    ## 15   Banana            Quindío      <NA>     1 #FFF2CC      1          NA     2
+    ## 16   Banana          Risaralda   Monthly     1 #FFF2CC      1          NA     3
+    ## 17   Banana          Risaralda      <NA>     1 #FFF2CC      1          NA     2
+    ## 18 Plantain          Antioquia      <NA>     2 #28B463      2          NA     2
+    ## 19 Plantain          Antioquia    Weekly     2 #28B463      2          NA     3
+    ## 20 Plantain             Arauca   Monthly     2 #4DC479      2          NA     3
+    ## 21 Plantain             Arauca      <NA>     2 #4DC479      2          NA     2
+    ## 22 Plantain          Atlántico Bimonthly     1 #98E4A7      1          NA     3
+    ## 23 Plantain          Atlántico      <NA>     1 #98E4A7      1          NA     2
+    ## 24 Plantain            Bolívar Bimonthly     1 #98E4A7      1          NA     3
+    ## 25 Plantain            Bolívar      <NA>     1 #98E4A7      1          NA     2
+    ## 26 Plantain             Caldas      <NA>     7 #73D490      7          NA     2
+    ## 27 Plantain             Caldas Quarterly     7 #73D490      7          NA     3
+    ## 28 Plantain           Casanare   Monthly     2 #4DC479      2          NA     3
+    ## 29 Plantain           Casanare      <NA>     2 #4DC479      2          NA     2
+    ## 30 Plantain            Córdoba   Monthly     1 #4DC479      1          NA     3
+    ## 31 Plantain            Córdoba      <NA>     1 #4DC479      1          NA     2
+    ## 32 Plantain              Huila Bimonthly     1 #98E4A7      1          NA     3
+    ## 33 Plantain              Huila      <NA>     1 #98E4A7      1          NA     2
+    ## 34 Plantain         La Guajira   Monthly     4 #4DC479      4          NA     3
+    ## 35 Plantain         La Guajira      <NA>     4 #4DC479      4          NA     2
+    ## 36 Plantain          Magdalena Bimonthly     3 #98E4A7      3          NA     3
+    ## 37 Plantain          Magdalena      <NA>     3 #98E4A7      3          NA     2
+    ## 38 Plantain               Meta  Biweekly    11 #BEF4BE     11          NA     3
+    ## 39 Plantain               Meta      <NA>    11 #BEF4BE     11          NA     2
+    ## 40 Plantain               <NA>      <NA>    54 #98E4A7     54          NA     1
+    ## 41 Plantain Norte De Santander Bimonthly     1 #98E4A7      1          NA     3
+    ## 42 Plantain Norte De Santander      <NA>     1 #98E4A7      1          NA     2
+    ## 43 Plantain            Quindío Bimonthly     6 #98E4A7      6          NA     3
+    ## 44 Plantain            Quindío      <NA>     6 #98E4A7      6          NA     2
+    ## 45 Plantain          Risaralda Bimonthly     9 #98E4A7      9          NA     3
+    ## 46 Plantain          Risaralda      <NA>     9 #98E4A7      9          NA     2
+    ## 47 Plantain          Santander Bimonthly     1 #98E4A7      1          NA     3
+    ## 48 Plantain          Santander      <NA>     1 #98E4A7      1          NA     2
+    ## 49 Plantain              Sucre      <NA>     1 #73D490      1          NA     2
+    ## 50 Plantain              Sucre Quarterly     1 #73D490      1          NA     3
+    ## 51 Plantain             Tolima Bimonthly     1 #98E4A7      1          NA     3
+    ## 52 Plantain             Tolima      <NA>     1 #98E4A7      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.5744681 0.40000000 0.21276596 0.60000000 #FFDA00
+    ## 2  0.5744681 0.40000000 0.21276596 0.60000000 #FFDA00
+    ## 3  0.8670213 0.24000000 0.06648936 0.16000000 #FFF2CC
+    ## 4  0.8670213 0.24000000 0.06648936 0.16000000 #FFF2CC
+    ## 5  0.9335106 0.24000000 0.06648936 0.16000000 #FFE566
+    ## 6  0.9335106 0.24000000 0.06648936 0.16000000 #FFE566
+    ## 7  0.8670213 0.08000000 0.06648936 0.16000000 #FFF2CC
+    ## 8  0.8670213 0.08000000 0.06648936 0.16000000 #FFF2CC
+    ## 9  0.5744681 0.00000000 0.29255319 0.40000000 #FFDA00
+    ## 10 0.5744681 0.00000000 0.29255319 0.40000000 #FFDA00
+    ## 11 0.7872340 0.40000000 0.21276596 0.60000000 #FFDA00
+    ## 12 0.7872340 0.40000000 0.21276596 0.60000000 #FFDA00
+    ## 13 0.5744681 0.00000000 0.42553191 1.00000000 #FFF2CC
+    ## 14 0.9335106 0.08000000 0.06648936 0.16000000 #FFF2CC
+    ## 15 0.9335106 0.08000000 0.06648936 0.16000000 #FFF2CC
+    ## 16 0.8670213 0.00000000 0.13297872 0.08000000 #FFF2CC
+    ## 17 0.8670213 0.00000000 0.13297872 0.08000000 #FFF2CC
+    ## 18 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 19 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 20 0.2196496 0.17989418 0.11827284 0.17989418 #4DC479
+    ## 21 0.2196496 0.17989418 0.11827284 0.17989418 #4DC479
+    ## 22 0.3379224 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 23 0.3379224 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 24 0.4167710 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 25 0.4167710 0.22486772 0.07884856 0.13492063 #98E4A7
+    ## 26 0.0000000 0.29059829 0.21964956 0.33903134 #73D490
+    ## 27 0.0000000 0.29059829 0.21964956 0.33903134 #73D490
+    ## 28 0.2196496 0.00000000 0.11827284 0.17989418 #4DC479
+    ## 29 0.2196496 0.00000000 0.11827284 0.17989418 #4DC479
+    ## 30 0.4956195 0.22486772 0.07884856 0.13492063 #4DC479
+    ## 31 0.4956195 0.22486772 0.07884856 0.13492063 #4DC479
+    ## 32 0.3379224 0.11243386 0.09461827 0.11243386 #98E4A7
+    ## 33 0.3379224 0.11243386 0.09461827 0.11243386 #98E4A7
+    ## 34 0.2196496 0.35978836 0.15769712 0.26984127 #4DC479
+    ## 35 0.2196496 0.35978836 0.15769712 0.26984127 #4DC479
+    ## 36 0.3773467 0.35978836 0.11827284 0.26984127 #98E4A7
+    ## 37 0.3773467 0.35978836 0.11827284 0.26984127 #98E4A7
+    ## 38 0.0000000 0.62962963 0.31595745 0.37037037 #BEF4BE
+    ## 39 0.0000000 0.62962963 0.31595745 0.37037037 #BEF4BE
+    ## 40 0.0000000 0.00000000 0.57446809 1.00000000 #98E4A7
+    ## 41 0.3379224 0.00000000 0.09461827 0.11243386 #98E4A7
+    ## 42 0.3379224 0.00000000 0.09461827 0.11243386 #98E4A7
+    ## 43 0.0000000 0.00000000 0.21964956 0.29059829 #98E4A7
+    ## 44 0.0000000 0.00000000 0.21964956 0.29059829 #98E4A7
+    ## 45 0.3159574 0.62962963 0.25851064 0.37037037 #98E4A7
+    ## 46 0.3159574 0.62962963 0.25851064 0.37037037 #98E4A7
+    ## 47 0.4325407 0.07495591 0.07096370 0.14991182 #98E4A7
+    ## 48 0.4325407 0.07495591 0.07096370 0.14991182 #98E4A7
+    ## 49 0.5035044 0.07495591 0.07096370 0.14991182 #73D490
+    ## 50 0.5035044 0.07495591 0.07096370 0.14991182 #73D490
+    ## 51 0.4325407 0.00000000 0.14192741 0.07495591 #98E4A7
+    ## 52 0.4325407 0.00000000 0.14192741 0.07495591 #98E4A7
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_21, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_21-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          Monthly    12 #FFF2CC     12
+    ## 2    Banana          Antioquia             <NA>    12 #FFF2CC     12
+    ## 3    Banana             Caldas          Monthly     1 #FFF2CC      1
+    ## 4    Banana             Caldas             <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar             <NA>     1 #FFDA00      1
+    ## 6    Banana              Cesar           Weekly     1 #FFDA00      1
+    ## 7    Banana              Huila          Monthly     1 #FFF2CC      1
+    ## 8    Banana              Huila             <NA>     1 #FFF2CC      1
+    ## 9    Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 10   Banana         La Guajira           Weekly     9 #FFDA00      9
+    ## 11   Banana          Magdalena         Biweekly    11 #FFE566     11
+    ## 12   Banana          Magdalena             <NA>    11 #FFE566     11
+    ## 13   Banana               <NA>             <NA>    37 #FFF2CC     37
+    ## 14   Banana            Quindío          Monthly     1 #FFF2CC      1
+    ## 15   Banana            Quindío             <NA>     1 #FFF2CC      1
+    ## 16   Banana          Risaralda          Monthly     1 #FFF2CC      1
+    ## 17   Banana          Risaralda             <NA>     1 #FFF2CC      1
+    ## 18 Plantain          Antioquia         Biweekly     2 #28B463      2
+    ## 19 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 20 Plantain             Arauca          Monthly     2 #BEF4BE      2
+    ## 21 Plantain             Arauca             <NA>     2 #BEF4BE      2
+    ## 22 Plantain          Atlántico        Bimonthly     1 #4DC479      1
+    ## 23 Plantain          Atlántico             <NA>     1 #4DC479      1
+    ## 24 Plantain            Bolívar        Bimonthly     1 #4DC479      1
+    ## 25 Plantain            Bolívar             <NA>     1 #4DC479      1
+    ## 26 Plantain             Caldas             <NA>     7 #73D490      7
+    ## 27 Plantain             Caldas     Semiannually     7 #73D490      7
+    ## 28 Plantain           Casanare          Monthly     2 #BEF4BE      2
+    ## 29 Plantain           Casanare             <NA>     2 #BEF4BE      2
+    ## 30 Plantain            Córdoba          Monthly     1 #BEF4BE      1
+    ## 31 Plantain            Córdoba             <NA>     1 #BEF4BE      1
+    ## 32 Plantain              Huila        Bimonthly     1 #4DC479      1
+    ## 33 Plantain              Huila             <NA>     1 #4DC479      1
+    ## 34 Plantain         La Guajira        Bimonthly     4 #4DC479      4
+    ## 35 Plantain         La Guajira             <NA>     4 #4DC479      4
+    ## 36 Plantain          Magdalena        Bimonthly     3 #4DC479      3
+    ## 37 Plantain          Magdalena             <NA>     3 #4DC479      3
+    ## 38 Plantain               Meta         Biweekly    10 #28B463     10
+    ## 39 Plantain               Meta             <NA>    10 #28B463     10
+    ## 40 Plantain               <NA>             <NA>    53 #4DC479     53
+    ## 41 Plantain Norte De Santander        Bimonthly     1 #4DC479      1
+    ## 42 Plantain Norte De Santander             <NA>     1 #4DC479      1
+    ## 43 Plantain            Quindío             <NA>     6 #98E4A7      6
+    ## 44 Plantain            Quindío        Quarterly     6 #98E4A7      6
+    ## 45 Plantain          Risaralda             <NA>     9 #98E4A7      9
+    ## 46 Plantain          Risaralda        Quarterly     9 #98E4A7      9
+    ## 47 Plantain          Santander        Bimonthly     1 #4DC479      1
+    ## 48 Plantain          Santander             <NA>     1 #4DC479      1
+    ## 49 Plantain              Sucre             <NA>     1 #98E4A7      1
+    ## 50 Plantain              Sucre        Quarterly     1 #98E4A7      1
+    ## 51 Plantain             Tolima        Bimonthly     1 #4DC479      1
+    ## 52 Plantain             Tolima             <NA>     1 #4DC479      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5888889 0.67567568 0.41111111 0.32432432 #FFF2CC
+    ## 2           NA     2 0.5888889 0.67567568 0.41111111 0.32432432 #FFF2CC
+    ## 3           NA     3 0.5888889 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 4           NA     2 0.5888889 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 5           NA     2 0.6711111 0.00000000 0.08222222 0.13513514 #FFDA00
+    ## 6           NA     3 0.6711111 0.00000000 0.08222222 0.13513514 #FFDA00
+    ## 7           NA     3 0.7533333 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 8           NA     2 0.7533333 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 9           NA     2 0.8150000 0.13513514 0.18500000 0.54054054 #FFDA00
+    ## 10          NA     3 0.8150000 0.13513514 0.18500000 0.54054054 #FFDA00
+    ## 11          NA     3 0.5888889 0.13513514 0.22611111 0.54054054 #FFE566
+    ## 12          NA     2 0.5888889 0.13513514 0.22611111 0.54054054 #FFE566
+    ## 13          NA     1 0.5888889 0.00000000 0.41111111 1.00000000 #FFF2CC
+    ## 14          NA     3 0.8355556 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 15          NA     2 0.8355556 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 16          NA     3 0.9177778 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 17          NA     2 0.9177778 0.00000000 0.08222222 0.13513514 #FFF2CC
+    ## 18          NA     3 0.5080610 0.36657682 0.08082789 0.27493261 #28B463
+    ## 19          NA     2 0.5080610 0.36657682 0.08082789 0.27493261 #28B463
+    ## 20          NA     3 0.2251634 0.18328841 0.12124183 0.18328841 #BEF4BE
+    ## 21          NA     2 0.2251634 0.18328841 0.12124183 0.18328841 #BEF4BE
+    ## 22          NA     3 0.3464052 0.22911051 0.08082789 0.13746631 #4DC479
+    ## 23          NA     2 0.3464052 0.22911051 0.08082789 0.13746631 #4DC479
+    ## 24          NA     3 0.4272331 0.22911051 0.08082789 0.13746631 #4DC479
+    ## 25          NA     2 0.4272331 0.22911051 0.08082789 0.13746631 #4DC479
+    ## 26          NA     2 0.0000000 0.29608128 0.22516340 0.34542816 #73D490
+    ## 27          NA     3 0.0000000 0.29608128 0.22516340 0.34542816 #73D490
+    ## 28          NA     3 0.2251634 0.00000000 0.12124183 0.18328841 #BEF4BE
+    ## 29          NA     2 0.2251634 0.00000000 0.12124183 0.18328841 #BEF4BE
+    ## 30          NA     3 0.5080610 0.22911051 0.08082789 0.13746631 #BEF4BE
+    ## 31          NA     2 0.5080610 0.22911051 0.08082789 0.13746631 #BEF4BE
+    ## 32          NA     3 0.3464052 0.11455526 0.09699346 0.11455526 #4DC479
+    ## 33          NA     2 0.3464052 0.11455526 0.09699346 0.11455526 #4DC479
+    ## 34          NA     3 0.2251634 0.36657682 0.16165577 0.27493261 #4DC479
+    ## 35          NA     2 0.2251634 0.36657682 0.16165577 0.27493261 #4DC479
+    ## 36          NA     3 0.3868192 0.36657682 0.12124183 0.27493261 #4DC479
+    ## 37          NA     2 0.3868192 0.36657682 0.12124183 0.27493261 #4DC479
+    ## 38          NA     3 0.0000000 0.64150943 0.30994152 0.35849057 #28B463
+    ## 39          NA     2 0.0000000 0.64150943 0.30994152 0.35849057 #28B463
+    ## 40          NA     1 0.0000000 0.00000000 0.58888889 1.00000000 #4DC479
+    ## 41          NA     3 0.3464052 0.00000000 0.09699346 0.11455526 #4DC479
+    ## 42          NA     2 0.3464052 0.00000000 0.09699346 0.11455526 #4DC479
+    ## 43          NA     2 0.0000000 0.00000000 0.22516340 0.29608128 #98E4A7
+    ## 44          NA     3 0.0000000 0.00000000 0.22516340 0.29608128 #98E4A7
+    ## 45          NA     2 0.3099415 0.64150943 0.27894737 0.35849057 #98E4A7
+    ## 46          NA     3 0.3099415 0.64150943 0.27894737 0.35849057 #98E4A7
+    ## 47          NA     3 0.4433987 0.07637017 0.07274510 0.15274034 #4DC479
+    ## 48          NA     2 0.4433987 0.07637017 0.07274510 0.15274034 #4DC479
+    ## 49          NA     2 0.5161438 0.07637017 0.07274510 0.15274034 #98E4A7
+    ## 50          NA     3 0.5161438 0.07637017 0.07274510 0.15274034 #98E4A7
+    ## 51          NA     3 0.4433987 0.00000000 0.14549020 0.07637017 #4DC479
+    ## 52          NA     2 0.4433987 0.00000000 0.14549020 0.07637017 #4DC479
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q21_no_weight<- question_21 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =21))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+``` r
+nal_q21_no_weight<- full_join(codes_department, nal_q21_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q21_no_weight$cat<- factor(nal_q21_no_weight$cat, levels = level_21)
+colmap(departamentos, data = nal_q21_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q21_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_21-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q21_weight<- inner_join(question_21, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q21_weight<- nal_q21_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =21)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+``` r
+nal_q21_weight<- full_join(codes_department, nal_q21_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q21_weight$cat_weighted<- factor(nal_q21_weight$cat_weighted, levels = level_21)
+colmap(departamentos, data = nal_q21_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q21_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_21-4.png)<!-- -->
+
+## Question 22: What is the efficacy perceived by producers of chemical control (pesticides, fungicides) in the prevention or management of banana diseases in the areas where you have experience?
+
+``` r
+#selecting only question 22----
+question_22<- filter(individual_surveys, question_number==22)
+#unique(question_22$numeric_answer)
+#dput(unique(question_22$answer_in_english))
+
+#organizing the order of the levels
+level_22<- c("Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_22$answer_in_english<- factor(question_22$answer_in_english,levels = level_22)
+question_22<- filter(question_22, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_22<- question_22 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(22, mean =average, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(22, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_22<- inner_join(question_22, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_22<- add_weights_question_22 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(22, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(22, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q22_no_weighted<- tapply(avg_dept_no_weight_22$ave_cat, avg_dept_no_weight_22$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question22_no_weighted<- palette_banana(length(levels_per_crop_Q22_no_weighted$Banana))
+colors_plantain_question22_no_weighted<- palette_plantain(length(levels_per_crop_Q22_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_22 <- list(
+  Banana = levels_per_crop_Q22_no_weighted$Banana,
+  Plantain = levels_per_crop_Q22_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_22 <- list(
+  Banana = colors_banana_question22_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question22_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_22 <- assign_group_color(data = avg_dept_no_weight_22, levels_by_crop = levels_by_crop_no_weighted_22, colors_by_crop = colors_by_crop_no_weighted_22,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q22_weighted<- tapply(avg_dept_weight_22$ave_cat_weighted, avg_dept_weight_22$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question22_weighted<- palette_banana(length(levels_per_crop_Q22_weighted$Banana))
+colors_plantain_question22_weighted<- palette_plantain(length(levels_per_crop_Q22_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_22 <- list(
+  Banana = levels_per_crop_Q22_weighted$Banana,
+  Plantain = levels_per_crop_Q22_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_22 <- list(
+  Banana = colors_banana_question22_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question22_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_22 <- assign_group_color(data = avg_dept_weight_22, levels_by_crop = levels_by_crop_weighted_22, colors_by_crop = colors_by_crop_weighted_22,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_22, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_22-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 2    Banana          Antioquia       Very Effective    10 #FFDA00     10
+    ## 3    Banana             Caldas Moderately Effective     1 #FFF2CC      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar Moderately Effective     1 #FFF2CC      1
+    ## 6    Banana              Cesar                 <NA>     1 #FFF2CC      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFDA00      2
+    ## 8    Banana              Chocó       Very Effective     2 #FFDA00      2
+    ## 9    Banana            Córdoba Moderately Effective     1 #FFF2CC      1
+    ## 10   Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFF2CC      1
+    ## 12   Banana              Huila                 <NA>     1 #FFF2CC      1
+    ## 13   Banana         La Guajira                 <NA>    11 #FFDA00     11
+    ## 14   Banana         La Guajira       Very Effective    11 #FFDA00     11
+    ## 15   Banana          Magdalena Moderately Effective    13 #FFF2CC     13
+    ## 16   Banana          Magdalena                 <NA>    13 #FFF2CC     13
+    ## 17   Banana               <NA>                 <NA>    42 #FFF2CC     42
+    ## 18   Banana            Quindío Moderately Effective     1 #FFF2CC      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFF2CC      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFF2CC      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia       Very Effective     2 #28B463      2
+    ## 24 Plantain             Arauca Moderately Effective     2 #BEF4BE      2
+    ## 25 Plantain             Arauca                 <NA>     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #28B463      1
+    ## 27 Plantain          Atlántico       Very Effective     1 #28B463      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #28B463      1
+    ## 29 Plantain            Bolívar       Very Effective     1 #28B463      1
+    ## 30 Plantain             Caldas Moderately Effective     7 #BEF4BE      7
+    ## 31 Plantain             Caldas                 <NA>     7 #BEF4BE      7
+    ## 32 Plantain           Casanare Moderately Effective     2 #BEF4BE      2
+    ## 33 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #28B463      1
+    ## 35 Plantain            Córdoba       Very Effective     1 #28B463      1
+    ## 36 Plantain              Huila                 <NA>     1 #28B463      1
+    ## 37 Plantain              Huila       Very Effective     1 #28B463      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #BEF4BE      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #BEF4BE      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #BEF4BE      3
+    ## 42 Plantain               Meta Moderately Effective    11 #BEF4BE     11
+    ## 43 Plantain               Meta                 <NA>    11 #BEF4BE     11
+    ## 44 Plantain               <NA>                 <NA>    54 #28B463     54
+    ## 45 Plantain Norte De Santander                 <NA>     1 #28B463      1
+    ## 46 Plantain Norte De Santander       Very Effective     1 #28B463      1
+    ## 47 Plantain            Quindío                 <NA>     6 #28B463      6
+    ## 48 Plantain            Quindío       Very Effective     6 #28B463      6
+    ## 49 Plantain          Risaralda Moderately Effective     9 #BEF4BE      9
+    ## 50 Plantain          Risaralda                 <NA>     9 #BEF4BE      9
+    ## 51 Plantain          Santander                 <NA>     1 #28B463      1
+    ## 52 Plantain          Santander       Very Effective     1 #28B463      1
+    ## 53 Plantain              Sucre                 <NA>     1 #28B463      1
+    ## 54 Plantain              Sucre       Very Effective     1 #28B463      1
+    ## 55 Plantain             Tolima                 <NA>     1 #28B463      1
+    ## 56 Plantain             Tolima       Very Effective     1 #28B463      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5625000 0.00000000 0.24305556 0.42857143 #FFDA00
+    ## 2           NA     3 0.5625000 0.00000000 0.24305556 0.42857143 #FFDA00
+    ## 3           NA     3 0.9351852 0.26785714 0.06481481 0.16071429 #FFF2CC
+    ## 4           NA     2 0.9351852 0.26785714 0.06481481 0.16071429 #FFF2CC
+    ## 5           NA     3 0.8055556 0.13392857 0.07777778 0.13392857 #FFF2CC
+    ## 6           NA     2 0.8055556 0.13392857 0.07777778 0.13392857 #FFF2CC
+    ## 7           NA     2 0.8055556 0.26785714 0.12962963 0.16071429 #FFDA00
+    ## 8           NA     3 0.8055556 0.26785714 0.12962963 0.16071429 #FFDA00
+    ## 9           NA     3 0.8055556 0.00000000 0.07777778 0.13392857 #FFF2CC
+    ## 10          NA     2 0.8055556 0.00000000 0.07777778 0.13392857 #FFF2CC
+    ## 11          NA     3 0.8833333 0.17857143 0.11666667 0.08928571 #FFF2CC
+    ## 12          NA     2 0.8833333 0.17857143 0.11666667 0.08928571 #FFF2CC
+    ## 13          NA     2 0.7994792 0.42857143 0.20052083 0.57142857 #FFDA00
+    ## 14          NA     3 0.7994792 0.42857143 0.20052083 0.57142857 #FFDA00
+    ## 15          NA     3 0.5625000 0.42857143 0.23697917 0.57142857 #FFF2CC
+    ## 16          NA     2 0.5625000 0.42857143 0.23697917 0.57142857 #FFF2CC
+    ## 17          NA     1 0.5625000 0.00000000 0.43750000 1.00000000 #FFF2CC
+    ## 18          NA     3 0.8833333 0.08928571 0.11666667 0.08928571 #FFF2CC
+    ## 19          NA     2 0.8833333 0.08928571 0.11666667 0.08928571 #FFF2CC
+    ## 20          NA     3 0.8833333 0.00000000 0.11666667 0.08928571 #FFF2CC
+    ## 21          NA     2 0.8833333 0.00000000 0.11666667 0.08928571 #FFF2CC
+    ## 22          NA     2 0.4852941 0.35978836 0.07720588 0.26984127 #28B463
+    ## 23          NA     3 0.4852941 0.35978836 0.07720588 0.26984127 #28B463
+    ## 24          NA     3 0.2150735 0.17989418 0.11580882 0.17989418 #BEF4BE
+    ## 25          NA     2 0.2150735 0.17989418 0.11580882 0.17989418 #BEF4BE
+    ## 26          NA     2 0.3308824 0.22486772 0.07720588 0.13492063 #28B463
+    ## 27          NA     3 0.3308824 0.22486772 0.07720588 0.13492063 #28B463
+    ## 28          NA     2 0.4080882 0.22486772 0.07720588 0.13492063 #28B463
+    ## 29          NA     3 0.4080882 0.22486772 0.07720588 0.13492063 #28B463
+    ## 30          NA     3 0.0000000 0.29059829 0.21507353 0.33903134 #BEF4BE
+    ## 31          NA     2 0.0000000 0.29059829 0.21507353 0.33903134 #BEF4BE
+    ## 32          NA     3 0.2150735 0.00000000 0.11580882 0.17989418 #BEF4BE
+    ## 33          NA     2 0.2150735 0.00000000 0.11580882 0.17989418 #BEF4BE
+    ## 34          NA     2 0.4852941 0.22486772 0.07720588 0.13492063 #28B463
+    ## 35          NA     3 0.4852941 0.22486772 0.07720588 0.13492063 #28B463
+    ## 36          NA     2 0.3308824 0.11243386 0.09264706 0.11243386 #28B463
+    ## 37          NA     3 0.3308824 0.11243386 0.09264706 0.11243386 #28B463
+    ## 38          NA     3 0.2150735 0.35978836 0.15441176 0.26984127 #BEF4BE
+    ## 39          NA     2 0.2150735 0.35978836 0.15441176 0.26984127 #BEF4BE
+    ## 40          NA     3 0.3694853 0.35978836 0.11580882 0.26984127 #BEF4BE
+    ## 41          NA     2 0.3694853 0.35978836 0.11580882 0.26984127 #BEF4BE
+    ## 42          NA     3 0.0000000 0.62962963 0.30937500 0.37037037 #BEF4BE
+    ## 43          NA     2 0.0000000 0.62962963 0.30937500 0.37037037 #BEF4BE
+    ## 44          NA     1 0.0000000 0.00000000 0.56250000 1.00000000 #28B463
+    ## 45          NA     2 0.3308824 0.00000000 0.09264706 0.11243386 #28B463
+    ## 46          NA     3 0.3308824 0.00000000 0.09264706 0.11243386 #28B463
+    ## 47          NA     2 0.0000000 0.00000000 0.21507353 0.29059829 #28B463
+    ## 48          NA     3 0.0000000 0.00000000 0.21507353 0.29059829 #28B463
+    ## 49          NA     3 0.3093750 0.62962963 0.25312500 0.37037037 #BEF4BE
+    ## 50          NA     2 0.3093750 0.62962963 0.25312500 0.37037037 #BEF4BE
+    ## 51          NA     2 0.4235294 0.07495591 0.06948529 0.14991182 #28B463
+    ## 52          NA     3 0.4235294 0.07495591 0.06948529 0.14991182 #28B463
+    ## 53          NA     2 0.4930147 0.07495591 0.06948529 0.14991182 #28B463
+    ## 54          NA     3 0.4930147 0.07495591 0.06948529 0.14991182 #28B463
+    ## 55          NA     2 0.4235294 0.00000000 0.13897059 0.07495591 #28B463
+    ## 56          NA     3 0.4235294 0.00000000 0.13897059 0.07495591 #28B463
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_22, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_22-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    10 #FFF2CC     10
+    ## 2    Banana          Antioquia       Very Effective    10 #FFF2CC     10
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar Moderately Effective     1 #FFDA00      1
+    ## 6    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó       Very Effective     2 #FFF2CC      2
+    ## 9    Banana            Córdoba Moderately Effective     1 #FFDA00      1
+    ## 10   Banana            Córdoba                 <NA>     1 #FFDA00      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective     9 #FFDA00      9
+    ## 14   Banana         La Guajira                 <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena Moderately Effective    12 #FFDA00     12
+    ## 16   Banana          Magdalena                 <NA>    12 #FFDA00     12
+    ## 17   Banana               <NA>                 <NA>    39 #FFDA00     39
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia  Extremely Effective     2 #28B463      2
+    ## 23 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca Moderately Effective     2 #73D490      2
+    ## 25 Plantain             Arauca                 <NA>     2 #73D490      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico       Very Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar       Very Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     7 #73D490      7
+    ## 31 Plantain             Caldas                 <NA>     7 #73D490      7
+    ## 32 Plantain           Casanare Moderately Effective     2 #73D490      2
+    ## 33 Plantain           Casanare                 <NA>     2 #73D490      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba       Very Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain              Huila       Very Effective     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #73D490      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #73D490      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #73D490      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #73D490      3
+    ## 42 Plantain               Meta Moderately Effective    10 #73D490     10
+    ## 43 Plantain               Meta                 <NA>    10 #73D490     10
+    ## 44 Plantain               <NA>                 <NA>    53 #73D490     53
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander       Very Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío Moderately Effective     6 #73D490      6
+    ## 48 Plantain            Quindío                 <NA>     6 #73D490      6
+    ## 49 Plantain          Risaralda Moderately Effective     9 #73D490      9
+    ## 50 Plantain          Risaralda                 <NA>     9 #73D490      9
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander       Very Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre       Very Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima       Very Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.8073123 0.43589744 0.19268775 0.56410256 #FFF2CC
+    ## 2           NA     3 0.8073123 0.43589744 0.19268775 0.56410256 #FFF2CC
+    ## 3           NA     3 0.8503836 0.29059829 0.07480818 0.14529915 #FFDA00
+    ## 4           NA     2 0.8503836 0.29059829 0.07480818 0.14529915 #FFDA00
+    ## 5           NA     3 0.9251918 0.29059829 0.07480818 0.14529915 #FFDA00
+    ## 6           NA     2 0.9251918 0.29059829 0.07480818 0.14529915 #FFDA00
+    ## 7           NA     2 0.5760870 0.00000000 0.27429668 0.07925408 #FFF2CC
+    ## 8           NA     3 0.5760870 0.00000000 0.27429668 0.07925408 #FFF2CC
+    ## 9           NA     3 0.8503836 0.14529915 0.07480818 0.14529915 #FFDA00
+    ## 10          NA     2 0.8503836 0.14529915 0.07480818 0.14529915 #FFDA00
+    ## 11          NA     3 0.9251918 0.14529915 0.07480818 0.14529915 #FFDA00
+    ## 12          NA     2 0.9251918 0.14529915 0.07480818 0.14529915 #FFDA00
+    ## 13          NA     3 0.5760870 0.07925408 0.27429668 0.35664336 #FFDA00
+    ## 14          NA     2 0.5760870 0.07925408 0.27429668 0.35664336 #FFDA00
+    ## 15          NA     3 0.5760870 0.43589744 0.23122530 0.56410256 #FFDA00
+    ## 16          NA     2 0.5760870 0.43589744 0.23122530 0.56410256 #FFDA00
+    ## 17          NA     1 0.5760870 0.00000000 0.42391304 1.00000000 #FFDA00
+    ## 18          NA     3 0.8503836 0.00000000 0.07480818 0.14529915 #FFDA00
+    ## 19          NA     2 0.8503836 0.00000000 0.07480818 0.14529915 #FFDA00
+    ## 20          NA     3 0.9251918 0.00000000 0.07480818 0.14529915 #FFDA00
+    ## 21          NA     2 0.9251918 0.00000000 0.07480818 0.14529915 #FFDA00
+    ## 22          NA     3 0.4970162 0.36657682 0.07907076 0.27493261 #28B463
+    ## 23          NA     2 0.4970162 0.36657682 0.07907076 0.27493261 #28B463
+    ## 24          NA     3 0.2202685 0.18328841 0.11860614 0.18328841 #73D490
+    ## 25          NA     2 0.2202685 0.18328841 0.11860614 0.18328841 #73D490
+    ## 26          NA     2 0.3388747 0.22911051 0.07907076 0.13746631 #BEF4BE
+    ## 27          NA     3 0.3388747 0.22911051 0.07907076 0.13746631 #BEF4BE
+    ## 28          NA     2 0.4179454 0.22911051 0.07907076 0.13746631 #BEF4BE
+    ## 29          NA     3 0.4179454 0.22911051 0.07907076 0.13746631 #BEF4BE
+    ## 30          NA     3 0.0000000 0.29608128 0.22026854 0.34542816 #73D490
+    ## 31          NA     2 0.0000000 0.29608128 0.22026854 0.34542816 #73D490
+    ## 32          NA     3 0.2202685 0.00000000 0.11860614 0.18328841 #73D490
+    ## 33          NA     2 0.2202685 0.00000000 0.11860614 0.18328841 #73D490
+    ## 34          NA     2 0.4970162 0.22911051 0.07907076 0.13746631 #BEF4BE
+    ## 35          NA     3 0.4970162 0.22911051 0.07907076 0.13746631 #BEF4BE
+    ## 36          NA     2 0.3388747 0.11455526 0.09488491 0.11455526 #BEF4BE
+    ## 37          NA     3 0.3388747 0.11455526 0.09488491 0.11455526 #BEF4BE
+    ## 38          NA     3 0.2202685 0.36657682 0.15814152 0.27493261 #73D490
+    ## 39          NA     2 0.2202685 0.36657682 0.15814152 0.27493261 #73D490
+    ## 40          NA     3 0.3784101 0.36657682 0.11860614 0.27493261 #73D490
+    ## 41          NA     2 0.3784101 0.36657682 0.11860614 0.27493261 #73D490
+    ## 42          NA     3 0.0000000 0.64150943 0.30320366 0.35849057 #73D490
+    ## 43          NA     2 0.0000000 0.64150943 0.30320366 0.35849057 #73D490
+    ## 44          NA     1 0.0000000 0.00000000 0.57608696 1.00000000 #73D490
+    ## 45          NA     2 0.3388747 0.00000000 0.09488491 0.11455526 #BEF4BE
+    ## 46          NA     3 0.3388747 0.00000000 0.09488491 0.11455526 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.22026854 0.29608128 #73D490
+    ## 48          NA     2 0.0000000 0.00000000 0.22026854 0.29608128 #73D490
+    ## 49          NA     3 0.3032037 0.64150943 0.27288330 0.35849057 #73D490
+    ## 50          NA     2 0.3032037 0.64150943 0.27288330 0.35849057 #73D490
+    ## 51          NA     2 0.4337596 0.07637017 0.07116368 0.15274034 #BEF4BE
+    ## 52          NA     3 0.4337596 0.07637017 0.07116368 0.15274034 #BEF4BE
+    ## 53          NA     2 0.5049233 0.07637017 0.07116368 0.15274034 #BEF4BE
+    ## 54          NA     3 0.5049233 0.07637017 0.07116368 0.15274034 #BEF4BE
+    ## 55          NA     2 0.4337596 0.00000000 0.14232737 0.07637017 #BEF4BE
+    ## 56          NA     3 0.4337596 0.00000000 0.14232737 0.07637017 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q22_no_weight<- question_22 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =22))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q22_no_weight<- full_join(codes_department, nal_q22_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q22_no_weight$cat<- factor(nal_q22_no_weight$cat, levels = level_22)
+colmap(departamentos, data = nal_q22_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q22_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_22-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q22_weight<- inner_join(question_22, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q22_weight<- nal_q22_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =22)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+``` r
+nal_q22_weight<- full_join(codes_department, nal_q22_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q22_weight$cat_weighted<- factor(nal_q22_weight$cat_weighted, levels = level_22)
+colmap(departamentos, data = nal_q22_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q22_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_22-4.png)<!-- -->
+
+## Question 23: What is the efficacy perceived by producers of biological control (beneficial insects, microbial controls) in the prevention or management of banana diseases in the areas where you are an expert?
+
+``` r
+#selecting only question 23----
+question_23<- filter(individual_surveys, question_number==23)
+#unique(question_23$numeric_answer)
+#dput(unique(question_23$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_23 <- question_23 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "Extremely Effective,Unsure" ~ "Unsure",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_23 <- question_23 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "5,6" ~ "6",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_23<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_23$answer_in_english<- factor(question_23$answer_in_english,levels = level_23)
+question_23<- filter(question_23, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_23<- question_23 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(23, mean =average, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(23, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_23<- inner_join(question_23, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_23<- add_weights_question_23 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(23, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(23, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q23_no_weighted<- tapply(avg_dept_no_weight_23$ave_cat, avg_dept_no_weight_23$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question23_no_weighted<- palette_banana(length(levels_per_crop_Q23_no_weighted$Banana))
+colors_plantain_question23_no_weighted<- palette_plantain(length(levels_per_crop_Q23_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_23 <- list(
+  Banana = levels_per_crop_Q23_no_weighted$Banana,
+  Plantain = levels_per_crop_Q23_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_23 <- list(
+  Banana = colors_banana_question23_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question23_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_23 <- assign_group_color(data = avg_dept_no_weight_23, levels_by_crop = levels_by_crop_no_weighted_23, colors_by_crop = colors_by_crop_no_weighted_23,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q23_weighted<- tapply(avg_dept_weight_23$ave_cat_weighted, avg_dept_weight_23$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question23_weighted<- palette_banana(length(levels_per_crop_Q23_weighted$Banana))
+colors_plantain_question23_weighted<- palette_plantain(length(levels_per_crop_Q23_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_23 <- list(
+  Banana = levels_per_crop_Q23_weighted$Banana,
+  Plantain = levels_per_crop_Q23_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_23 <- list(
+  Banana = colors_banana_question23_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question23_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_23 <- assign_group_color(data = avg_dept_weight_23, levels_by_crop = levels_by_crop_weighted_23, colors_by_crop = colors_by_crop_weighted_23,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_23, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_23-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Effective    10 #FFDA00     10
+    ## 2    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFE244      1
+    ## 6    Banana              Cesar       Very Effective     1 #FFE244      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFEA88      2
+    ## 8    Banana              Chocó   Slightly Effective     2 #FFEA88      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba        Not Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective    10 #FFDA00     10
+    ## 14   Banana         La Guajira                 <NA>    10 #FFDA00     10
+    ## 15   Banana          Magdalena Moderately Effective    13 #FFDA00     13
+    ## 16   Banana          Magdalena                 <NA>    13 #FFDA00     13
+    ## 17   Banana               <NA>                 <NA>    41 #FFDA00     41
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia       Very Effective     2 #28B463      2
+    ## 24 Plantain             Arauca                 <NA>     2 #BEF4BE      2
+    ## 25 Plantain             Arauca   Slightly Effective     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico   Slightly Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar   Slightly Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     7 #73D490      7
+    ## 31 Plantain             Caldas                 <NA>     7 #73D490      7
+    ## 32 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare   Slightly Effective     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba   Slightly Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila Moderately Effective     1 #73D490      1
+    ## 37 Plantain              Huila                 <NA>     1 #73D490      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #73D490      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #73D490      4
+    ## 40 Plantain          Magdalena                 <NA>     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena   Slightly Effective     3 #BEF4BE      3
+    ## 42 Plantain               Meta Moderately Effective    10 #73D490     10
+    ## 43 Plantain               Meta                 <NA>    10 #73D490     10
+    ## 44 Plantain               <NA>                 <NA>    50 #BEF4BE     50
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander   Slightly Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío Moderately Effective     5 #73D490      5
+    ## 48 Plantain            Quindío                 <NA>     5 #73D490      5
+    ## 49 Plantain          Risaralda Moderately Effective     7 #73D490      7
+    ## 50 Plantain          Risaralda                 <NA>     7 #73D490      7
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander   Slightly Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre   Slightly Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima   Slightly Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.8041089 0.43902439 0.19589107 0.56097561 #FFDA00
+    ## 2           NA     2 0.8041089 0.43902439 0.19589107 0.56097561 #FFDA00
+    ## 3           NA     3 0.9332519 0.27439024 0.06674807 0.16463415 #FFDA00
+    ## 4           NA     2 0.9332519 0.27439024 0.06674807 0.16463415 #FFDA00
+    ## 5           NA     2 0.7997558 0.13719512 0.08009768 0.13719512 #FFE244
+    ## 6           NA     3 0.7997558 0.13719512 0.08009768 0.13719512 #FFE244
+    ## 7           NA     2 0.7997558 0.27439024 0.13349613 0.16463415 #FFEA88
+    ## 8           NA     3 0.7997558 0.27439024 0.13349613 0.16463415 #FFEA88
+    ## 9           NA     2 0.7997558 0.00000000 0.08009768 0.13719512 #FFF2CC
+    ## 10          NA     3 0.7997558 0.00000000 0.08009768 0.13719512 #FFF2CC
+    ## 11          NA     3 0.8798535 0.18292683 0.12014652 0.09146341 #FFDA00
+    ## 12          NA     2 0.8798535 0.18292683 0.12014652 0.09146341 #FFDA00
+    ## 13          NA     3 0.5494505 0.00000000 0.25030525 0.43902439 #FFDA00
+    ## 14          NA     2 0.5494505 0.00000000 0.25030525 0.43902439 #FFDA00
+    ## 15          NA     3 0.5494505 0.43902439 0.25465839 0.56097561 #FFDA00
+    ## 16          NA     2 0.5494505 0.43902439 0.25465839 0.56097561 #FFDA00
+    ## 17          NA     1 0.5494505 0.00000000 0.45054945 1.00000000 #FFDA00
+    ## 18          NA     3 0.8798535 0.09146341 0.12014652 0.09146341 #FFDA00
+    ## 19          NA     2 0.8798535 0.09146341 0.12014652 0.09146341 #FFDA00
+    ## 20          NA     3 0.8798535 0.00000000 0.12014652 0.09146341 #FFDA00
+    ## 21          NA     2 0.8798535 0.00000000 0.12014652 0.09146341 #FFDA00
+    ## 22          NA     2 0.4717505 0.37714286 0.07770008 0.28285714 #28B463
+    ## 23          NA     3 0.4717505 0.37714286 0.07770008 0.28285714 #28B463
+    ## 24          NA     2 0.1998002 0.18857143 0.11655012 0.18857143 #BEF4BE
+    ## 25          NA     3 0.1998002 0.18857143 0.11655012 0.18857143 #BEF4BE
+    ## 26          NA     2 0.3163503 0.23571429 0.07770008 0.14142857 #BEF4BE
+    ## 27          NA     3 0.3163503 0.23571429 0.07770008 0.14142857 #BEF4BE
+    ## 28          NA     2 0.3940504 0.23571429 0.07770008 0.14142857 #BEF4BE
+    ## 29          NA     3 0.3940504 0.23571429 0.07770008 0.14142857 #BEF4BE
+    ## 30          NA     3 0.3232062 0.66000000 0.22624434 0.34000000 #73D490
+    ## 31          NA     2 0.3232062 0.66000000 0.22624434 0.34000000 #73D490
+    ## 32          NA     2 0.1998002 0.00000000 0.11655012 0.18857143 #BEF4BE
+    ## 33          NA     3 0.1998002 0.00000000 0.11655012 0.18857143 #BEF4BE
+    ## 34          NA     2 0.4717505 0.23571429 0.07770008 0.14142857 #BEF4BE
+    ## 35          NA     3 0.4717505 0.23571429 0.07770008 0.14142857 #BEF4BE
+    ## 36          NA     3 0.3163503 0.11785714 0.09324009 0.11785714 #73D490
+    ## 37          NA     2 0.3163503 0.11785714 0.09324009 0.11785714 #73D490
+    ## 38          NA     3 0.1998002 0.37714286 0.15540016 0.28285714 #73D490
+    ## 39          NA     2 0.1998002 0.37714286 0.15540016 0.28285714 #73D490
+    ## 40          NA     2 0.3552004 0.37714286 0.11655012 0.28285714 #BEF4BE
+    ## 41          NA     3 0.3552004 0.37714286 0.11655012 0.28285714 #BEF4BE
+    ## 42          NA     3 0.0000000 0.66000000 0.32320621 0.34000000 #73D490
+    ## 43          NA     2 0.0000000 0.66000000 0.32320621 0.34000000 #73D490
+    ## 44          NA     1 0.0000000 0.00000000 0.54945055 1.00000000 #BEF4BE
+    ## 45          NA     2 0.3163503 0.00000000 0.09324009 0.11785714 #BEF4BE
+    ## 46          NA     3 0.3163503 0.00000000 0.09324009 0.11785714 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.19980020 0.27500000 #73D490
+    ## 48          NA     2 0.0000000 0.00000000 0.19980020 0.27500000 #73D490
+    ## 49          NA     3 0.0000000 0.27500000 0.19980020 0.38500000 #73D490
+    ## 50          NA     2 0.0000000 0.27500000 0.19980020 0.38500000 #73D490
+    ## 51          NA     2 0.4095904 0.07857143 0.06993007 0.15714286 #BEF4BE
+    ## 52          NA     3 0.4095904 0.07857143 0.06993007 0.15714286 #BEF4BE
+    ## 53          NA     2 0.4795205 0.07857143 0.06993007 0.15714286 #BEF4BE
+    ## 54          NA     3 0.4795205 0.07857143 0.06993007 0.15714286 #BEF4BE
+    ## 55          NA     2 0.4095904 0.00000000 0.13986014 0.07857143 #BEF4BE
+    ## 56          NA     3 0.4095904 0.00000000 0.13986014 0.07857143 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_23, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_23-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Effective    10 #FFDA00     10
+    ## 2    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFE566      1
+    ## 6    Banana              Cesar       Very Effective     1 #FFE566      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó        Not Effective     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba        Not Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective     9 #FFDA00      9
+    ## 14   Banana         La Guajira                 <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena Moderately Effective    12 #FFDA00     12
+    ## 16   Banana          Magdalena                 <NA>    12 #FFDA00     12
+    ## 17   Banana               <NA>                 <NA>    39 #FFDA00     39
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia Moderately Effective     2 #28B463      2
+    ## 23 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca Moderately Effective     2 #28B463      2
+    ## 25 Plantain             Arauca                 <NA>     2 #28B463      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico   Slightly Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar   Slightly Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     7 #28B463      7
+    ## 31 Plantain             Caldas                 <NA>     7 #28B463      7
+    ## 32 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare   Slightly Effective     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba   Slightly Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila Moderately Effective     1 #28B463      1
+    ## 37 Plantain              Huila                 <NA>     1 #28B463      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #28B463      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #28B463      4
+    ## 40 Plantain          Magdalena                 <NA>     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena   Slightly Effective     3 #BEF4BE      3
+    ## 42 Plantain               Meta Moderately Effective    10 #28B463     10
+    ## 43 Plantain               Meta                 <NA>    10 #28B463     10
+    ## 44 Plantain               <NA>                 <NA>    50 #BEF4BE     50
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander   Slightly Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío Moderately Effective     5 #28B463      5
+    ## 48 Plantain            Quindío                 <NA>     5 #28B463      5
+    ## 49 Plantain          Risaralda Moderately Effective     7 #28B463      7
+    ## 50 Plantain          Risaralda                 <NA>     7 #28B463      7
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander   Slightly Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre   Slightly Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima   Slightly Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.8008172 0.43589744 0.19918284 0.56410256 #FFDA00
+    ## 2           NA     2 0.8008172 0.43589744 0.19918284 0.56410256 #FFDA00
+    ## 3           NA     3 0.8453404 0.29059829 0.07732981 0.14529915 #FFDA00
+    ## 4           NA     2 0.8453404 0.29059829 0.07732981 0.14529915 #FFDA00
+    ## 5           NA     2 0.9226702 0.29059829 0.07732981 0.14529915 #FFE566
+    ## 6           NA     3 0.9226702 0.29059829 0.07732981 0.14529915 #FFE566
+    ## 7           NA     2 0.5617978 0.00000000 0.28354263 0.07925408 #FFF2CC
+    ## 8           NA     3 0.5617978 0.00000000 0.28354263 0.07925408 #FFF2CC
+    ## 9           NA     2 0.8453404 0.14529915 0.07732981 0.14529915 #FFF2CC
+    ## 10          NA     3 0.8453404 0.14529915 0.07732981 0.14529915 #FFF2CC
+    ## 11          NA     3 0.9226702 0.14529915 0.07732981 0.14529915 #FFDA00
+    ## 12          NA     2 0.9226702 0.14529915 0.07732981 0.14529915 #FFDA00
+    ## 13          NA     3 0.5617978 0.07925408 0.28354263 0.35664336 #FFDA00
+    ## 14          NA     2 0.5617978 0.07925408 0.28354263 0.35664336 #FFDA00
+    ## 15          NA     3 0.5617978 0.43589744 0.23901941 0.56410256 #FFDA00
+    ## 16          NA     2 0.5617978 0.43589744 0.23901941 0.56410256 #FFDA00
+    ## 17          NA     1 0.5617978 0.00000000 0.43820225 1.00000000 #FFDA00
+    ## 18          NA     3 0.8453404 0.00000000 0.07732981 0.14529915 #FFDA00
+    ## 19          NA     2 0.8453404 0.00000000 0.07732981 0.14529915 #FFDA00
+    ## 20          NA     3 0.9226702 0.00000000 0.07732981 0.14529915 #FFDA00
+    ## 21          NA     2 0.9226702 0.00000000 0.07732981 0.14529915 #FFDA00
+    ## 22          NA     3 0.1944685 0.14857143 0.15125324 0.14857143 #28B463
+    ## 23          NA     2 0.1944685 0.14857143 0.15125324 0.14857143 #28B463
+    ## 24          NA     3 0.1944685 0.00000000 0.15125324 0.14857143 #28B463
+    ## 25          NA     2 0.1944685 0.00000000 0.15125324 0.14857143 #28B463
+    ## 26          NA     2 0.4537597 0.41600000 0.10803803 0.10400000 #BEF4BE
+    ## 27          NA     3 0.4537597 0.41600000 0.10803803 0.10400000 #BEF4BE
+    ## 28          NA     2 0.4537597 0.31200000 0.10803803 0.10400000 #BEF4BE
+    ## 29          NA     3 0.4537597 0.31200000 0.10803803 0.10400000 #BEF4BE
+    ## 30          NA     3 0.2340824 0.52000000 0.16385768 0.48000000 #28B463
+    ## 31          NA     2 0.2340824 0.52000000 0.16385768 0.48000000 #28B463
+    ## 32          NA     2 0.3457217 0.31200000 0.10803803 0.20800000 #BEF4BE
+    ## 33          NA     3 0.3457217 0.31200000 0.10803803 0.20800000 #BEF4BE
+    ## 34          NA     2 0.3457217 0.15600000 0.07202535 0.15600000 #BEF4BE
+    ## 35          NA     3 0.3457217 0.15600000 0.07202535 0.15600000 #BEF4BE
+    ## 36          NA     3 0.3457217 0.00000000 0.07202535 0.15600000 #28B463
+    ## 37          NA     2 0.3457217 0.00000000 0.07202535 0.15600000 #28B463
+    ## 38          NA     3 0.0000000 0.00000000 0.19446845 0.23111111 #28B463
+    ## 39          NA     2 0.0000000 0.00000000 0.19446845 0.23111111 #28B463
+    ## 40          NA     2 0.1944685 0.29714286 0.15125324 0.22285714 #BEF4BE
+    ## 41          NA     3 0.1944685 0.29714286 0.15125324 0.22285714 #BEF4BE
+    ## 42          NA     3 0.0000000 0.52000000 0.23408240 0.48000000 #28B463
+    ## 43          NA     2 0.0000000 0.52000000 0.23408240 0.48000000 #28B463
+    ## 44          NA     1 0.0000000 0.00000000 0.56179775 1.00000000 #BEF4BE
+    ## 45          NA     2 0.4177470 0.15600000 0.07202535 0.15600000 #BEF4BE
+    ## 46          NA     3 0.4177470 0.15600000 0.07202535 0.15600000 #BEF4BE
+    ## 47          NA     3 0.0000000 0.23111111 0.19446845 0.28888889 #28B463
+    ## 48          NA     2 0.0000000 0.23111111 0.19446845 0.28888889 #28B463
+    ## 49          NA     3 0.3979401 0.52000000 0.16385768 0.48000000 #28B463
+    ## 50          NA     2 0.3979401 0.52000000 0.16385768 0.48000000 #28B463
+    ## 51          NA     2 0.4897724 0.15600000 0.07202535 0.15600000 #BEF4BE
+    ## 52          NA     3 0.4897724 0.15600000 0.07202535 0.15600000 #BEF4BE
+    ## 53          NA     2 0.4177470 0.00000000 0.07202535 0.15600000 #BEF4BE
+    ## 54          NA     3 0.4177470 0.00000000 0.07202535 0.15600000 #BEF4BE
+    ## 55          NA     2 0.4897724 0.00000000 0.07202535 0.15600000 #BEF4BE
+    ## 56          NA     3 0.4897724 0.00000000 0.07202535 0.15600000 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q23_no_weight<- question_23 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =23))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q23_no_weight<- full_join(codes_department, nal_q23_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q23_no_weight$cat<- factor(nal_q23_no_weight$cat, levels = level_23)
+colmap(departamentos, data = nal_q23_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q23_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_23-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q23_weight<- inner_join(question_23, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q23_weight<- nal_q23_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =23)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q23_weight<- full_join(codes_department, nal_q23_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q23_weight$cat_weighted<- factor(nal_q23_weight$cat_weighted, levels = level_23)
+colmap(departamentos, data = nal_q23_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q23_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_23-4.png)<!-- -->
+
+## Question 24: What is the efficacy perceived by producers of cultural control (crop rotation, sanitation) in the prevention or management of banana diseases in the areas where you are an expert?
+
+``` r
+#selecting only question 24----
+question_24<- filter(individual_surveys, question_number==24)
+#unique(question_24$numeric_answer)
+#dput(unique(question_24$answer_in_english))
+#organizing the order of the levels
+level_24<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_24$answer_in_english<- factor(question_24$answer_in_english,levels = level_24)
+question_24<- filter(question_24, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_24<- question_24 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(24, mean =average, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(24, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_24<- inner_join(question_24, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_24<- add_weights_question_24 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(24, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 9 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(24, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q24_no_weighted<- tapply(avg_dept_no_weight_24$ave_cat, avg_dept_no_weight_24$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question24_no_weighted<- palette_banana(length(levels_per_crop_Q24_no_weighted$Banana))
+colors_plantain_question24_no_weighted<- palette_plantain(length(levels_per_crop_Q24_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_24 <- list(
+  Banana = levels_per_crop_Q24_no_weighted$Banana,
+  Plantain = levels_per_crop_Q24_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_24 <- list(
+  Banana = colors_banana_question24_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question24_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_24 <- assign_group_color(data = avg_dept_no_weight_24, levels_by_crop = levels_by_crop_no_weighted_24, colors_by_crop = colors_by_crop_no_weighted_24,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q24_weighted<- tapply(avg_dept_weight_24$ave_cat_weighted, avg_dept_weight_24$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question24_weighted<- palette_banana(length(levels_per_crop_Q24_weighted$Banana))
+colors_plantain_question24_weighted<- palette_plantain(length(levels_per_crop_Q24_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_24 <- list(
+  Banana = levels_per_crop_Q24_weighted$Banana,
+  Plantain = levels_per_crop_Q24_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_24 <- list(
+  Banana = colors_banana_question24_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question24_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_24 <- assign_group_color(data = avg_dept_weight_24, levels_by_crop = levels_by_crop_weighted_24, colors_by_crop = colors_by_crop_weighted_24,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_24, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_24-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Effective    10 #FFDA00     10
+    ## 2    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar Moderately Effective     1 #FFDA00      1
+    ## 6    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó Moderately Effective     2 #FFDA00      2
+    ## 8    Banana              Chocó                 <NA>     2 #FFDA00      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba   Slightly Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective    10 #FFDA00     10
+    ## 14   Banana         La Guajira                 <NA>    10 #FFDA00     10
+    ## 15   Banana          Magdalena Moderately Effective    11 #FFDA00     11
+    ## 16   Banana          Magdalena                 <NA>    11 #FFDA00     11
+    ## 17   Banana               <NA>                 <NA>    39 #FFDA00     39
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia                 <NA>     1 #28B463      1
+    ## 23 Plantain          Antioquia       Very Effective     1 #28B463      1
+    ## 24 Plantain             Arauca                 <NA>     2 #28B463      2
+    ## 25 Plantain             Arauca       Very Effective     2 #28B463      2
+    ## 26 Plantain          Atlántico Moderately Effective     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar Moderately Effective     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     6 #BEF4BE      6
+    ## 31 Plantain             Caldas                 <NA>     6 #BEF4BE      6
+    ## 32 Plantain           Casanare Moderately Effective     2 #BEF4BE      2
+    ## 33 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba Moderately Effective     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 36 Plantain              Huila Moderately Effective     1 #BEF4BE      1
+    ## 37 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #BEF4BE      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #BEF4BE      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #BEF4BE      3
+    ## 42 Plantain               Meta                 <NA>    11 #28B463     11
+    ## 43 Plantain               Meta       Very Effective    11 #28B463     11
+    ## 44 Plantain               <NA>                 <NA>    50 #BEF4BE     50
+    ## 45 Plantain Norte De Santander                 <NA>     1 #28B463      1
+    ## 46 Plantain Norte De Santander       Very Effective     1 #28B463      1
+    ## 47 Plantain            Quindío Moderately Effective     5 #BEF4BE      5
+    ## 48 Plantain            Quindío                 <NA>     5 #BEF4BE      5
+    ## 49 Plantain          Risaralda Moderately Effective     8 #BEF4BE      8
+    ## 50 Plantain          Risaralda                 <NA>     8 #BEF4BE      8
+    ## 51 Plantain          Santander Moderately Effective     1 #BEF4BE      1
+    ## 52 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre Moderately Effective     1 #BEF4BE      1
+    ## 54 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 55 Plantain             Tolima Moderately Effective     1 #BEF4BE      1
+    ## 56 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7913323 0.46153846 0.20866774 0.53846154 #FFDA00
+    ## 2           NA     2 0.7913323 0.46153846 0.20866774 0.53846154 #FFDA00
+    ## 3           NA     3 0.8539326 0.30769231 0.07303371 0.15384615 #FFDA00
+    ## 4           NA     2 0.8539326 0.30769231 0.07303371 0.15384615 #FFDA00
+    ## 5           NA     3 0.9269663 0.30769231 0.07303371 0.15384615 #FFDA00
+    ## 6           NA     2 0.9269663 0.30769231 0.07303371 0.15384615 #FFDA00
+    ## 7           NA     3 0.5617978 0.00000000 0.29213483 0.07692308 #FFDA00
+    ## 8           NA     2 0.5617978 0.00000000 0.29213483 0.07692308 #FFDA00
+    ## 9           NA     2 0.8539326 0.15384615 0.07303371 0.15384615 #FFF2CC
+    ## 10          NA     3 0.8539326 0.15384615 0.07303371 0.15384615 #FFF2CC
+    ## 11          NA     3 0.9269663 0.15384615 0.07303371 0.15384615 #FFDA00
+    ## 12          NA     2 0.9269663 0.15384615 0.07303371 0.15384615 #FFDA00
+    ## 13          NA     3 0.5617978 0.07692308 0.29213483 0.38461538 #FFDA00
+    ## 14          NA     2 0.5617978 0.07692308 0.29213483 0.38461538 #FFDA00
+    ## 15          NA     3 0.5617978 0.46153846 0.22953451 0.53846154 #FFDA00
+    ## 16          NA     2 0.5617978 0.46153846 0.22953451 0.53846154 #FFDA00
+    ## 17          NA     1 0.5617978 0.00000000 0.43820225 1.00000000 #FFDA00
+    ## 18          NA     3 0.8539326 0.00000000 0.07303371 0.15384615 #FFDA00
+    ## 19          NA     2 0.8539326 0.00000000 0.07303371 0.15384615 #FFDA00
+    ## 20          NA     3 0.9269663 0.00000000 0.07303371 0.15384615 #FFDA00
+    ## 21          NA     2 0.9269663 0.00000000 0.07303371 0.15384615 #FFDA00
+    ## 22          NA     2 0.1993476 0.00000000 0.06590003 0.17050000 #28B463
+    ## 23          NA     3 0.1993476 0.00000000 0.06590003 0.17050000 #28B463
+    ## 24          NA     2 0.4812533 0.34100000 0.08054448 0.27900000 #28B463
+    ## 25          NA     3 0.4812533 0.34100000 0.08054448 0.27900000 #28B463
+    ## 26          NA     3 0.2652476 0.00000000 0.06590003 0.17050000 #BEF4BE
+    ## 27          NA     2 0.2652476 0.00000000 0.06590003 0.17050000 #BEF4BE
+    ## 28          NA     3 0.3311476 0.22733333 0.09885004 0.11366667 #BEF4BE
+    ## 29          NA     2 0.3311476 0.22733333 0.09885004 0.11366667 #BEF4BE
+    ## 30          NA     3 0.0000000 0.28181818 0.19934759 0.33818182 #BEF4BE
+    ## 31          NA     2 0.0000000 0.28181818 0.19934759 0.33818182 #BEF4BE
+    ## 32          NA     3 0.1993476 0.17050000 0.13180006 0.17050000 #BEF4BE
+    ## 33          NA     2 0.1993476 0.17050000 0.13180006 0.17050000 #BEF4BE
+    ## 34          NA     3 0.3311476 0.11366667 0.09885004 0.11366667 #BEF4BE
+    ## 35          NA     2 0.3311476 0.11366667 0.09885004 0.11366667 #BEF4BE
+    ## 36          NA     3 0.3311476 0.00000000 0.09885004 0.11366667 #BEF4BE
+    ## 37          NA     2 0.3311476 0.00000000 0.09885004 0.11366667 #BEF4BE
+    ## 38          NA     3 0.1993476 0.34100000 0.16108896 0.27900000 #BEF4BE
+    ## 39          NA     2 0.1993476 0.34100000 0.16108896 0.27900000 #BEF4BE
+    ## 40          NA     3 0.3604366 0.34100000 0.12081672 0.27900000 #BEF4BE
+    ## 41          NA     2 0.3604366 0.34100000 0.12081672 0.27900000 #BEF4BE
+    ## 42          NA     2 0.0000000 0.62000000 0.32525133 0.38000000 #28B463
+    ## 43          NA     3 0.0000000 0.62000000 0.32525133 0.38000000 #28B463
+    ## 44          NA     1 0.0000000 0.00000000 0.56179775 1.00000000 #BEF4BE
+    ## 45          NA     2 0.4299977 0.17050000 0.06590003 0.17050000 #28B463
+    ## 46          NA     3 0.4299977 0.17050000 0.06590003 0.17050000 #28B463
+    ## 47          NA     3 0.0000000 0.00000000 0.19934759 0.28181818 #BEF4BE
+    ## 48          NA     2 0.0000000 0.00000000 0.19934759 0.28181818 #BEF4BE
+    ## 49          NA     3 0.3252513 0.62000000 0.23654642 0.38000000 #BEF4BE
+    ## 50          NA     2 0.3252513 0.62000000 0.23654642 0.38000000 #BEF4BE
+    ## 51          NA     3 0.4958977 0.17050000 0.06590003 0.17050000 #BEF4BE
+    ## 52          NA     2 0.4958977 0.17050000 0.06590003 0.17050000 #BEF4BE
+    ## 53          NA     3 0.4299977 0.00000000 0.06590003 0.17050000 #BEF4BE
+    ## 54          NA     2 0.4299977 0.00000000 0.06590003 0.17050000 #BEF4BE
+    ## 55          NA     3 0.4958977 0.00000000 0.06590003 0.17050000 #BEF4BE
+    ## 56          NA     2 0.4958977 0.00000000 0.06590003 0.17050000 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_24, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_24-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Effective    10 #FFDA00     10
+    ## 2    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar Moderately Effective     1 #FFDA00      1
+    ## 6    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó Moderately Effective     2 #FFDA00      2
+    ## 8    Banana              Chocó                 <NA>     2 #FFDA00      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba   Slightly Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective     8 #FFDA00      8
+    ## 14   Banana         La Guajira                 <NA>     8 #FFDA00      8
+    ## 15   Banana          Magdalena Moderately Effective    10 #FFDA00     10
+    ## 16   Banana          Magdalena                 <NA>    10 #FFDA00     10
+    ## 17   Banana               <NA>                 <NA>    36 #FFDA00     36
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia                 <NA>     1 #28B463      1
+    ## 23 Plantain          Antioquia       Very Effective     1 #28B463      1
+    ## 24 Plantain             Arauca Moderately Effective     2 #BEF4BE      2
+    ## 25 Plantain             Arauca                 <NA>     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico Moderately Effective     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar Moderately Effective     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     6 #BEF4BE      6
+    ## 31 Plantain             Caldas                 <NA>     6 #BEF4BE      6
+    ## 32 Plantain           Casanare Moderately Effective     2 #BEF4BE      2
+    ## 33 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba Moderately Effective     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 36 Plantain              Huila Moderately Effective     1 #BEF4BE      1
+    ## 37 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #BEF4BE      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #BEF4BE      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #BEF4BE      3
+    ## 42 Plantain               Meta                 <NA>    10 #28B463     10
+    ## 43 Plantain               Meta       Very Effective    10 #28B463     10
+    ## 44 Plantain               <NA>                 <NA>    49 #BEF4BE     49
+    ## 45 Plantain Norte De Santander                 <NA>     1 #28B463      1
+    ## 46 Plantain Norte De Santander       Very Effective     1 #28B463      1
+    ## 47 Plantain            Quindío Moderately Effective     5 #BEF4BE      5
+    ## 48 Plantain            Quindío                 <NA>     5 #BEF4BE      5
+    ## 49 Plantain          Risaralda Moderately Effective     8 #BEF4BE      8
+    ## 50 Plantain          Risaralda                 <NA>     8 #BEF4BE      8
+    ## 51 Plantain          Santander Moderately Effective     1 #BEF4BE      1
+    ## 52 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre Moderately Effective     1 #BEF4BE      1
+    ## 54 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 55 Plantain             Tolima Moderately Effective     1 #BEF4BE      1
+    ## 56 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5764706 0.44444444 0.21176471 0.55555556 #FFDA00
+    ## 2           NA     2 0.5764706 0.44444444 0.21176471 0.55555556 #FFDA00
+    ## 3           NA     3 0.8411765 0.29629630 0.07941176 0.14814815 #FFDA00
+    ## 4           NA     2 0.8411765 0.29629630 0.07941176 0.14814815 #FFDA00
+    ## 5           NA     3 0.9205882 0.29629630 0.07941176 0.14814815 #FFDA00
+    ## 6           NA     2 0.9205882 0.29629630 0.07941176 0.14814815 #FFDA00
+    ## 7           NA     3 0.5764706 0.00000000 0.26470588 0.08888889 #FFDA00
+    ## 8           NA     2 0.5764706 0.00000000 0.26470588 0.08888889 #FFDA00
+    ## 9           NA     2 0.8411765 0.14814815 0.07941176 0.14814815 #FFF2CC
+    ## 10          NA     3 0.8411765 0.14814815 0.07941176 0.14814815 #FFF2CC
+    ## 11          NA     3 0.9205882 0.14814815 0.07941176 0.14814815 #FFDA00
+    ## 12          NA     2 0.9205882 0.14814815 0.07941176 0.14814815 #FFDA00
+    ## 13          NA     3 0.5764706 0.08888889 0.26470588 0.35555556 #FFDA00
+    ## 14          NA     2 0.5764706 0.08888889 0.26470588 0.35555556 #FFDA00
+    ## 15          NA     3 0.7882353 0.44444444 0.21176471 0.55555556 #FFDA00
+    ## 16          NA     2 0.7882353 0.44444444 0.21176471 0.55555556 #FFDA00
+    ## 17          NA     1 0.5764706 0.00000000 0.42352941 1.00000000 #FFDA00
+    ## 18          NA     3 0.8411765 0.00000000 0.07941176 0.14814815 #FFDA00
+    ## 19          NA     2 0.8411765 0.00000000 0.07941176 0.14814815 #FFDA00
+    ## 20          NA     3 0.9205882 0.00000000 0.07941176 0.14814815 #FFDA00
+    ## 21          NA     2 0.9205882 0.00000000 0.07941176 0.14814815 #FFDA00
+    ## 22          NA     2 0.2045541 0.00000000 0.06762118 0.17397959 #28B463
+    ## 23          NA     3 0.2045541 0.00000000 0.06762118 0.17397959 #28B463
+    ## 24          NA     3 0.4938225 0.34795918 0.08264811 0.28469388 #BEF4BE
+    ## 25          NA     2 0.4938225 0.34795918 0.08264811 0.28469388 #BEF4BE
+    ## 26          NA     3 0.2721753 0.00000000 0.06762118 0.17397959 #BEF4BE
+    ## 27          NA     2 0.2721753 0.00000000 0.06762118 0.17397959 #BEF4BE
+    ## 28          NA     3 0.3397964 0.23197279 0.10143178 0.11598639 #BEF4BE
+    ## 29          NA     2 0.3397964 0.23197279 0.10143178 0.11598639 #BEF4BE
+    ## 30          NA     3 0.0000000 0.28756957 0.20455408 0.34508349 #BEF4BE
+    ## 31          NA     2 0.0000000 0.28756957 0.20455408 0.34508349 #BEF4BE
+    ## 32          NA     3 0.2045541 0.17397959 0.13524237 0.17397959 #BEF4BE
+    ## 33          NA     2 0.2045541 0.17397959 0.13524237 0.17397959 #BEF4BE
+    ## 34          NA     3 0.3397964 0.11598639 0.10143178 0.11598639 #BEF4BE
+    ## 35          NA     2 0.3397964 0.11598639 0.10143178 0.11598639 #BEF4BE
+    ## 36          NA     3 0.3397964 0.00000000 0.10143178 0.11598639 #BEF4BE
+    ## 37          NA     2 0.3397964 0.00000000 0.10143178 0.11598639 #BEF4BE
+    ## 38          NA     3 0.2045541 0.34795918 0.16529623 0.28469388 #BEF4BE
+    ## 39          NA     2 0.2045541 0.34795918 0.16529623 0.28469388 #BEF4BE
+    ## 40          NA     3 0.3698503 0.34795918 0.12397217 0.28469388 #BEF4BE
+    ## 41          NA     2 0.3698503 0.34795918 0.12397217 0.28469388 #BEF4BE
+    ## 42          NA     2 0.0000000 0.63265306 0.32026144 0.36734694 #28B463
+    ## 43          NA     3 0.0000000 0.63265306 0.32026144 0.36734694 #28B463
+    ## 44          NA     1 0.0000000 0.00000000 0.57647059 1.00000000 #BEF4BE
+    ## 45          NA     2 0.4412282 0.17397959 0.06762118 0.17397959 #28B463
+    ## 46          NA     3 0.4412282 0.17397959 0.06762118 0.17397959 #28B463
+    ## 47          NA     3 0.0000000 0.00000000 0.20455408 0.28756957 #BEF4BE
+    ## 48          NA     2 0.0000000 0.00000000 0.20455408 0.28756957 #BEF4BE
+    ## 49          NA     3 0.3202614 0.63265306 0.25620915 0.36734694 #BEF4BE
+    ## 50          NA     2 0.3202614 0.63265306 0.25620915 0.36734694 #BEF4BE
+    ## 51          NA     3 0.5088494 0.17397959 0.06762118 0.17397959 #BEF4BE
+    ## 52          NA     2 0.5088494 0.17397959 0.06762118 0.17397959 #BEF4BE
+    ## 53          NA     3 0.4412282 0.00000000 0.06762118 0.17397959 #BEF4BE
+    ## 54          NA     2 0.4412282 0.00000000 0.06762118 0.17397959 #BEF4BE
+    ## 55          NA     3 0.5088494 0.00000000 0.06762118 0.17397959 #BEF4BE
+    ## 56          NA     2 0.5088494 0.00000000 0.06762118 0.17397959 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q24_no_weight<- question_24 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =24))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q24_no_weight<- full_join(codes_department, nal_q24_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q24_no_weight$cat<- factor(nal_q24_no_weight$cat, levels = level_24)
+colmap(departamentos, data = nal_q24_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q24_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_24-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q24_weight<- inner_join(question_24, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q24_weight<- nal_q24_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =24)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q24_weight<- full_join(codes_department, nal_q24_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q24_weight$cat_weighted<- factor(nal_q24_weight$cat_weighted, levels = level_24)
+colmap(departamentos, data = nal_q24_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q24_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_24-4.png)<!-- -->
+
+## Question 25: What is the efficacy perceived by producers of biosecurity measures (quarantine, disinfection) in the prevention or management of banana diseases in the areas where you are an expert?
+
+``` r
+#selecting only question 25----
+question_25<- filter(individual_surveys, question_number==25)
+#unique(question_25$numeric_answer)
+#dput(unique(question_25$answer_in_english))
+#organizing the order of the levels
+level_25<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_25$answer_in_english<- factor(question_25$answer_in_english,levels = level_25)
+question_25<- filter(question_25, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_25<- question_25 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(25, mean =average, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(25, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_25<- inner_join(question_25, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_25<- add_weights_question_25 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(25, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(25, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q25_no_weighted<- tapply(avg_dept_no_weight_25$ave_cat, avg_dept_no_weight_25$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question25_no_weighted<- palette_banana(length(levels_per_crop_Q25_no_weighted$Banana))
+colors_plantain_question25_no_weighted<- palette_plantain(length(levels_per_crop_Q25_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_25 <- list(
+  Banana = levels_per_crop_Q25_no_weighted$Banana,
+  Plantain = levels_per_crop_Q25_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_25 <- list(
+  Banana = colors_banana_question25_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question25_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_25 <- assign_group_color(data = avg_dept_no_weight_25, levels_by_crop = levels_by_crop_no_weighted_25, colors_by_crop = colors_by_crop_no_weighted_25,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q25_weighted<- tapply(avg_dept_weight_25$ave_cat_weighted, avg_dept_weight_25$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question25_weighted<- palette_banana(length(levels_per_crop_Q25_weighted$Banana))
+colors_plantain_question25_weighted<- palette_plantain(length(levels_per_crop_Q25_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_25 <- list(
+  Banana = levels_per_crop_Q25_weighted$Banana,
+  Plantain = levels_per_crop_Q25_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_25 <- list(
+  Banana = colors_banana_question25_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question25_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_25 <- assign_group_color(data = avg_dept_weight_25, levels_by_crop = levels_by_crop_weighted_25, colors_by_crop = colors_by_crop_weighted_25,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_25, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_25-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Effective    11 #FFE244     11
+    ## 2    Banana          Antioquia                 <NA>    11 #FFE244     11
+    ## 3    Banana             Caldas Moderately Effective     1 #FFE244      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFE244      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 6    Banana              Cesar       Very Effective     1 #FFDA00      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFEA88      2
+    ## 8    Banana              Chocó   Slightly Effective     2 #FFEA88      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba        Not Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFE244      1
+    ## 12   Banana              Huila                 <NA>     1 #FFE244      1
+    ## 13   Banana         La Guajira                 <NA>    11 #FFDA00     11
+    ## 14   Banana         La Guajira       Very Effective    11 #FFDA00     11
+    ## 15   Banana          Magdalena                 <NA>    13 #FFDA00     13
+    ## 16   Banana          Magdalena       Very Effective    13 #FFDA00     13
+    ## 17   Banana               <NA>                 <NA>    43 #FFE244     43
+    ## 18   Banana            Quindío Moderately Effective     1 #FFE244      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFE244      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFE244      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFE244      1
+    ## 22 Plantain          Antioquia  Extremely Effective     2 #28B463      2
+    ## 23 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca Moderately Effective     2 #8CDE9F      2
+    ## 25 Plantain             Arauca                 <NA>     2 #8CDE9F      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico   Slightly Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar   Slightly Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     7 #8CDE9F      7
+    ## 31 Plantain             Caldas                 <NA>     7 #8CDE9F      7
+    ## 32 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare   Slightly Effective     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba   Slightly Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila Moderately Effective     1 #8CDE9F      1
+    ## 37 Plantain              Huila                 <NA>     1 #8CDE9F      1
+    ## 38 Plantain         La Guajira                 <NA>     4 #59C981      4
+    ## 39 Plantain         La Guajira       Very Effective     4 #59C981      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #8CDE9F      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #8CDE9F      3
+    ## 42 Plantain               Meta Moderately Effective    11 #8CDE9F     11
+    ## 43 Plantain               Meta                 <NA>    11 #8CDE9F     11
+    ## 44 Plantain               <NA>                 <NA>    54 #BEF4BE     54
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander   Slightly Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío Moderately Effective     5 #8CDE9F      5
+    ## 48 Plantain            Quindío                 <NA>     5 #8CDE9F      5
+    ## 49 Plantain          Risaralda Moderately Effective    10 #8CDE9F     10
+    ## 50 Plantain          Risaralda                 <NA>    10 #8CDE9F     10
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander   Slightly Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre   Slightly Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima   Slightly Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7968213 0.44186047 0.20317869 0.55813953 #FFE244
+    ## 2           NA     2 0.7968213 0.44186047 0.20317869 0.55813953 #FFE244
+    ## 3           NA     3 0.9377826 0.27616279 0.06221740 0.16569767 #FFE244
+    ## 4           NA     2 0.9377826 0.27616279 0.06221740 0.16569767 #FFE244
+    ## 5           NA     2 0.8133478 0.13808140 0.07466088 0.13808140 #FFDA00
+    ## 6           NA     3 0.8133478 0.13808140 0.07466088 0.13808140 #FFDA00
+    ## 7           NA     2 0.8133478 0.27616279 0.12443480 0.16569767 #FFEA88
+    ## 8           NA     3 0.8133478 0.27616279 0.12443480 0.16569767 #FFEA88
+    ## 9           NA     2 0.8133478 0.00000000 0.07466088 0.13808140 #FFF2CC
+    ## 10          NA     3 0.8133478 0.00000000 0.07466088 0.13808140 #FFF2CC
+    ## 11          NA     3 0.8880087 0.18410853 0.11199132 0.09205426 #FFE244
+    ## 12          NA     2 0.8880087 0.18410853 0.11199132 0.09205426 #FFE244
+    ## 13          NA     2 0.5567010 0.00000000 0.25664677 0.44186047 #FFDA00
+    ## 14          NA     3 0.5567010 0.00000000 0.25664677 0.44186047 #FFDA00
+    ## 15          NA     2 0.5567010 0.44186047 0.24012027 0.55813953 #FFDA00
+    ## 16          NA     3 0.5567010 0.44186047 0.24012027 0.55813953 #FFDA00
+    ## 17          NA     1 0.5567010 0.00000000 0.44329897 1.00000000 #FFE244
+    ## 18          NA     3 0.8880087 0.09205426 0.11199132 0.09205426 #FFE244
+    ## 19          NA     2 0.8880087 0.09205426 0.11199132 0.09205426 #FFE244
+    ## 20          NA     3 0.8880087 0.00000000 0.11199132 0.09205426 #FFE244
+    ## 21          NA     2 0.8880087 0.00000000 0.11199132 0.09205426 #FFE244
+    ## 22          NA     3 0.4779756 0.34920635 0.07872540 0.26190476 #28B463
+    ## 23          NA     2 0.4779756 0.34920635 0.07872540 0.26190476 #28B463
+    ## 24          NA     3 0.2024367 0.17460317 0.11808810 0.17460317 #8CDE9F
+    ## 25          NA     2 0.2024367 0.17460317 0.11808810 0.17460317 #8CDE9F
+    ## 26          NA     2 0.3205248 0.23280423 0.08856607 0.11640212 #BEF4BE
+    ## 27          NA     3 0.3205248 0.23280423 0.08856607 0.11640212 #BEF4BE
+    ## 28          NA     2 0.3205248 0.11640212 0.08856607 0.11640212 #BEF4BE
+    ## 29          NA     3 0.3205248 0.11640212 0.08856607 0.11640212 #BEF4BE
+    ## 30          NA     3 0.0000000 0.25462963 0.20243674 0.35648148 #8CDE9F
+    ## 31          NA     2 0.0000000 0.25462963 0.20243674 0.35648148 #8CDE9F
+    ## 32          NA     2 0.2024367 0.00000000 0.11808810 0.17460317 #BEF4BE
+    ## 33          NA     3 0.2024367 0.00000000 0.11808810 0.17460317 #BEF4BE
+    ## 34          NA     2 0.3205248 0.00000000 0.08856607 0.11640212 #BEF4BE
+    ## 35          NA     3 0.3205248 0.00000000 0.08856607 0.11640212 #BEF4BE
+    ## 36          NA     3 0.4090909 0.20952381 0.07380506 0.13968254 #8CDE9F
+    ## 37          NA     2 0.4090909 0.20952381 0.07380506 0.13968254 #8CDE9F
+    ## 38          NA     2 0.2024367 0.34920635 0.15745080 0.26190476 #59C981
+    ## 39          NA     3 0.2024367 0.34920635 0.15745080 0.26190476 #59C981
+    ## 40          NA     3 0.3598875 0.34920635 0.11808810 0.26190476 #8CDE9F
+    ## 41          NA     2 0.3598875 0.34920635 0.11808810 0.26190476 #8CDE9F
+    ## 42          NA     3 0.0000000 0.61111111 0.29160530 0.38888889 #8CDE9F
+    ## 43          NA     2 0.0000000 0.61111111 0.29160530 0.38888889 #8CDE9F
+    ## 44          NA     1 0.0000000 0.00000000 0.55670103 1.00000000 #BEF4BE
+    ## 45          NA     2 0.4828960 0.20952381 0.07380506 0.13968254 #BEF4BE
+    ## 46          NA     3 0.4828960 0.20952381 0.07380506 0.13968254 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.20243674 0.25462963 #8CDE9F
+    ## 48          NA     2 0.0000000 0.00000000 0.20243674 0.25462963 #8CDE9F
+    ## 49          NA     3 0.2916053 0.61111111 0.26509573 0.38888889 #8CDE9F
+    ## 50          NA     2 0.2916053 0.61111111 0.26509573 0.38888889 #8CDE9F
+    ## 51          NA     2 0.4090909 0.10476190 0.09840675 0.10476190 #BEF4BE
+    ## 52          NA     3 0.4090909 0.10476190 0.09840675 0.10476190 #BEF4BE
+    ## 53          NA     2 0.4090909 0.00000000 0.09840675 0.10476190 #BEF4BE
+    ## 54          NA     3 0.4090909 0.00000000 0.09840675 0.10476190 #BEF4BE
+    ## 55          NA     2 0.5074977 0.00000000 0.04920337 0.20952381 #BEF4BE
+    ## 56          NA     3 0.5074977 0.00000000 0.04920337 0.20952381 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_25, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_25-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Effective    11 #FFDA00     11
+    ## 2    Banana          Antioquia                 <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFE566      1
+    ## 6    Banana              Cesar       Very Effective     1 #FFE566      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó        Not Effective     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba        Not Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective     9 #FFDA00      9
+    ## 14   Banana         La Guajira                 <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena                 <NA>    12 #FFE566     12
+    ## 16   Banana          Magdalena       Very Effective    12 #FFE566     12
+    ## 17   Banana               <NA>                 <NA>    40 #FFDA00     40
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia  Extremely Effective     2 #28B463      2
+    ## 23 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca Moderately Effective     2 #8CDE9F      2
+    ## 25 Plantain             Arauca                 <NA>     2 #8CDE9F      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico   Slightly Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar   Slightly Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas Moderately Effective     7 #8CDE9F      7
+    ## 31 Plantain             Caldas                 <NA>     7 #8CDE9F      7
+    ## 32 Plantain           Casanare Moderately Effective     2 #8CDE9F      2
+    ## 33 Plantain           Casanare                 <NA>     2 #8CDE9F      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba   Slightly Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila Moderately Effective     1 #8CDE9F      1
+    ## 37 Plantain              Huila                 <NA>     1 #8CDE9F      1
+    ## 38 Plantain         La Guajira                 <NA>     4 #59C981      4
+    ## 39 Plantain         La Guajira       Very Effective     4 #59C981      4
+    ## 40 Plantain          Magdalena                 <NA>     3 #59C981      3
+    ## 41 Plantain          Magdalena       Very Effective     3 #59C981      3
+    ## 42 Plantain               Meta Moderately Effective    10 #8CDE9F     10
+    ## 43 Plantain               Meta                 <NA>    10 #8CDE9F     10
+    ## 44 Plantain               <NA>                 <NA>    53 #8CDE9F     53
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander   Slightly Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío Moderately Effective     5 #8CDE9F      5
+    ## 48 Plantain            Quindío                 <NA>     5 #8CDE9F      5
+    ## 49 Plantain          Risaralda Moderately Effective    10 #8CDE9F     10
+    ## 50 Plantain          Risaralda                 <NA>    10 #8CDE9F     10
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander   Slightly Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre   Slightly Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima   Slightly Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7942964 0.42500000 0.20570360 0.57500000 #FFDA00
+    ## 2           NA     2 0.7942964 0.42500000 0.20570360 0.57500000 #FFDA00
+    ## 3           NA     3 0.8481973 0.28333333 0.07590133 0.14166667 #FFDA00
+    ## 4           NA     2 0.8481973 0.28333333 0.07590133 0.14166667 #FFDA00
+    ## 5           NA     2 0.9240987 0.28333333 0.07590133 0.14166667 #FFE566
+    ## 6           NA     3 0.9240987 0.28333333 0.07590133 0.14166667 #FFE566
+    ## 7           NA     2 0.5698925 0.00000000 0.27830487 0.07727273 #FFF2CC
+    ## 8           NA     3 0.5698925 0.00000000 0.27830487 0.07727273 #FFF2CC
+    ## 9           NA     2 0.8481973 0.14166667 0.07590133 0.14166667 #FFF2CC
+    ## 10          NA     3 0.8481973 0.14166667 0.07590133 0.14166667 #FFF2CC
+    ## 11          NA     3 0.9240987 0.14166667 0.07590133 0.14166667 #FFDA00
+    ## 12          NA     2 0.9240987 0.14166667 0.07590133 0.14166667 #FFDA00
+    ## 13          NA     3 0.5698925 0.07727273 0.27830487 0.34772727 #FFDA00
+    ## 14          NA     2 0.5698925 0.07727273 0.27830487 0.34772727 #FFDA00
+    ## 15          NA     2 0.5698925 0.42500000 0.22440393 0.57500000 #FFE566
+    ## 16          NA     3 0.5698925 0.42500000 0.22440393 0.57500000 #FFE566
+    ## 17          NA     1 0.5698925 0.00000000 0.43010753 1.00000000 #FFDA00
+    ## 18          NA     3 0.8481973 0.00000000 0.07590133 0.14166667 #FFDA00
+    ## 19          NA     2 0.8481973 0.00000000 0.07590133 0.14166667 #FFDA00
+    ## 20          NA     3 0.9240987 0.00000000 0.07590133 0.14166667 #FFDA00
+    ## 21          NA     2 0.9240987 0.00000000 0.07590133 0.14166667 #FFDA00
+    ## 22          NA     3 0.4893016 0.35579515 0.08059085 0.26684636 #28B463
+    ## 23          NA     2 0.4893016 0.35579515 0.08059085 0.26684636 #28B463
+    ## 24          NA     3 0.2072336 0.17789757 0.12088628 0.17789757 #8CDE9F
+    ## 25          NA     2 0.2072336 0.17789757 0.12088628 0.17789757 #8CDE9F
+    ## 26          NA     2 0.3281199 0.23719677 0.09066471 0.11859838 #BEF4BE
+    ## 27          NA     3 0.3281199 0.23719677 0.09066471 0.11859838 #BEF4BE
+    ## 28          NA     2 0.3281199 0.11859838 0.09066471 0.11859838 #BEF4BE
+    ## 29          NA     3 0.3281199 0.11859838 0.09066471 0.11859838 #BEF4BE
+    ## 30          NA     3 0.0000000 0.25943396 0.20723363 0.36320755 #8CDE9F
+    ## 31          NA     2 0.0000000 0.25943396 0.20723363 0.36320755 #8CDE9F
+    ## 32          NA     3 0.2072336 0.00000000 0.12088628 0.17789757 #8CDE9F
+    ## 33          NA     2 0.2072336 0.00000000 0.12088628 0.17789757 #8CDE9F
+    ## 34          NA     2 0.3281199 0.00000000 0.09066471 0.11859838 #BEF4BE
+    ## 35          NA     3 0.3281199 0.00000000 0.09066471 0.11859838 #BEF4BE
+    ## 36          NA     3 0.4187846 0.21347709 0.07555393 0.14231806 #8CDE9F
+    ## 37          NA     2 0.4187846 0.21347709 0.07555393 0.14231806 #8CDE9F
+    ## 38          NA     2 0.2072336 0.35579515 0.16118171 0.26684636 #59C981
+    ## 39          NA     3 0.2072336 0.35579515 0.16118171 0.26684636 #59C981
+    ## 40          NA     2 0.3684153 0.35579515 0.12088628 0.26684636 #59C981
+    ## 41          NA     3 0.3684153 0.35579515 0.12088628 0.26684636 #59C981
+    ## 42          NA     3 0.0000000 0.62264151 0.28494624 0.37735849 #8CDE9F
+    ## 43          NA     2 0.0000000 0.62264151 0.28494624 0.37735849 #8CDE9F
+    ## 44          NA     1 0.0000000 0.00000000 0.56989247 1.00000000 #8CDE9F
+    ## 45          NA     2 0.4943385 0.21347709 0.07555393 0.14231806 #BEF4BE
+    ## 46          NA     3 0.4943385 0.21347709 0.07555393 0.14231806 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.20723363 0.25943396 #8CDE9F
+    ## 48          NA     2 0.0000000 0.00000000 0.20723363 0.25943396 #8CDE9F
+    ## 49          NA     3 0.2849462 0.62264151 0.28494624 0.37735849 #8CDE9F
+    ## 50          NA     2 0.2849462 0.62264151 0.28494624 0.37735849 #8CDE9F
+    ## 51          NA     2 0.4187846 0.10673854 0.10073857 0.10673854 #BEF4BE
+    ## 52          NA     3 0.4187846 0.10673854 0.10073857 0.10673854 #BEF4BE
+    ## 53          NA     2 0.4187846 0.00000000 0.10073857 0.10673854 #BEF4BE
+    ## 54          NA     3 0.4187846 0.00000000 0.10073857 0.10673854 #BEF4BE
+    ## 55          NA     2 0.5195232 0.00000000 0.05036928 0.21347709 #BEF4BE
+    ## 56          NA     3 0.5195232 0.00000000 0.05036928 0.21347709 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q25_no_weight<- question_25 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =25))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q25_no_weight<- full_join(codes_department, nal_q25_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q25_no_weight$cat<- factor(nal_q25_no_weight$cat, levels = level_25)
+colmap(departamentos, data = nal_q25_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q25_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_25-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q25_weight<- inner_join(question_25, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q25_weight<- nal_q25_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =25)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q25_weight<- full_join(codes_department, nal_q25_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q25_weight$cat_weighted<- factor(nal_q25_weight$cat_weighted, levels = level_25)
+colmap(departamentos, data = nal_q25_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q25_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_25-4.png)<!-- -->
+
+## Question 26: What is the efficacy perceived by producers about surveillance and reporting in the prevention or management of banana diseases in the areas where you are an expert?
+
+``` r
+#selecting only question 26----
+question_26<- filter(individual_surveys, question_number==26)
+#unique(question_26$numeric_answer)
+#dput(unique(question_26$answer_in_english))
+#organizing the order of the levels
+level_26<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_26$answer_in_english<- factor(question_26$answer_in_english,levels = level_26)
+question_26<- filter(question_26, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_26<- question_26 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(26, mean =average, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(26, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_26<- inner_join(question_26, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_26<- add_weights_question_26 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(26, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 5 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(26, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q26_no_weighted<- tapply(avg_dept_no_weight_26$ave_cat, avg_dept_no_weight_26$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question26_no_weighted<- palette_banana(length(levels_per_crop_Q26_no_weighted$Banana))
+colors_plantain_question26_no_weighted<- palette_plantain(length(levels_per_crop_Q26_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_26 <- list(
+  Banana = levels_per_crop_Q26_no_weighted$Banana,
+  Plantain = levels_per_crop_Q26_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_26 <- list(
+  Banana = colors_banana_question26_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question26_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_26 <- assign_group_color(data = avg_dept_no_weight_26, levels_by_crop = levels_by_crop_no_weighted_26, colors_by_crop = colors_by_crop_no_weighted_26,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q26_weighted<- tapply(avg_dept_weight_26$ave_cat_weighted, avg_dept_weight_26$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question26_weighted<- palette_banana(length(levels_per_crop_Q26_weighted$Banana))
+colors_plantain_question26_weighted<- palette_plantain(length(levels_per_crop_Q26_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_26 <- list(
+  Banana = levels_per_crop_Q26_weighted$Banana,
+  Plantain = levels_per_crop_Q26_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_26 <- list(
+  Banana = colors_banana_question26_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question26_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_26 <- assign_group_color(data = avg_dept_weight_26, levels_by_crop = levels_by_crop_weighted_26, colors_by_crop = colors_by_crop_weighted_26,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_26, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_26-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    11 #FFDA00     11
+    ## 2    Banana          Antioquia       Very Effective    11 #FFDA00     11
+    ## 3    Banana             Caldas Moderately Effective     1 #FFF2CC      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 6    Banana              Cesar       Very Effective     1 #FFDA00      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFE244      2
+    ## 8    Banana              Chocó   Slightly Effective     2 #FFE244      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFEA88      1
+    ## 10   Banana            Córdoba        Not Effective     1 #FFEA88      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFF2CC      1
+    ## 12   Banana              Huila                 <NA>     1 #FFF2CC      1
+    ## 13   Banana         La Guajira                 <NA>    10 #FFDA00     10
+    ## 14   Banana         La Guajira       Very Effective    10 #FFDA00     10
+    ## 15   Banana          Magdalena                 <NA>    12 #FFDA00     12
+    ## 16   Banana          Magdalena       Very Effective    12 #FFDA00     12
+    ## 17   Banana               <NA>                 <NA>    41 #FFDA00     41
+    ## 18   Banana            Quindío Moderately Effective     1 #FFF2CC      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFF2CC      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFF2CC      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia       Very Effective     2 #28B463      2
+    ## 24 Plantain             Arauca                 <NA>     1 #BEF4BE      1
+    ## 25 Plantain             Arauca        Not Effective     1 #BEF4BE      1
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico        Not Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar        Not Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas                 <NA>     6 #8CDE9F      6
+    ## 31 Plantain             Caldas   Slightly Effective     6 #8CDE9F      6
+    ## 32 Plantain           Casanare                 <NA>     1 #BEF4BE      1
+    ## 33 Plantain           Casanare        Not Effective     1 #BEF4BE      1
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba        Not Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain              Huila        Not Effective     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #59C981      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #59C981      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #59C981      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #59C981      3
+    ## 42 Plantain               Meta Moderately Effective     8 #59C981      8
+    ## 43 Plantain               Meta                 <NA>     8 #59C981      8
+    ## 44 Plantain               <NA>                 <NA>    46 #BEF4BE     46
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander        Not Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío                 <NA>     5 #8CDE9F      5
+    ## 48 Plantain            Quindío   Slightly Effective     5 #8CDE9F      5
+    ## 49 Plantain          Risaralda Moderately Effective     8 #59C981      8
+    ## 50 Plantain          Risaralda                 <NA>     8 #59C981      8
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander        Not Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre        Not Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima        Not Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.7746127 0.43902439 0.22538731 0.56097561 #FFDA00
+    ## 2           NA     3 0.7746127 0.43902439 0.22538731 0.56097561 #FFDA00
+    ## 3           NA     3 0.9301831 0.27439024 0.06981694 0.16463415 #FFF2CC
+    ## 4           NA     2 0.9301831 0.27439024 0.06981694 0.16463415 #FFF2CC
+    ## 5           NA     2 0.7905492 0.13719512 0.08378033 0.13719512 #FFDA00
+    ## 6           NA     3 0.7905492 0.13719512 0.08378033 0.13719512 #FFDA00
+    ## 7           NA     2 0.7905492 0.27439024 0.13963389 0.16463415 #FFE244
+    ## 8           NA     3 0.7905492 0.27439024 0.13963389 0.16463415 #FFE244
+    ## 9           NA     2 0.7905492 0.00000000 0.08378033 0.13719512 #FFEA88
+    ## 10          NA     3 0.7905492 0.00000000 0.08378033 0.13719512 #FFEA88
+    ## 11          NA     3 0.8743295 0.09146341 0.06283525 0.18292683 #FFF2CC
+    ## 12          NA     2 0.8743295 0.09146341 0.06283525 0.18292683 #FFF2CC
+    ## 13          NA     2 0.5287356 0.00000000 0.26181354 0.43902439 #FFDA00
+    ## 14          NA     3 0.5287356 0.00000000 0.26181354 0.43902439 #FFDA00
+    ## 15          NA     2 0.5287356 0.43902439 0.24587706 0.56097561 #FFDA00
+    ## 16          NA     3 0.5287356 0.43902439 0.24587706 0.56097561 #FFDA00
+    ## 17          NA     1 0.5287356 0.00000000 0.47126437 1.00000000 #FFDA00
+    ## 18          NA     3 0.9371648 0.09146341 0.06283525 0.18292683 #FFF2CC
+    ## 19          NA     2 0.9371648 0.09146341 0.06283525 0.18292683 #FFF2CC
+    ## 20          NA     3 0.8743295 0.00000000 0.12567050 0.09146341 #FFF2CC
+    ## 21          NA     2 0.8743295 0.00000000 0.12567050 0.09146341 #FFF2CC
+    ## 22          NA     2 0.1938697 0.20594966 0.11162197 0.20594966 #28B463
+    ## 23          NA     3 0.1938697 0.20594966 0.11162197 0.20594966 #28B463
+    ## 24          NA     2 0.1938697 0.10297483 0.11162197 0.10297483 #BEF4BE
+    ## 25          NA     3 0.1938697 0.10297483 0.11162197 0.10297483 #BEF4BE
+    ## 26          NA     2 0.1938697 0.00000000 0.11162197 0.10297483 #BEF4BE
+    ## 27          NA     3 0.1938697 0.00000000 0.11162197 0.10297483 #BEF4BE
+    ## 28          NA     2 0.3054917 0.25743707 0.07441464 0.15446224 #BEF4BE
+    ## 29          NA     3 0.3054917 0.25743707 0.07441464 0.15446224 #BEF4BE
+    ## 30          NA     2 0.0000000 0.29644269 0.19386973 0.35573123 #8CDE9F
+    ## 31          NA     3 0.0000000 0.29644269 0.19386973 0.35573123 #8CDE9F
+    ## 32          NA     2 0.3799063 0.25743707 0.07441464 0.15446224 #BEF4BE
+    ## 33          NA     3 0.3799063 0.25743707 0.07441464 0.15446224 #BEF4BE
+    ## 34          NA     2 0.4543210 0.25743707 0.07441464 0.15446224 #BEF4BE
+    ## 35          NA     3 0.4543210 0.25743707 0.07441464 0.15446224 #BEF4BE
+    ## 36          NA     2 0.3054917 0.12871854 0.08929757 0.12871854 #BEF4BE
+    ## 37          NA     3 0.3054917 0.12871854 0.08929757 0.12871854 #BEF4BE
+    ## 38          NA     3 0.1938697 0.41189931 0.19135194 0.24027460 #59C981
+    ## 39          NA     2 0.1938697 0.41189931 0.19135194 0.24027460 #59C981
+    ## 40          NA     3 0.3852217 0.41189931 0.14351396 0.24027460 #59C981
+    ## 41          NA     2 0.3852217 0.41189931 0.14351396 0.24027460 #59C981
+    ## 42          NA     3 0.0000000 0.65217391 0.26436782 0.34782609 #59C981
+    ## 43          NA     2 0.0000000 0.65217391 0.26436782 0.34782609 #59C981
+    ## 44          NA     1 0.0000000 0.00000000 0.52873563 1.00000000 #BEF4BE
+    ## 45          NA     2 0.3054917 0.00000000 0.08929757 0.12871854 #BEF4BE
+    ## 46          NA     3 0.3054917 0.00000000 0.08929757 0.12871854 #BEF4BE
+    ## 47          NA     2 0.0000000 0.00000000 0.19386973 0.29644269 #8CDE9F
+    ## 48          NA     3 0.0000000 0.00000000 0.19386973 0.29644269 #8CDE9F
+    ## 49          NA     3 0.2643678 0.65217391 0.26436782 0.34782609 #59C981
+    ## 50          NA     2 0.2643678 0.65217391 0.26436782 0.34782609 #59C981
+    ## 51          NA     2 0.3947893 0.08581236 0.06697318 0.17162471 #BEF4BE
+    ## 52          NA     3 0.3947893 0.08581236 0.06697318 0.17162471 #BEF4BE
+    ## 53          NA     2 0.4617625 0.08581236 0.06697318 0.17162471 #BEF4BE
+    ## 54          NA     3 0.4617625 0.08581236 0.06697318 0.17162471 #BEF4BE
+    ## 55          NA     2 0.3947893 0.00000000 0.13394636 0.08581236 #BEF4BE
+    ## 56          NA     3 0.3947893 0.00000000 0.13394636 0.08581236 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_26, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_26-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    11 #FFE244     11
+    ## 2    Banana          Antioquia       Very Effective    11 #FFE244     11
+    ## 3    Banana             Caldas Moderately Effective     1 #FFDA00      1
+    ## 4    Banana             Caldas                 <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFE244      1
+    ## 6    Banana              Cesar       Very Effective     1 #FFE244      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFEA88      2
+    ## 8    Banana              Chocó   Slightly Effective     2 #FFEA88      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba        Not Effective     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderately Effective     1 #FFDA00      1
+    ## 12   Banana              Huila                 <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderately Effective     9 #FFDA00      9
+    ## 14   Banana         La Guajira                 <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena                 <NA>    11 #FFE244     11
+    ## 16   Banana          Magdalena       Very Effective    11 #FFE244     11
+    ## 17   Banana               <NA>                 <NA>    39 #FFDA00     39
+    ## 18   Banana            Quindío Moderately Effective     1 #FFDA00      1
+    ## 19   Banana            Quindío                 <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderately Effective     1 #FFDA00      1
+    ## 21   Banana          Risaralda                 <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia  Extremely Effective     2 #28B463      2
+    ## 23 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca                 <NA>     1 #BEF4BE      1
+    ## 25 Plantain             Arauca        Not Effective     1 #BEF4BE      1
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico        Not Effective     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar        Not Effective     1 #BEF4BE      1
+    ## 30 Plantain             Caldas                 <NA>     6 #8CDE9F      6
+    ## 31 Plantain             Caldas   Slightly Effective     6 #8CDE9F      6
+    ## 32 Plantain           Casanare                 <NA>     1 #BEF4BE      1
+    ## 33 Plantain           Casanare        Not Effective     1 #BEF4BE      1
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba        Not Effective     1 #BEF4BE      1
+    ## 36 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain              Huila        Not Effective     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira Moderately Effective     4 #59C981      4
+    ## 39 Plantain         La Guajira                 <NA>     4 #59C981      4
+    ## 40 Plantain          Magdalena Moderately Effective     3 #59C981      3
+    ## 41 Plantain          Magdalena                 <NA>     3 #59C981      3
+    ## 42 Plantain               Meta Moderately Effective     7 #59C981      7
+    ## 43 Plantain               Meta                 <NA>     7 #59C981      7
+    ## 44 Plantain               <NA>                 <NA>    45 #BEF4BE     45
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander        Not Effective     1 #BEF4BE      1
+    ## 47 Plantain            Quindío                 <NA>     5 #8CDE9F      5
+    ## 48 Plantain            Quindío   Slightly Effective     5 #8CDE9F      5
+    ## 49 Plantain          Risaralda                 <NA>     8 #8CDE9F      8
+    ## 50 Plantain          Risaralda   Slightly Effective     8 #8CDE9F      8
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander        Not Effective     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre        Not Effective     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima        Not Effective     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5357143 0.43589744 0.23214286 0.56410256 #FFE244
+    ## 2           NA     3 0.5357143 0.43589744 0.23214286 0.56410256 #FFE244
+    ## 3           NA     3 0.9271709 0.27243590 0.07282913 0.16346154 #FFDA00
+    ## 4           NA     2 0.9271709 0.27243590 0.07282913 0.16346154 #FFDA00
+    ## 5           NA     2 0.7815126 0.13621795 0.08739496 0.13621795 #FFE244
+    ## 6           NA     3 0.7815126 0.13621795 0.08739496 0.13621795 #FFE244
+    ## 7           NA     2 0.7815126 0.27243590 0.14565826 0.16346154 #FFEA88
+    ## 8           NA     3 0.7815126 0.27243590 0.14565826 0.16346154 #FFEA88
+    ## 9           NA     2 0.7815126 0.00000000 0.08739496 0.13621795 #FFF2CC
+    ## 10          NA     3 0.7815126 0.00000000 0.08739496 0.13621795 #FFF2CC
+    ## 11          NA     3 0.8689076 0.09081197 0.06554622 0.18162393 #FFDA00
+    ## 12          NA     2 0.8689076 0.09081197 0.06554622 0.18162393 #FFDA00
+    ## 13          NA     3 0.5357143 0.00000000 0.24579832 0.43589744 #FFDA00
+    ## 14          NA     2 0.5357143 0.00000000 0.24579832 0.43589744 #FFDA00
+    ## 15          NA     2 0.7678571 0.43589744 0.23214286 0.56410256 #FFE244
+    ## 16          NA     3 0.7678571 0.43589744 0.23214286 0.56410256 #FFE244
+    ## 17          NA     1 0.5357143 0.00000000 0.46428571 1.00000000 #FFDA00
+    ## 18          NA     3 0.9344538 0.09081197 0.06554622 0.18162393 #FFDA00
+    ## 19          NA     2 0.9344538 0.09081197 0.06554622 0.18162393 #FFDA00
+    ## 20          NA     3 0.8689076 0.00000000 0.13109244 0.09081197 #FFDA00
+    ## 21          NA     2 0.8689076 0.00000000 0.13109244 0.09081197 #FFDA00
+    ## 22          NA     3 0.1964286 0.25263158 0.14136905 0.16842105 #28B463
+    ## 23          NA     2 0.1964286 0.25263158 0.14136905 0.16842105 #28B463
+    ## 24          NA     2 0.1964286 0.08421053 0.07068452 0.16842105 #BEF4BE
+    ## 25          NA     3 0.1964286 0.08421053 0.07068452 0.16842105 #BEF4BE
+    ## 26          NA     2 0.2671131 0.08421053 0.07068452 0.16842105 #BEF4BE
+    ## 27          NA     3 0.2671131 0.08421053 0.07068452 0.16842105 #BEF4BE
+    ## 28          NA     2 0.1964286 0.00000000 0.14136905 0.08421053 #BEF4BE
+    ## 29          NA     3 0.1964286 0.00000000 0.14136905 0.08421053 #BEF4BE
+    ## 30          NA     2 0.0000000 0.30303030 0.19642857 0.36363636 #8CDE9F
+    ## 31          NA     3 0.0000000 0.30303030 0.19642857 0.36363636 #8CDE9F
+    ## 32          NA     2 0.3377976 0.30075188 0.09895833 0.12030075 #BEF4BE
+    ## 33          NA     3 0.3377976 0.30075188 0.09895833 0.12030075 #BEF4BE
+    ## 34          NA     2 0.4367560 0.30075188 0.09895833 0.12030075 #BEF4BE
+    ## 35          NA     3 0.4367560 0.30075188 0.09895833 0.12030075 #BEF4BE
+    ## 36          NA     2 0.3377976 0.18045113 0.09895833 0.12030075 #BEF4BE
+    ## 37          NA     3 0.3377976 0.18045113 0.09895833 0.12030075 #BEF4BE
+    ## 38          NA     3 0.1964286 0.42105263 0.19387755 0.24561404 #59C981
+    ## 39          NA     2 0.1964286 0.42105263 0.19387755 0.24561404 #59C981
+    ## 40          NA     3 0.3903061 0.42105263 0.14540816 0.24561404 #59C981
+    ## 41          NA     2 0.3903061 0.42105263 0.14540816 0.24561404 #59C981
+    ## 42          NA     3 0.2857143 0.66666667 0.25000000 0.33333333 #59C981
+    ## 43          NA     2 0.2857143 0.66666667 0.25000000 0.33333333 #59C981
+    ## 44          NA     1 0.0000000 0.00000000 0.53571429 1.00000000 #BEF4BE
+    ## 45          NA     2 0.4367560 0.18045113 0.09895833 0.12030075 #BEF4BE
+    ## 46          NA     3 0.4367560 0.18045113 0.09895833 0.12030075 #BEF4BE
+    ## 47          NA     2 0.0000000 0.00000000 0.19642857 0.30303030 #8CDE9F
+    ## 48          NA     3 0.0000000 0.00000000 0.19642857 0.30303030 #8CDE9F
+    ## 49          NA     2 0.0000000 0.66666667 0.28571429 0.33333333 #8CDE9F
+    ## 50          NA     3 0.0000000 0.66666667 0.28571429 0.33333333 #8CDE9F
+    ## 51          NA     2 0.3377976 0.00000000 0.06597222 0.18045113 #BEF4BE
+    ## 52          NA     3 0.3377976 0.00000000 0.06597222 0.18045113 #BEF4BE
+    ## 53          NA     2 0.4037698 0.00000000 0.06597222 0.18045113 #BEF4BE
+    ## 54          NA     3 0.4037698 0.00000000 0.06597222 0.18045113 #BEF4BE
+    ## 55          NA     2 0.4697421 0.00000000 0.06597222 0.18045113 #BEF4BE
+    ## 56          NA     3 0.4697421 0.00000000 0.06597222 0.18045113 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q26_no_weight<- question_26 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =26))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+``` r
+nal_q26_no_weight<- full_join(codes_department, nal_q26_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q26_no_weight$cat<- factor(nal_q26_no_weight$cat, levels = level_26)
+colmap(departamentos, data = nal_q26_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q26_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_26-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q26_weight<- inner_join(question_26, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q26_weight<- nal_q26_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =26)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q26_weight<- full_join(codes_department, nal_q26_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q26_weight$cat_weighted<- factor(nal_q26_weight$cat_weighted, levels = level_26)
+colmap(departamentos, data = nal_q26_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q26_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_26-4.png)<!-- -->
+
+## Question 28: How important do you believe the role of migrant or itinerant workers is in the spread of pests and diseases in banana plantations in your areas of specialization?
+
+``` r
+#selecting only question 28----
+question_28<- filter(individual_surveys, question_number==28)
+#unique(question_28$numeric_answer)
+#dput(unique(question_28$answer_in_english))
+
+#organizing the order of the levels
+level_28<- c("Not Significant", "Somewhat Significant", "Very Significant","Not Sure")
+question_28$answer_in_english<- factor(question_28$answer_in_english,levels = level_28)
+question_28<- filter(question_28, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_28<- question_28 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(28, mean =average, language = "en"))
+```
+
+    ## Warning: There were 5 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(28, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_28<- inner_join(question_28, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_28<- add_weights_question_28 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(28, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(28, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q28_no_weighted<- tapply(avg_dept_no_weight_28$ave_cat, avg_dept_no_weight_28$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question28_no_weighted<- palette_banana(length(levels_per_crop_Q28_no_weighted$Banana))
+colors_plantain_question28_no_weighted<- palette_plantain(length(levels_per_crop_Q28_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_28 <- list(
+  Banana = levels_per_crop_Q28_no_weighted$Banana,
+  Plantain = levels_per_crop_Q28_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_28 <- list(
+  Banana = colors_banana_question28_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question28_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_28 <- assign_group_color(data = avg_dept_no_weight_28, levels_by_crop = levels_by_crop_no_weighted_28, colors_by_crop = colors_by_crop_no_weighted_28,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q28_weighted<- tapply(avg_dept_weight_28$ave_cat_weighted, avg_dept_weight_28$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question28_weighted<- palette_banana(length(levels_per_crop_Q28_weighted$Banana))
+colors_plantain_question28_weighted<- palette_plantain(length(levels_per_crop_Q28_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_28 <- list(
+  Banana = levels_per_crop_Q28_weighted$Banana,
+  Plantain = levels_per_crop_Q28_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_28 <- list(
+  Banana = colors_banana_question28_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question28_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_28 <- assign_group_color(data = avg_dept_weight_28, levels_by_crop = levels_by_crop_weighted_28, colors_by_crop = colors_by_crop_weighted_28,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_28, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_28-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    11 #FFDA00     11
+    ## 2    Banana          Antioquia     Very Significant    11 #FFDA00     11
+    ## 3    Banana             Caldas                 <NA>     1 #FFF2CC      1
+    ## 4    Banana             Caldas      Not Significant     1 #FFF2CC      1
+    ## 5    Banana              Cesar                 <NA>     2 #FFDA00      2
+    ## 6    Banana              Cesar     Very Significant     2 #FFDA00      2
+    ## 7    Banana              Chocó                 <NA>     1 #FFE566      1
+    ## 8    Banana              Chocó Somewhat Significant     1 #FFE566      1
+    ## 9    Banana            Córdoba                 <NA>     1 #FFDA00      1
+    ## 10   Banana            Córdoba     Very Significant     1 #FFDA00      1
+    ## 11   Banana              Huila                 <NA>     1 #FFF2CC      1
+    ## 12   Banana              Huila      Not Significant     1 #FFF2CC      1
+    ## 13   Banana         La Guajira                 <NA>     9 #FFDA00      9
+    ## 14   Banana         La Guajira     Very Significant     9 #FFDA00      9
+    ## 15   Banana          Magdalena                 <NA>    11 #FFDA00     11
+    ## 16   Banana          Magdalena     Very Significant    11 #FFDA00     11
+    ## 17   Banana               <NA>                 <NA>    39 #FFDA00     39
+    ## 18   Banana            Quindío                 <NA>     1 #FFF2CC      1
+    ## 19   Banana            Quindío      Not Significant     1 #FFF2CC      1
+    ## 20   Banana          Risaralda                 <NA>     1 #FFF2CC      1
+    ## 21   Banana          Risaralda      Not Significant     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia Somewhat Significant     2 #28B463      2
+    ## 24 Plantain             Arauca                 <NA>     2 #28B463      2
+    ## 25 Plantain             Arauca Somewhat Significant     2 #28B463      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico      Not Significant     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar      Not Significant     1 #BEF4BE      1
+    ## 30 Plantain             Caldas                 <NA>     7 #28B463      7
+    ## 31 Plantain             Caldas Somewhat Significant     7 #28B463      7
+    ## 32 Plantain           Casanare                 <NA>     2 #28B463      2
+    ## 33 Plantain           Casanare Somewhat Significant     2 #28B463      2
+    ## 34 Plantain              Chocó                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain              Chocó      Not Significant     1 #BEF4BE      1
+    ## 36 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain            Córdoba      Not Significant     1 #BEF4BE      1
+    ## 38 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 39 Plantain              Huila      Not Significant     1 #BEF4BE      1
+    ## 40 Plantain         La Guajira                 <NA>     3 #28B463      3
+    ## 41 Plantain         La Guajira Somewhat Significant     3 #28B463      3
+    ## 42 Plantain          Magdalena                 <NA>     2 #28B463      2
+    ## 43 Plantain          Magdalena Somewhat Significant     2 #28B463      2
+    ## 44 Plantain               Meta                 <NA>    11 #28B463     11
+    ## 45 Plantain               Meta Somewhat Significant    11 #28B463     11
+    ## 46 Plantain               <NA>                 <NA>    54 #28B463     54
+    ## 47 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 48 Plantain Norte De Santander      Not Significant     1 #BEF4BE      1
+    ## 49 Plantain            Quindío                 <NA>     6 #28B463      6
+    ## 50 Plantain            Quindío Somewhat Significant     6 #28B463      6
+    ## 51 Plantain          Risaralda                 <NA>    10 #28B463     10
+    ## 52 Plantain          Risaralda Somewhat Significant    10 #28B463     10
+    ## 53 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain          Santander      Not Significant     1 #BEF4BE      1
+    ## 55 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain              Sucre      Not Significant     1 #BEF4BE      1
+    ## 57 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 58 Plantain             Tolima      Not Significant     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5806452 0.43589744 0.20967742 0.56410256 #FFDA00
+    ## 2           NA     3 0.5806452 0.43589744 0.20967742 0.56410256 #FFDA00
+    ## 3           NA     2 0.8519924 0.29059829 0.07400380 0.14529915 #FFF2CC
+    ## 4           NA     3 0.8519924 0.29059829 0.07400380 0.14529915 #FFF2CC
+    ## 5           NA     2 0.5806452 0.00000000 0.27134725 0.07925408 #FFDA00
+    ## 6           NA     3 0.5806452 0.00000000 0.27134725 0.07925408 #FFDA00
+    ## 7           NA     2 0.9259962 0.29059829 0.07400380 0.14529915 #FFE566
+    ## 8           NA     3 0.9259962 0.29059829 0.07400380 0.14529915 #FFE566
+    ## 9           NA     2 0.8519924 0.14529915 0.07400380 0.14529915 #FFDA00
+    ## 10          NA     3 0.8519924 0.14529915 0.07400380 0.14529915 #FFDA00
+    ## 11          NA     2 0.9259962 0.14529915 0.07400380 0.14529915 #FFF2CC
+    ## 12          NA     3 0.9259962 0.14529915 0.07400380 0.14529915 #FFF2CC
+    ## 13          NA     2 0.5806452 0.07925408 0.27134725 0.35664336 #FFDA00
+    ## 14          NA     3 0.5806452 0.07925408 0.27134725 0.35664336 #FFDA00
+    ## 15          NA     2 0.7903226 0.43589744 0.20967742 0.56410256 #FFDA00
+    ## 16          NA     3 0.7903226 0.43589744 0.20967742 0.56410256 #FFDA00
+    ## 17          NA     1 0.5806452 0.00000000 0.41935484 1.00000000 #FFDA00
+    ## 18          NA     2 0.8519924 0.00000000 0.07400380 0.14529915 #FFF2CC
+    ## 19          NA     3 0.8519924 0.00000000 0.07400380 0.14529915 #FFF2CC
+    ## 20          NA     2 0.9259962 0.00000000 0.07400380 0.14529915 #FFF2CC
+    ## 21          NA     3 0.9259962 0.00000000 0.07400380 0.14529915 #FFF2CC
+    ## 22          NA     2 0.3795559 0.39722222 0.10054462 0.21388889 #28B463
+    ## 23          NA     3 0.3795559 0.39722222 0.10054462 0.21388889 #28B463
+    ## 24          NA     2 0.4801005 0.39722222 0.10054462 0.21388889 #28B463
+    ## 25          NA     3 0.4801005 0.39722222 0.10054462 0.21388889 #28B463
+    ## 26          NA     2 0.3370178 0.26481481 0.08120911 0.13240741 #BEF4BE
+    ## 27          NA     3 0.3370178 0.26481481 0.08120911 0.13240741 #BEF4BE
+    ## 28          NA     2 0.4182269 0.26481481 0.08120911 0.13240741 #BEF4BE
+    ## 29          NA     3 0.4182269 0.26481481 0.08120911 0.13240741 #BEF4BE
+    ## 30          NA     2 0.0000000 0.28205128 0.22873900 0.32905983 #28B463
+    ## 31          NA     3 0.0000000 0.28205128 0.22873900 0.32905983 #28B463
+    ## 32          NA     2 0.2287390 0.19861111 0.10827882 0.19861111 #28B463
+    ## 33          NA     3 0.2287390 0.19861111 0.10827882 0.19861111 #28B463
+    ## 34          NA     2 0.4994360 0.26481481 0.08120911 0.13240741 #BEF4BE
+    ## 35          NA     3 0.4994360 0.26481481 0.08120911 0.13240741 #BEF4BE
+    ## 36          NA     2 0.3370178 0.13240741 0.08120911 0.13240741 #BEF4BE
+    ## 37          NA     3 0.3370178 0.13240741 0.08120911 0.13240741 #BEF4BE
+    ## 38          NA     2 0.3370178 0.00000000 0.08120911 0.13240741 #BEF4BE
+    ## 39          NA     3 0.3370178 0.00000000 0.08120911 0.13240741 #BEF4BE
+    ## 40          NA     2 0.2287390 0.39722222 0.15081693 0.21388889 #28B463
+    ## 41          NA     3 0.2287390 0.39722222 0.15081693 0.21388889 #28B463
+    ## 42          NA     2 0.2287390 0.00000000 0.10827882 0.19861111 #28B463
+    ## 43          NA     3 0.2287390 0.00000000 0.10827882 0.19861111 #28B463
+    ## 44          NA     2 0.0000000 0.61111111 0.30414747 0.38888889 #28B463
+    ## 45          NA     3 0.0000000 0.61111111 0.30414747 0.38888889 #28B463
+    ## 46          NA     1 0.0000000 0.00000000 0.58064516 1.00000000 #28B463
+    ## 47          NA     2 0.4182269 0.13240741 0.08120911 0.13240741 #BEF4BE
+    ## 48          NA     3 0.4182269 0.13240741 0.08120911 0.13240741 #BEF4BE
+    ## 49          NA     2 0.0000000 0.00000000 0.22873900 0.28205128 #28B463
+    ## 50          NA     3 0.0000000 0.00000000 0.22873900 0.28205128 #28B463
+    ## 51          NA     2 0.3041475 0.61111111 0.27649770 0.38888889 #28B463
+    ## 52          NA     3 0.3041475 0.61111111 0.27649770 0.38888889 #28B463
+    ## 53          NA     2 0.4994360 0.13240741 0.08120911 0.13240741 #BEF4BE
+    ## 54          NA     3 0.4994360 0.13240741 0.08120911 0.13240741 #BEF4BE
+    ## 55          NA     2 0.4182269 0.00000000 0.08120911 0.13240741 #BEF4BE
+    ## 56          NA     3 0.4182269 0.00000000 0.08120911 0.13240741 #BEF4BE
+    ## 57          NA     2 0.4994360 0.00000000 0.08120911 0.13240741 #BEF4BE
+    ## 58          NA     3 0.4994360 0.00000000 0.08120911 0.13240741 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_28, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_28-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    11 #FFDA00     11
+    ## 2    Banana          Antioquia     Very Significant    11 #FFDA00     11
+    ## 3    Banana             Caldas                 <NA>     1 #FFF2CC      1
+    ## 4    Banana             Caldas      Not Significant     1 #FFF2CC      1
+    ## 5    Banana              Cesar                 <NA>     2 #FFDA00      2
+    ## 6    Banana              Cesar     Very Significant     2 #FFDA00      2
+    ## 7    Banana              Chocó                 <NA>     1 #FFE566      1
+    ## 8    Banana              Chocó Somewhat Significant     1 #FFE566      1
+    ## 9    Banana            Córdoba                 <NA>     1 #FFDA00      1
+    ## 10   Banana            Córdoba     Very Significant     1 #FFDA00      1
+    ## 11   Banana              Huila                 <NA>     1 #FFF2CC      1
+    ## 12   Banana              Huila      Not Significant     1 #FFF2CC      1
+    ## 13   Banana         La Guajira                 <NA>     8 #FFDA00      8
+    ## 14   Banana         La Guajira     Very Significant     8 #FFDA00      8
+    ## 15   Banana          Magdalena                 <NA>    10 #FFDA00     10
+    ## 16   Banana          Magdalena     Very Significant    10 #FFDA00     10
+    ## 17   Banana               <NA>                 <NA>    37 #FFDA00     37
+    ## 18   Banana            Quindío                 <NA>     1 #FFF2CC      1
+    ## 19   Banana            Quindío      Not Significant     1 #FFF2CC      1
+    ## 20   Banana          Risaralda                 <NA>     1 #FFF2CC      1
+    ## 21   Banana          Risaralda      Not Significant     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia                 <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia Somewhat Significant     2 #28B463      2
+    ## 24 Plantain             Arauca                 <NA>     2 #28B463      2
+    ## 25 Plantain             Arauca Somewhat Significant     2 #28B463      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico      Not Significant     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar      Not Significant     1 #BEF4BE      1
+    ## 30 Plantain             Caldas                 <NA>     7 #28B463      7
+    ## 31 Plantain             Caldas Somewhat Significant     7 #28B463      7
+    ## 32 Plantain           Casanare                 <NA>     2 #28B463      2
+    ## 33 Plantain           Casanare Somewhat Significant     2 #28B463      2
+    ## 34 Plantain              Chocó                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain              Chocó      Not Significant     1 #BEF4BE      1
+    ## 36 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain            Córdoba      Not Significant     1 #BEF4BE      1
+    ## 38 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 39 Plantain              Huila      Not Significant     1 #BEF4BE      1
+    ## 40 Plantain         La Guajira                 <NA>     3 #28B463      3
+    ## 41 Plantain         La Guajira Somewhat Significant     3 #28B463      3
+    ## 42 Plantain          Magdalena                 <NA>     2 #28B463      2
+    ## 43 Plantain          Magdalena Somewhat Significant     2 #28B463      2
+    ## 44 Plantain               Meta                 <NA>    10 #28B463     10
+    ## 45 Plantain               Meta Somewhat Significant    10 #28B463     10
+    ## 46 Plantain               <NA>                 <NA>    53 #28B463     53
+    ## 47 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 48 Plantain Norte De Santander      Not Significant     1 #BEF4BE      1
+    ## 49 Plantain            Quindío                 <NA>     6 #28B463      6
+    ## 50 Plantain            Quindío Somewhat Significant     6 #28B463      6
+    ## 51 Plantain          Risaralda                 <NA>    10 #28B463     10
+    ## 52 Plantain          Risaralda Somewhat Significant    10 #28B463     10
+    ## 53 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain          Santander      Not Significant     1 #BEF4BE      1
+    ## 55 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain              Sucre      Not Significant     1 #BEF4BE      1
+    ## 57 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 58 Plantain             Tolima      Not Significant     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5888889 0.43243243 0.21534392 0.56756757 #FFDA00
+    ## 2           NA     3 0.5888889 0.43243243 0.21534392 0.56756757 #FFDA00
+    ## 3           NA     2 0.8458333 0.28828829 0.07708333 0.14414414 #FFF2CC
+    ## 4           NA     3 0.8458333 0.28828829 0.07708333 0.14414414 #FFF2CC
+    ## 5           NA     2 0.5888889 0.00000000 0.25694444 0.08648649 #FFDA00
+    ## 6           NA     3 0.5888889 0.00000000 0.25694444 0.08648649 #FFDA00
+    ## 7           NA     2 0.9229167 0.28828829 0.07708333 0.14414414 #FFE566
+    ## 8           NA     3 0.9229167 0.28828829 0.07708333 0.14414414 #FFE566
+    ## 9           NA     2 0.8458333 0.14414414 0.07708333 0.14414414 #FFDA00
+    ## 10          NA     3 0.8458333 0.14414414 0.07708333 0.14414414 #FFDA00
+    ## 11          NA     2 0.9229167 0.14414414 0.07708333 0.14414414 #FFF2CC
+    ## 12          NA     3 0.9229167 0.14414414 0.07708333 0.14414414 #FFF2CC
+    ## 13          NA     2 0.5888889 0.08648649 0.25694444 0.34594595 #FFDA00
+    ## 14          NA     3 0.5888889 0.08648649 0.25694444 0.34594595 #FFDA00
+    ## 15          NA     2 0.8042328 0.43243243 0.19576720 0.56756757 #FFDA00
+    ## 16          NA     3 0.8042328 0.43243243 0.19576720 0.56756757 #FFDA00
+    ## 17          NA     1 0.5888889 0.00000000 0.41111111 1.00000000 #FFDA00
+    ## 18          NA     2 0.8458333 0.00000000 0.07708333 0.14414414 #FFF2CC
+    ## 19          NA     3 0.8458333 0.00000000 0.07708333 0.14414414 #FFF2CC
+    ## 20          NA     2 0.9229167 0.00000000 0.07708333 0.14414414 #FFF2CC
+    ## 21          NA     3 0.9229167 0.00000000 0.07708333 0.14414414 #FFF2CC
+    ## 22          NA     2 0.3849447 0.40471698 0.10197210 0.21792453 #28B463
+    ## 23          NA     3 0.3849447 0.40471698 0.10197210 0.21792453 #28B463
+    ## 24          NA     2 0.4869168 0.40471698 0.10197210 0.21792453 #28B463
+    ## 25          NA     3 0.4869168 0.40471698 0.10197210 0.21792453 #28B463
+    ## 26          NA     2 0.3418026 0.26981132 0.08236208 0.13490566 #BEF4BE
+    ## 27          NA     3 0.3418026 0.26981132 0.08236208 0.13490566 #BEF4BE
+    ## 28          NA     2 0.4241647 0.26981132 0.08236208 0.13490566 #BEF4BE
+    ## 29          NA     3 0.4241647 0.26981132 0.08236208 0.13490566 #BEF4BE
+    ## 30          NA     2 0.0000000 0.28737300 0.23198653 0.33526851 #28B463
+    ## 31          NA     3 0.0000000 0.28737300 0.23198653 0.33526851 #28B463
+    ## 32          NA     2 0.2319865 0.20235849 0.10981611 0.20235849 #28B463
+    ## 33          NA     3 0.2319865 0.20235849 0.10981611 0.20235849 #28B463
+    ## 34          NA     2 0.5065268 0.26981132 0.08236208 0.13490566 #BEF4BE
+    ## 35          NA     3 0.5065268 0.26981132 0.08236208 0.13490566 #BEF4BE
+    ## 36          NA     2 0.3418026 0.13490566 0.08236208 0.13490566 #BEF4BE
+    ## 37          NA     3 0.3418026 0.13490566 0.08236208 0.13490566 #BEF4BE
+    ## 38          NA     2 0.3418026 0.00000000 0.08236208 0.13490566 #BEF4BE
+    ## 39          NA     3 0.3418026 0.00000000 0.08236208 0.13490566 #BEF4BE
+    ## 40          NA     2 0.2319865 0.40471698 0.15295815 0.21792453 #28B463
+    ## 41          NA     3 0.2319865 0.40471698 0.15295815 0.21792453 #28B463
+    ## 42          NA     2 0.2319865 0.00000000 0.10981611 0.20235849 #28B463
+    ## 43          NA     3 0.2319865 0.00000000 0.10981611 0.20235849 #28B463
+    ## 44          NA     2 0.0000000 0.62264151 0.29444444 0.37735849 #28B463
+    ## 45          NA     3 0.0000000 0.62264151 0.29444444 0.37735849 #28B463
+    ## 46          NA     1 0.0000000 0.00000000 0.58888889 1.00000000 #28B463
+    ## 47          NA     2 0.4241647 0.13490566 0.08236208 0.13490566 #BEF4BE
+    ## 48          NA     3 0.4241647 0.13490566 0.08236208 0.13490566 #BEF4BE
+    ## 49          NA     2 0.0000000 0.00000000 0.23198653 0.28737300 #28B463
+    ## 50          NA     3 0.0000000 0.00000000 0.23198653 0.28737300 #28B463
+    ## 51          NA     2 0.2944444 0.62264151 0.29444444 0.37735849 #28B463
+    ## 52          NA     3 0.2944444 0.62264151 0.29444444 0.37735849 #28B463
+    ## 53          NA     2 0.5065268 0.13490566 0.08236208 0.13490566 #BEF4BE
+    ## 54          NA     3 0.5065268 0.13490566 0.08236208 0.13490566 #BEF4BE
+    ## 55          NA     2 0.4241647 0.00000000 0.08236208 0.13490566 #BEF4BE
+    ## 56          NA     3 0.4241647 0.00000000 0.08236208 0.13490566 #BEF4BE
+    ## 57          NA     2 0.5065268 0.00000000 0.08236208 0.13490566 #BEF4BE
+    ## 58          NA     3 0.5065268 0.00000000 0.08236208 0.13490566 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q28_no_weight<- question_28 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =28))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q28_no_weight<- full_join(codes_department, nal_q28_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q28_no_weight$cat<- factor(nal_q28_no_weight$cat, levels = level_28)
+colmap(departamentos, data = nal_q28_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q28_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_28-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q28_weight<- inner_join(question_28, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q28_weight<- nal_q28_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =28)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q28_weight<- full_join(codes_department, nal_q28_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q28_weight$cat_weighted<- factor(nal_q28_weight$cat_weighted, levels = level_28)
+colmap(departamentos, data = nal_q28_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q28_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_28-4.png)<!-- -->
+
+## Question 29: To what extent are migrant or itinerant workers implementing biosecurity measures to reduce the possible spread of pests and diseases in the areas where you are an expert?
+
+``` r
+#selecting only question 29----
+question_29<- filter(individual_surveys, question_number==29)
+#unique(question_29$numeric_answer)
+#dput(unique(question_29$answer_in_english))
+
+#organizing the order of the levels
+level_29<- c("No Measures", "Some Measures", "Significant Measures","Not Sure")
+question_29$answer_in_english<- factor(question_29$answer_in_english,levels = level_29)
+question_29<- filter(question_29, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_29<- question_29 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(29, mean =average, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(29, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_29<- inner_join(question_29, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_29<- add_weights_question_29 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(29, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(29, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q29_no_weighted<- tapply(avg_dept_no_weight_29$ave_cat, avg_dept_no_weight_29$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question29_no_weighted<- palette_banana(length(levels_per_crop_Q29_no_weighted$Banana))
+colors_plantain_question29_no_weighted<- palette_plantain(length(levels_per_crop_Q29_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_29 <- list(
+  Banana = levels_per_crop_Q29_no_weighted$Banana,
+  Plantain = levels_per_crop_Q29_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_29 <- list(
+  Banana = colors_banana_question29_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question29_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_29 <- assign_group_color(data = avg_dept_no_weight_29, levels_by_crop = levels_by_crop_no_weighted_29, colors_by_crop = colors_by_crop_no_weighted_29,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q29_weighted<- tapply(avg_dept_weight_29$ave_cat_weighted, avg_dept_weight_29$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question29_weighted<- palette_banana(length(levels_per_crop_Q29_weighted$Banana))
+colors_plantain_question29_weighted<- palette_plantain(length(levels_per_crop_Q29_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_29 <- list(
+  Banana = levels_per_crop_Q29_weighted$Banana,
+  Plantain = levels_per_crop_Q29_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_29 <- list(
+  Banana = colors_banana_question29_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question29_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_29 <- assign_group_color(data = avg_dept_weight_29, levels_by_crop = levels_by_crop_weighted_29, colors_by_crop = colors_by_crop_weighted_29,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_29, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_29-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in              ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 2    Banana          Antioquia        Some Measures    10 #FFDA00     10
+    ## 3    Banana             Caldas                 <NA>     1 #FFF2CC      1
+    ## 4    Banana             Caldas          No Measures     1 #FFF2CC      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 6    Banana              Cesar        Some Measures     1 #FFDA00      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó          No Measures     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba          No Measures     1 #FFF2CC      1
+    ## 11   Banana              Huila                 <NA>     1 #FFF2CC      1
+    ## 12   Banana              Huila          No Measures     1 #FFF2CC      1
+    ## 13   Banana         La Guajira                 <NA>     8 #FFDA00      8
+    ## 14   Banana         La Guajira        Some Measures     8 #FFDA00      8
+    ## 15   Banana          Magdalena                 <NA>    10 #FFDA00     10
+    ## 16   Banana          Magdalena        Some Measures    10 #FFDA00     10
+    ## 17   Banana               <NA>                 <NA>    36 #FFF2CC     36
+    ## 18   Banana            Quindío                 <NA>     1 #FFF2CC      1
+    ## 19   Banana            Quindío          No Measures     1 #FFF2CC      1
+    ## 20   Banana          Risaralda                 <NA>     1 #FFF2CC      1
+    ## 21   Banana          Risaralda          No Measures     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia                 <NA>     1 #28B463      1
+    ## 23 Plantain          Antioquia Significant Measures     1 #28B463      1
+    ## 24 Plantain             Arauca                 <NA>     2 #BEF4BE      2
+    ## 25 Plantain             Arauca          No Measures     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico          No Measures     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar          No Measures     1 #BEF4BE      1
+    ## 30 Plantain             Caldas                 <NA>     7 #BEF4BE      7
+    ## 31 Plantain             Caldas          No Measures     7 #BEF4BE      7
+    ## 32 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare          No Measures     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba          No Measures     1 #BEF4BE      1
+    ## 36 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain              Huila          No Measures     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira                 <NA>     4 #73D490      4
+    ## 39 Plantain         La Guajira        Some Measures     4 #73D490      4
+    ## 40 Plantain          Magdalena                 <NA>     3 #73D490      3
+    ## 41 Plantain          Magdalena        Some Measures     3 #73D490      3
+    ## 42 Plantain               Meta                 <NA>    10 #BEF4BE     10
+    ## 43 Plantain               Meta          No Measures    10 #BEF4BE     10
+    ## 44 Plantain               <NA>                 <NA>    53 #BEF4BE     53
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander          No Measures     1 #BEF4BE      1
+    ## 47 Plantain            Quindío                 <NA>     6 #73D490      6
+    ## 48 Plantain            Quindío        Some Measures     6 #73D490      6
+    ## 49 Plantain          Risaralda                 <NA>    10 #73D490     10
+    ## 50 Plantain          Risaralda        Some Measures    10 #73D490     10
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander          No Measures     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre          No Measures     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima          No Measures     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5955056 0.44444444 0.20224719 0.55555556 #FFDA00
+    ## 2           NA     3 0.5955056 0.44444444 0.20224719 0.55555556 #FFDA00
+    ## 3           NA     2 0.8483146 0.29629630 0.07584270 0.14814815 #FFF2CC
+    ## 4           NA     3 0.8483146 0.29629630 0.07584270 0.14814815 #FFF2CC
+    ## 5           NA     2 0.9241573 0.29629630 0.07584270 0.14814815 #FFDA00
+    ## 6           NA     3 0.9241573 0.29629630 0.07584270 0.14814815 #FFDA00
+    ## 7           NA     2 0.5955056 0.00000000 0.25280899 0.08888889 #FFF2CC
+    ## 8           NA     3 0.5955056 0.00000000 0.25280899 0.08888889 #FFF2CC
+    ## 9           NA     2 0.8483146 0.14814815 0.07584270 0.14814815 #FFF2CC
+    ## 10          NA     3 0.8483146 0.14814815 0.07584270 0.14814815 #FFF2CC
+    ## 11          NA     2 0.9241573 0.14814815 0.07584270 0.14814815 #FFF2CC
+    ## 12          NA     3 0.9241573 0.14814815 0.07584270 0.14814815 #FFF2CC
+    ## 13          NA     2 0.5955056 0.08888889 0.25280899 0.35555556 #FFDA00
+    ## 14          NA     3 0.5955056 0.08888889 0.25280899 0.35555556 #FFDA00
+    ## 15          NA     2 0.7977528 0.44444444 0.20224719 0.55555556 #FFDA00
+    ## 16          NA     3 0.7977528 0.44444444 0.20224719 0.55555556 #FFDA00
+    ## 17          NA     1 0.5955056 0.00000000 0.40449438 1.00000000 #FFF2CC
+    ## 18          NA     2 0.8483146 0.00000000 0.07584270 0.14814815 #FFF2CC
+    ## 19          NA     3 0.8483146 0.00000000 0.07584270 0.14814815 #FFF2CC
+    ## 20          NA     2 0.9241573 0.00000000 0.07584270 0.14814815 #FFF2CC
+    ## 21          NA     3 0.9241573 0.00000000 0.07584270 0.14814815 #FFF2CC
+    ## 22          NA     2 0.2345931 0.00000000 0.06562045 0.17122642 #28B463
+    ## 23          NA     3 0.2345931 0.00000000 0.06562045 0.17122642 #28B463
+    ## 24          NA     2 0.5153028 0.34245283 0.08020278 0.28018868 #BEF4BE
+    ## 25          NA     3 0.5153028 0.34245283 0.08020278 0.28018868 #BEF4BE
+    ## 26          NA     2 0.3002136 0.00000000 0.06562045 0.17122642 #BEF4BE
+    ## 27          NA     3 0.3002136 0.00000000 0.06562045 0.17122642 #BEF4BE
+    ## 28          NA     2 0.3658340 0.19568733 0.07655720 0.14676550 #BEF4BE
+    ## 29          NA     3 0.3658340 0.19568733 0.07655720 0.14676550 #BEF4BE
+    ## 30          NA     2 0.0000000 0.28737300 0.23459312 0.33526851 #BEF4BE
+    ## 31          NA     3 0.0000000 0.28737300 0.23459312 0.33526851 #BEF4BE
+    ## 32          NA     2 0.2345931 0.17122642 0.13124091 0.17122642 #BEF4BE
+    ## 33          NA     3 0.2345931 0.17122642 0.13124091 0.17122642 #BEF4BE
+    ## 34          NA     2 0.4423912 0.19568733 0.07655720 0.14676550 #BEF4BE
+    ## 35          NA     3 0.4423912 0.19568733 0.07655720 0.14676550 #BEF4BE
+    ## 36          NA     2 0.5189484 0.19568733 0.07655720 0.14676550 #BEF4BE
+    ## 37          NA     3 0.5189484 0.19568733 0.07655720 0.14676550 #BEF4BE
+    ## 38          NA     2 0.2345931 0.34245283 0.16040555 0.28018868 #73D490
+    ## 39          NA     3 0.2345931 0.34245283 0.16040555 0.28018868 #73D490
+    ## 40          NA     2 0.3949987 0.34245283 0.12030417 0.28018868 #73D490
+    ## 41          NA     3 0.3949987 0.34245283 0.12030417 0.28018868 #73D490
+    ## 42          NA     2 0.0000000 0.62264151 0.29775281 0.37735849 #BEF4BE
+    ## 43          NA     3 0.0000000 0.62264151 0.29775281 0.37735849 #BEF4BE
+    ## 44          NA     1 0.0000000 0.00000000 0.59550562 1.00000000 #BEF4BE
+    ## 45          NA     2 0.3658340 0.09784367 0.11483579 0.09784367 #BEF4BE
+    ## 46          NA     3 0.3658340 0.09784367 0.11483579 0.09784367 #BEF4BE
+    ## 47          NA     2 0.0000000 0.00000000 0.23459312 0.28737300 #73D490
+    ## 48          NA     3 0.0000000 0.00000000 0.23459312 0.28737300 #73D490
+    ## 49          NA     2 0.2977528 0.62264151 0.29775281 0.37735849 #73D490
+    ## 50          NA     3 0.2977528 0.62264151 0.29775281 0.37735849 #73D490
+    ## 51          NA     2 0.3658340 0.00000000 0.11483579 0.09784367 #BEF4BE
+    ## 52          NA     3 0.3658340 0.00000000 0.11483579 0.09784367 #BEF4BE
+    ## 53          NA     2 0.4806698 0.09784367 0.11483579 0.09784367 #BEF4BE
+    ## 54          NA     3 0.4806698 0.09784367 0.11483579 0.09784367 #BEF4BE
+    ## 55          NA     2 0.4806698 0.00000000 0.11483579 0.09784367 #BEF4BE
+    ## 56          NA     3 0.4806698 0.00000000 0.11483579 0.09784367 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_29, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_29-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in     ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia                 <NA>    10 #FFDA00     10
+    ## 2    Banana          Antioquia        Some Measures    10 #FFDA00     10
+    ## 3    Banana             Caldas                 <NA>     1 #FFF2CC      1
+    ## 4    Banana             Caldas          No Measures     1 #FFF2CC      1
+    ## 5    Banana              Cesar                 <NA>     1 #FFDA00      1
+    ## 6    Banana              Cesar        Some Measures     1 #FFDA00      1
+    ## 7    Banana              Chocó                 <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó          No Measures     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                 <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba          No Measures     1 #FFF2CC      1
+    ## 11   Banana              Huila                 <NA>     1 #FFF2CC      1
+    ## 12   Banana              Huila          No Measures     1 #FFF2CC      1
+    ## 13   Banana         La Guajira                 <NA>     8 #FFDA00      8
+    ## 14   Banana         La Guajira        Some Measures     8 #FFDA00      8
+    ## 15   Banana          Magdalena                 <NA>     9 #FFDA00      9
+    ## 16   Banana          Magdalena        Some Measures     9 #FFDA00      9
+    ## 17   Banana               <NA>                 <NA>    35 #FFF2CC     35
+    ## 18   Banana            Quindío                 <NA>     1 #FFF2CC      1
+    ## 19   Banana            Quindío          No Measures     1 #FFF2CC      1
+    ## 20   Banana          Risaralda                 <NA>     1 #FFF2CC      1
+    ## 21   Banana          Risaralda          No Measures     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia                 <NA>     1 #28B463      1
+    ## 23 Plantain          Antioquia Significant Measures     1 #28B463      1
+    ## 24 Plantain             Arauca                 <NA>     2 #BEF4BE      2
+    ## 25 Plantain             Arauca          No Measures     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico                 <NA>     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico          No Measures     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar                 <NA>     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar          No Measures     1 #BEF4BE      1
+    ## 30 Plantain             Caldas                 <NA>     7 #BEF4BE      7
+    ## 31 Plantain             Caldas          No Measures     7 #BEF4BE      7
+    ## 32 Plantain           Casanare                 <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare          No Measures     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba                 <NA>     1 #BEF4BE      1
+    ## 35 Plantain            Córdoba          No Measures     1 #BEF4BE      1
+    ## 36 Plantain              Huila                 <NA>     1 #BEF4BE      1
+    ## 37 Plantain              Huila          No Measures     1 #BEF4BE      1
+    ## 38 Plantain         La Guajira                 <NA>     4 #73D490      4
+    ## 39 Plantain         La Guajira        Some Measures     4 #73D490      4
+    ## 40 Plantain          Magdalena                 <NA>     3 #73D490      3
+    ## 41 Plantain          Magdalena        Some Measures     3 #73D490      3
+    ## 42 Plantain               Meta                 <NA>     9 #BEF4BE      9
+    ## 43 Plantain               Meta          No Measures     9 #BEF4BE      9
+    ## 44 Plantain               <NA>                 <NA>    52 #BEF4BE     52
+    ## 45 Plantain Norte De Santander                 <NA>     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander          No Measures     1 #BEF4BE      1
+    ## 47 Plantain            Quindío                 <NA>     6 #73D490      6
+    ## 48 Plantain            Quindío        Some Measures     6 #73D490      6
+    ## 49 Plantain          Risaralda                 <NA>    10 #73D490     10
+    ## 50 Plantain          Risaralda        Some Measures    10 #73D490     10
+    ## 51 Plantain          Santander                 <NA>     1 #BEF4BE      1
+    ## 52 Plantain          Santander          No Measures     1 #BEF4BE      1
+    ## 53 Plantain              Sucre                 <NA>     1 #BEF4BE      1
+    ## 54 Plantain              Sucre          No Measures     1 #BEF4BE      1
+    ## 55 Plantain             Tolima                 <NA>     1 #BEF4BE      1
+    ## 56 Plantain             Tolima          No Measures     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5977011 0.45714286 0.21173624 0.54285714 #FFDA00
+    ## 2           NA     3 0.5977011 0.45714286 0.21173624 0.54285714 #FFDA00
+    ## 3           NA     2 0.8491379 0.30476190 0.07543103 0.15238095 #FFF2CC
+    ## 4           NA     3 0.8491379 0.30476190 0.07543103 0.15238095 #FFF2CC
+    ## 5           NA     2 0.9245690 0.30476190 0.07543103 0.15238095 #FFDA00
+    ## 6           NA     3 0.9245690 0.30476190 0.07543103 0.15238095 #FFDA00
+    ## 7           NA     2 0.5977011 0.00000000 0.25143678 0.09142857 #FFF2CC
+    ## 8           NA     3 0.5977011 0.00000000 0.25143678 0.09142857 #FFF2CC
+    ## 9           NA     2 0.8491379 0.15238095 0.07543103 0.15238095 #FFF2CC
+    ## 10          NA     3 0.8491379 0.15238095 0.07543103 0.15238095 #FFF2CC
+    ## 11          NA     2 0.9245690 0.15238095 0.07543103 0.15238095 #FFF2CC
+    ## 12          NA     3 0.9245690 0.15238095 0.07543103 0.15238095 #FFF2CC
+    ## 13          NA     2 0.5977011 0.09142857 0.25143678 0.36571429 #FFDA00
+    ## 14          NA     3 0.5977011 0.09142857 0.25143678 0.36571429 #FFDA00
+    ## 15          NA     2 0.8094374 0.45714286 0.19056261 0.54285714 #FFDA00
+    ## 16          NA     3 0.8094374 0.45714286 0.19056261 0.54285714 #FFDA00
+    ## 17          NA     1 0.5977011 0.00000000 0.40229885 1.00000000 #FFF2CC
+    ## 18          NA     2 0.8491379 0.00000000 0.07543103 0.15238095 #FFF2CC
+    ## 19          NA     3 0.8491379 0.00000000 0.07543103 0.15238095 #FFF2CC
+    ## 20          NA     2 0.9245690 0.00000000 0.07543103 0.15238095 #FFF2CC
+    ## 21          NA     3 0.9245690 0.00000000 0.07543103 0.15238095 #FFF2CC
+    ## 22          NA     2 0.2354580 0.00000000 0.06586239 0.17451923 #28B463
+    ## 23          NA     3 0.2354580 0.00000000 0.06586239 0.17451923 #28B463
+    ## 24          NA     2 0.5172027 0.34903846 0.08049847 0.28557692 #BEF4BE
+    ## 25          NA     3 0.5172027 0.34903846 0.08049847 0.28557692 #BEF4BE
+    ## 26          NA     2 0.3013204 0.00000000 0.06586239 0.17451923 #BEF4BE
+    ## 27          NA     3 0.3013204 0.00000000 0.06586239 0.17451923 #BEF4BE
+    ## 28          NA     2 0.3671828 0.19945055 0.07683945 0.14958791 #BEF4BE
+    ## 29          NA     3 0.3671828 0.19945055 0.07683945 0.14958791 #BEF4BE
+    ## 30          NA     2 0.0000000 0.29289941 0.23545803 0.34171598 #BEF4BE
+    ## 31          NA     3 0.0000000 0.29289941 0.23545803 0.34171598 #BEF4BE
+    ## 32          NA     2 0.2354580 0.17451923 0.13172477 0.17451923 #BEF4BE
+    ## 33          NA     3 0.2354580 0.17451923 0.13172477 0.17451923 #BEF4BE
+    ## 34          NA     2 0.4440222 0.19945055 0.07683945 0.14958791 #BEF4BE
+    ## 35          NA     3 0.4440222 0.19945055 0.07683945 0.14958791 #BEF4BE
+    ## 36          NA     2 0.5208617 0.19945055 0.07683945 0.14958791 #BEF4BE
+    ## 37          NA     3 0.5208617 0.19945055 0.07683945 0.14958791 #BEF4BE
+    ## 38          NA     2 0.2354580 0.34903846 0.16099694 0.28557692 #73D490
+    ## 39          NA     3 0.2354580 0.34903846 0.16099694 0.28557692 #73D490
+    ## 40          NA     2 0.3964550 0.34903846 0.12074771 0.28557692 #73D490
+    ## 41          NA     3 0.3964550 0.34903846 0.12074771 0.28557692 #73D490
+    ## 42          NA     2 0.3145796 0.63461538 0.28312160 0.36538462 #BEF4BE
+    ## 43          NA     3 0.3145796 0.63461538 0.28312160 0.36538462 #BEF4BE
+    ## 44          NA     1 0.0000000 0.00000000 0.59770115 1.00000000 #BEF4BE
+    ## 45          NA     2 0.3671828 0.09972527 0.11525917 0.09972527 #BEF4BE
+    ## 46          NA     3 0.3671828 0.09972527 0.11525917 0.09972527 #BEF4BE
+    ## 47          NA     2 0.0000000 0.00000000 0.23545803 0.29289941 #73D490
+    ## 48          NA     3 0.0000000 0.00000000 0.23545803 0.29289941 #73D490
+    ## 49          NA     2 0.0000000 0.63461538 0.31457955 0.36538462 #73D490
+    ## 50          NA     3 0.0000000 0.63461538 0.31457955 0.36538462 #73D490
+    ## 51          NA     2 0.3671828 0.00000000 0.11525917 0.09972527 #BEF4BE
+    ## 52          NA     3 0.3671828 0.00000000 0.11525917 0.09972527 #BEF4BE
+    ## 53          NA     2 0.4824420 0.09972527 0.11525917 0.09972527 #BEF4BE
+    ## 54          NA     3 0.4824420 0.09972527 0.11525917 0.09972527 #BEF4BE
+    ## 55          NA     2 0.4824420 0.00000000 0.11525917 0.09972527 #BEF4BE
+    ## 56          NA     3 0.4824420 0.00000000 0.11525917 0.09972527 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q29_no_weight<- question_29 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =29))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q29_no_weight<- full_join(codes_department, nal_q29_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q29_no_weight$cat<- factor(nal_q29_no_weight$cat, levels = level_29)
+colmap(departamentos, data = nal_q29_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q29_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_29-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q29_weight<- inner_join(question_29, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q29_weight<- nal_q29_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =29)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q29_weight<- full_join(codes_department, nal_q29_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q29_weight$cat_weighted<- factor(nal_q29_weight$cat_weighted, levels = level_29)
+colmap(departamentos, data = nal_q29_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q29_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_29-4.png)<!-- -->
+
+## Question 30: What degree of restriction does each area successfully apply to the movement of personnel and visitors within and between plantations?
+
+``` r
+#selecting only question 30----
+question_30<- filter(individual_surveys, question_number==30)
+#unique(question_30$numeric_answer)
+#dput(unique(question_30$answer_in_english))
+
+#organizing the order of the levels
+level_30<- c("No Limitation", "Little Limitation",  "Moderate Limitation", "Extreme Limitation", "Unsure")
+question_30$answer_in_english<- factor(question_30$answer_in_english,levels = level_30)
+question_30<- filter(question_30, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_30<- question_30 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(30, mean =average, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(30, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_30<- inner_join(question_30, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_30<- add_weights_question_30 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(30, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(30, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q30_no_weighted<- tapply(avg_dept_no_weight_30$ave_cat, avg_dept_no_weight_30$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question30_no_weighted<- palette_banana(length(levels_per_crop_Q30_no_weighted$Banana))
+colors_plantain_question30_no_weighted<- palette_plantain(length(levels_per_crop_Q30_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_30 <- list(
+  Banana = levels_per_crop_Q30_no_weighted$Banana,
+  Plantain = levels_per_crop_Q30_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_30 <- list(
+  Banana = colors_banana_question30_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question30_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_30 <- assign_group_color(data = avg_dept_no_weight_30, levels_by_crop = levels_by_crop_no_weighted_30, colors_by_crop = colors_by_crop_no_weighted_30,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q30_weighted<- tapply(avg_dept_weight_30$ave_cat_weighted, avg_dept_weight_30$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question30_weighted<- palette_banana(length(levels_per_crop_Q30_weighted$Banana))
+colors_plantain_question30_weighted<- palette_plantain(length(levels_per_crop_Q30_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_30 <- list(
+  Banana = levels_per_crop_Q30_weighted$Banana,
+  Plantain = levels_per_crop_Q30_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_30 <- list(
+  Banana = colors_banana_question30_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question30_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_30 <- assign_group_color(data = avg_dept_weight_30, levels_by_crop = levels_by_crop_weighted_30, colors_by_crop = colors_by_crop_weighted_30,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_30, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_30-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in             ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderate Limitation    11 #FFDA00     11
+    ## 2    Banana          Antioquia                <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas Moderate Limitation     1 #FFDA00      1
+    ## 4    Banana             Caldas                <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar  Extreme Limitation     2 #FFE566      2
+    ## 6    Banana              Cesar                <NA>     2 #FFE566      2
+    ## 7    Banana              Chocó                <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó       No Limitation     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       No Limitation     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderate Limitation     1 #FFDA00      1
+    ## 12   Banana              Huila                <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderate Limitation    10 #FFDA00     10
+    ## 14   Banana         La Guajira                <NA>    10 #FFDA00     10
+    ## 15   Banana          Magdalena Moderate Limitation    12 #FFDA00     12
+    ## 16   Banana          Magdalena                <NA>    12 #FFDA00     12
+    ## 17   Banana               <NA>                <NA>    42 #FFDA00     42
+    ## 18   Banana            Quindío Moderate Limitation     1 #FFDA00      1
+    ## 19   Banana            Quindío                <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderate Limitation     1 #FFDA00      1
+    ## 21   Banana          Risaralda                <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia  Extreme Limitation     2 #28B463      2
+    ## 23 Plantain          Antioquia                <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca   Little Limitation     2 #BEF4BE      2
+    ## 25 Plantain             Arauca                <NA>     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico Moderate Limitation     1 #73D490      1
+    ## 27 Plantain          Atlántico                <NA>     1 #73D490      1
+    ## 28 Plantain            Bolívar Moderate Limitation     1 #73D490      1
+    ## 29 Plantain            Bolívar                <NA>     1 #73D490      1
+    ## 30 Plantain             Caldas   Little Limitation     7 #BEF4BE      7
+    ## 31 Plantain             Caldas                <NA>     7 #BEF4BE      7
+    ## 32 Plantain           Casanare   Little Limitation     2 #BEF4BE      2
+    ## 33 Plantain           Casanare                <NA>     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba Moderate Limitation     1 #73D490      1
+    ## 35 Plantain            Córdoba                <NA>     1 #73D490      1
+    ## 36 Plantain              Huila Moderate Limitation     1 #73D490      1
+    ## 37 Plantain              Huila                <NA>     1 #73D490      1
+    ## 38 Plantain         La Guajira Moderate Limitation     4 #73D490      4
+    ## 39 Plantain         La Guajira                <NA>     4 #73D490      4
+    ## 40 Plantain          Magdalena  Extreme Limitation     3 #28B463      3
+    ## 41 Plantain          Magdalena                <NA>     3 #28B463      3
+    ## 42 Plantain               Meta   Little Limitation    11 #BEF4BE     11
+    ## 43 Plantain               Meta                <NA>    11 #BEF4BE     11
+    ## 44 Plantain               <NA>                <NA>    55 #73D490     55
+    ## 45 Plantain Norte De Santander  Extreme Limitation     1 #28B463      1
+    ## 46 Plantain Norte De Santander                <NA>     1 #28B463      1
+    ## 47 Plantain            Quindío   Little Limitation     6 #BEF4BE      6
+    ## 48 Plantain            Quindío                <NA>     6 #BEF4BE      6
+    ## 49 Plantain          Risaralda   Little Limitation    10 #BEF4BE     10
+    ## 50 Plantain          Risaralda                <NA>    10 #BEF4BE     10
+    ## 51 Plantain          Santander  Extreme Limitation     1 #28B463      1
+    ## 52 Plantain          Santander                <NA>     1 #28B463      1
+    ## 53 Plantain              Sucre  Extreme Limitation     1 #28B463      1
+    ## 54 Plantain              Sucre                <NA>     1 #28B463      1
+    ## 55 Plantain             Tolima Moderate Limitation     1 #73D490      1
+    ## 56 Plantain             Tolima                <NA>     1 #73D490      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7929180 0.45238095 0.20708203 0.54761905 #FFDA00
+    ## 2           NA     2 0.7929180 0.45238095 0.20708203 0.54761905 #FFDA00
+    ## 3           NA     3 0.9468258 0.25850340 0.05317417 0.19387755 #FFDA00
+    ## 4           NA     2 0.9468258 0.25850340 0.05317417 0.19387755 #FFDA00
+    ## 5           NA     3 0.5670103 0.00000000 0.27346717 0.07539683 #FFE566
+    ## 6           NA     2 0.5670103 0.00000000 0.27346717 0.07539683 #FFE566
+    ## 7           NA     2 0.8404775 0.25850340 0.10634835 0.19387755 #FFF2CC
+    ## 8           NA     3 0.8404775 0.25850340 0.10634835 0.19387755 #FFF2CC
+    ## 9           NA     2 0.8404775 0.12925170 0.07976126 0.12925170 #FFF2CC
+    ## 10          NA     3 0.8404775 0.12925170 0.07976126 0.12925170 #FFF2CC
+    ## 11          NA     3 0.9202387 0.12925170 0.07976126 0.12925170 #FFDA00
+    ## 12          NA     2 0.9202387 0.12925170 0.07976126 0.12925170 #FFDA00
+    ## 13          NA     3 0.5670103 0.07539683 0.27346717 0.37698413 #FFDA00
+    ## 14          NA     2 0.5670103 0.07539683 0.27346717 0.37698413 #FFDA00
+    ## 15          NA     3 0.5670103 0.45238095 0.22590766 0.54761905 #FFDA00
+    ## 16          NA     2 0.5670103 0.45238095 0.22590766 0.54761905 #FFDA00
+    ## 17          NA     1 0.5670103 0.00000000 0.43298969 1.00000000 #FFDA00
+    ## 18          NA     3 0.8404775 0.00000000 0.07976126 0.12925170 #FFDA00
+    ## 19          NA     2 0.8404775 0.00000000 0.07976126 0.12925170 #FFDA00
+    ## 20          NA     3 0.9202387 0.00000000 0.07976126 0.12925170 #FFDA00
+    ## 21          NA     2 0.9202387 0.00000000 0.07976126 0.12925170 #FFDA00
+    ## 22          NA     3 0.4891854 0.35324675 0.07782494 0.26493506 #28B463
+    ## 23          NA     2 0.4891854 0.35324675 0.07782494 0.26493506 #28B463
+    ## 24          NA     3 0.2167981 0.17662338 0.11673742 0.17662338 #BEF4BE
+    ## 25          NA     2 0.2167981 0.17662338 0.11673742 0.17662338 #BEF4BE
+    ## 26          NA     3 0.3335355 0.22077922 0.07782494 0.13246753 #73D490
+    ## 27          NA     2 0.3335355 0.22077922 0.07782494 0.13246753 #73D490
+    ## 28          NA     3 0.4113604 0.22077922 0.07782494 0.13246753 #73D490
+    ## 29          NA     2 0.4113604 0.22077922 0.07782494 0.13246753 #73D490
+    ## 30          NA     3 0.0000000 0.28531469 0.21679806 0.33286713 #BEF4BE
+    ## 31          NA     2 0.0000000 0.28531469 0.21679806 0.33286713 #BEF4BE
+    ## 32          NA     3 0.2167981 0.00000000 0.11673742 0.17662338 #BEF4BE
+    ## 33          NA     2 0.2167981 0.00000000 0.11673742 0.17662338 #BEF4BE
+    ## 34          NA     3 0.4891854 0.22077922 0.07782494 0.13246753 #73D490
+    ## 35          NA     2 0.4891854 0.22077922 0.07782494 0.13246753 #73D490
+    ## 36          NA     3 0.3335355 0.11038961 0.09338993 0.11038961 #73D490
+    ## 37          NA     2 0.3335355 0.11038961 0.09338993 0.11038961 #73D490
+    ## 38          NA     3 0.2167981 0.35324675 0.15564989 0.26493506 #73D490
+    ## 39          NA     2 0.2167981 0.35324675 0.15564989 0.26493506 #73D490
+    ## 40          NA     3 0.3724479 0.35324675 0.11673742 0.26493506 #28B463
+    ## 41          NA     2 0.3724479 0.35324675 0.11673742 0.26493506 #28B463
+    ## 42          NA     3 0.0000000 0.61818182 0.29700540 0.38181818 #BEF4BE
+    ## 43          NA     2 0.0000000 0.61818182 0.29700540 0.38181818 #BEF4BE
+    ## 44          NA     1 0.0000000 0.00000000 0.56701031 1.00000000 #73D490
+    ## 45          NA     3 0.3335355 0.00000000 0.09338993 0.11038961 #28B463
+    ## 46          NA     2 0.3335355 0.00000000 0.09338993 0.11038961 #28B463
+    ## 47          NA     3 0.0000000 0.00000000 0.21679806 0.28531469 #BEF4BE
+    ## 48          NA     2 0.0000000 0.00000000 0.21679806 0.28531469 #BEF4BE
+    ## 49          NA     3 0.2970054 0.61818182 0.27000491 0.38181818 #BEF4BE
+    ## 50          NA     2 0.2970054 0.61818182 0.27000491 0.38181818 #BEF4BE
+    ## 51          NA     3 0.4269254 0.07359307 0.07004245 0.14718615 #28B463
+    ## 52          NA     2 0.4269254 0.07359307 0.07004245 0.14718615 #28B463
+    ## 53          NA     3 0.4969679 0.07359307 0.07004245 0.14718615 #28B463
+    ## 54          NA     2 0.4969679 0.07359307 0.07004245 0.14718615 #28B463
+    ## 55          NA     3 0.4269254 0.00000000 0.14008490 0.07359307 #73D490
+    ## 56          NA     2 0.4269254 0.00000000 0.14008490 0.07359307 #73D490
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_30, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_30-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in    ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderate Limitation    11 #FFDA00     11
+    ## 2    Banana          Antioquia                <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas Moderate Limitation     1 #FFDA00      1
+    ## 4    Banana             Caldas                <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar  Extreme Limitation     2 #FFE566      2
+    ## 6    Banana              Cesar                <NA>     2 #FFE566      2
+    ## 7    Banana              Chocó                <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó       No Limitation     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       No Limitation     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderate Limitation     1 #FFDA00      1
+    ## 12   Banana              Huila                <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderate Limitation     9 #FFDA00      9
+    ## 14   Banana         La Guajira                <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena Moderate Limitation    11 #FFDA00     11
+    ## 16   Banana          Magdalena                <NA>    11 #FFDA00     11
+    ## 17   Banana               <NA>                <NA>    40 #FFDA00     40
+    ## 18   Banana            Quindío Moderate Limitation     1 #FFDA00      1
+    ## 19   Banana            Quindío                <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderate Limitation     1 #FFDA00      1
+    ## 21   Banana          Risaralda                <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia Moderate Limitation     2 #28B463      2
+    ## 23 Plantain          Antioquia                <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca   Little Limitation     2 #73D490      2
+    ## 25 Plantain             Arauca                <NA>     2 #73D490      2
+    ## 26 Plantain          Atlántico Moderate Limitation     1 #28B463      1
+    ## 27 Plantain          Atlántico                <NA>     1 #28B463      1
+    ## 28 Plantain            Bolívar Moderate Limitation     1 #28B463      1
+    ## 29 Plantain            Bolívar                <NA>     1 #28B463      1
+    ## 30 Plantain             Caldas   Little Limitation     7 #73D490      7
+    ## 31 Plantain             Caldas                <NA>     7 #73D490      7
+    ## 32 Plantain           Casanare   Little Limitation     2 #73D490      2
+    ## 33 Plantain           Casanare                <NA>     2 #73D490      2
+    ## 34 Plantain            Córdoba Moderate Limitation     1 #28B463      1
+    ## 35 Plantain            Córdoba                <NA>     1 #28B463      1
+    ## 36 Plantain              Huila Moderate Limitation     1 #28B463      1
+    ## 37 Plantain              Huila                <NA>     1 #28B463      1
+    ## 38 Plantain         La Guajira Moderate Limitation     4 #28B463      4
+    ## 39 Plantain         La Guajira                <NA>     4 #28B463      4
+    ## 40 Plantain          Magdalena  Extreme Limitation     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena                <NA>     3 #BEF4BE      3
+    ## 42 Plantain               Meta   Little Limitation    10 #73D490     10
+    ## 43 Plantain               Meta                <NA>    10 #73D490     10
+    ## 44 Plantain               <NA>                <NA>    54 #28B463     54
+    ## 45 Plantain Norte De Santander  Extreme Limitation     1 #BEF4BE      1
+    ## 46 Plantain Norte De Santander                <NA>     1 #BEF4BE      1
+    ## 47 Plantain            Quindío   Little Limitation     6 #73D490      6
+    ## 48 Plantain            Quindío                <NA>     6 #73D490      6
+    ## 49 Plantain          Risaralda   Little Limitation    10 #73D490     10
+    ## 50 Plantain          Risaralda                <NA>    10 #73D490     10
+    ## 51 Plantain          Santander  Extreme Limitation     1 #BEF4BE      1
+    ## 52 Plantain          Santander                <NA>     1 #BEF4BE      1
+    ## 53 Plantain              Sucre  Extreme Limitation     1 #BEF4BE      1
+    ## 54 Plantain              Sucre                <NA>     1 #BEF4BE      1
+    ## 55 Plantain             Tolima Moderate Limitation     1 #28B463      1
+    ## 56 Plantain             Tolima                <NA>     1 #28B463      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5744681 0.45000000 0.21276596 0.55000000 #FFDA00
+    ## 2           NA     2 0.5744681 0.45000000 0.21276596 0.55000000 #FFDA00
+    ## 3           NA     3 0.9448385 0.25714286 0.05516154 0.19285714 #FFDA00
+    ## 4           NA     2 0.9448385 0.25714286 0.05516154 0.19285714 #FFDA00
+    ## 5           NA     3 0.5744681 0.00000000 0.26004728 0.08181818 #FFE566
+    ## 6           NA     2 0.5744681 0.00000000 0.26004728 0.08181818 #FFE566
+    ## 7           NA     2 0.8345154 0.25714286 0.11032309 0.19285714 #FFF2CC
+    ## 8           NA     3 0.8345154 0.25714286 0.11032309 0.19285714 #FFF2CC
+    ## 9           NA     2 0.8345154 0.12857143 0.08274232 0.12857143 #FFF2CC
+    ## 10          NA     3 0.8345154 0.12857143 0.08274232 0.12857143 #FFF2CC
+    ## 11          NA     3 0.9172577 0.12857143 0.08274232 0.12857143 #FFDA00
+    ## 12          NA     2 0.9172577 0.12857143 0.08274232 0.12857143 #FFDA00
+    ## 13          NA     3 0.5744681 0.08181818 0.26004728 0.36818182 #FFDA00
+    ## 14          NA     2 0.5744681 0.08181818 0.26004728 0.36818182 #FFDA00
+    ## 15          NA     3 0.7872340 0.45000000 0.21276596 0.55000000 #FFDA00
+    ## 16          NA     2 0.7872340 0.45000000 0.21276596 0.55000000 #FFDA00
+    ## 17          NA     1 0.5744681 0.00000000 0.42553191 1.00000000 #FFDA00
+    ## 18          NA     3 0.8345154 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 19          NA     2 0.8345154 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 20          NA     3 0.9172577 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 21          NA     2 0.9172577 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 22          NA     3 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 23          NA     2 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 24          NA     3 0.2196496 0.17989418 0.11827284 0.17989418 #73D490
+    ## 25          NA     2 0.2196496 0.17989418 0.11827284 0.17989418 #73D490
+    ## 26          NA     3 0.3379224 0.22486772 0.07884856 0.13492063 #28B463
+    ## 27          NA     2 0.3379224 0.22486772 0.07884856 0.13492063 #28B463
+    ## 28          NA     3 0.4167710 0.22486772 0.07884856 0.13492063 #28B463
+    ## 29          NA     2 0.4167710 0.22486772 0.07884856 0.13492063 #28B463
+    ## 30          NA     3 0.0000000 0.29059829 0.21964956 0.33903134 #73D490
+    ## 31          NA     2 0.0000000 0.29059829 0.21964956 0.33903134 #73D490
+    ## 32          NA     3 0.2196496 0.00000000 0.11827284 0.17989418 #73D490
+    ## 33          NA     2 0.2196496 0.00000000 0.11827284 0.17989418 #73D490
+    ## 34          NA     3 0.4956195 0.22486772 0.07884856 0.13492063 #28B463
+    ## 35          NA     2 0.4956195 0.22486772 0.07884856 0.13492063 #28B463
+    ## 36          NA     3 0.3379224 0.11243386 0.09461827 0.11243386 #28B463
+    ## 37          NA     2 0.3379224 0.11243386 0.09461827 0.11243386 #28B463
+    ## 38          NA     3 0.2196496 0.35978836 0.15769712 0.26984127 #28B463
+    ## 39          NA     2 0.2196496 0.35978836 0.15769712 0.26984127 #28B463
+    ## 40          NA     3 0.3773467 0.35978836 0.11827284 0.26984127 #BEF4BE
+    ## 41          NA     2 0.3773467 0.35978836 0.11827284 0.26984127 #BEF4BE
+    ## 42          NA     3 0.0000000 0.62962963 0.28723404 0.37037037 #73D490
+    ## 43          NA     2 0.0000000 0.62962963 0.28723404 0.37037037 #73D490
+    ## 44          NA     1 0.0000000 0.00000000 0.57446809 1.00000000 #28B463
+    ## 45          NA     3 0.3379224 0.00000000 0.09461827 0.11243386 #BEF4BE
+    ## 46          NA     2 0.3379224 0.00000000 0.09461827 0.11243386 #BEF4BE
+    ## 47          NA     3 0.0000000 0.00000000 0.21964956 0.29059829 #73D490
+    ## 48          NA     2 0.0000000 0.00000000 0.21964956 0.29059829 #73D490
+    ## 49          NA     3 0.2872340 0.62962963 0.28723404 0.37037037 #73D490
+    ## 50          NA     2 0.2872340 0.62962963 0.28723404 0.37037037 #73D490
+    ## 51          NA     3 0.4325407 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 52          NA     2 0.4325407 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 53          NA     3 0.5035044 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 54          NA     2 0.5035044 0.07495591 0.07096370 0.14991182 #BEF4BE
+    ## 55          NA     3 0.4325407 0.00000000 0.14192741 0.07495591 #28B463
+    ## 56          NA     2 0.4325407 0.00000000 0.14192741 0.07495591 #28B463
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q30_no_weight<- question_30 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =30))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+``` r
+nal_q30_no_weight<- full_join(codes_department, nal_q30_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q30_no_weight$cat<- factor(nal_q30_no_weight$cat, levels = level_30)
+colmap(departamentos, data = nal_q30_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q30_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_30-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q30_weight<- inner_join(question_30, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q30_weight<- nal_q30_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =30)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q30_weight<- full_join(codes_department, nal_q30_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q30_weight$cat_weighted<- factor(nal_q30_weight$cat_weighted, levels = level_30)
+colmap(departamentos, data = nal_q30_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q30_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_30-4.png)<!-- -->
+
+## Question 31: What degree of limitation does each area successfully apply to the movement of vehicles and equipment within and between plantations?
+
+``` r
+#selecting only question 31----
+question_31<- filter(individual_surveys, question_number==31)
+#unique(question_31$numeric_answer)
+#dput(unique(question_31$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_31 <- question_31 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "No Limitation,Little Limitation" ~ "Little Limitation",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_31 <- question_31 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "1,2" ~ "1.5",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_31<- c("No Limitation","Little Limitation", "Moderate Limitation", "Extreme Limitation")
+question_31$answer_in_english<- factor(question_31$answer_in_english,levels = level_31)
+#question_31<- filter(question_31, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_31<- question_31 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(31, mean =average, language = "en"))
+```
+
+    ## Warning: There were 4 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(31, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 3 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_31<- inner_join(question_31, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_31<- add_weights_question_31 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(31, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(31, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q31_no_weighted<- tapply(avg_dept_no_weight_31$ave_cat, avg_dept_no_weight_31$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question31_no_weighted<- palette_banana(length(levels_per_crop_Q31_no_weighted$Banana))
+colors_plantain_question31_no_weighted<- palette_plantain(length(levels_per_crop_Q31_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_31 <- list(
+  Banana = levels_per_crop_Q31_no_weighted$Banana,
+  Plantain = levels_per_crop_Q31_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_31 <- list(
+  Banana = colors_banana_question31_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question31_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_31 <- assign_group_color(data = avg_dept_no_weight_31, levels_by_crop = levels_by_crop_no_weighted_31, colors_by_crop = colors_by_crop_no_weighted_31,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q31_weighted<- tapply(avg_dept_weight_31$ave_cat_weighted, avg_dept_weight_31$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question31_weighted<- palette_banana(length(levels_per_crop_Q31_weighted$Banana))
+colors_plantain_question31_weighted<- palette_plantain(length(levels_per_crop_Q31_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_31 <- list(
+  Banana = levels_per_crop_Q31_weighted$Banana,
+  Plantain = levels_per_crop_Q31_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_31 <- list(
+  Banana = colors_banana_question31_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question31_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_31 <- assign_group_color(data = avg_dept_weight_31, levels_by_crop = levels_by_crop_weighted_31, colors_by_crop = colors_by_crop_weighted_31,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_31, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_31-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in             ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderate Limitation    11 #FFDA00     11
+    ## 2    Banana          Antioquia                <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas Moderate Limitation     1 #FFDA00      1
+    ## 4    Banana             Caldas                <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar Moderate Limitation     1 #FFDA00      1
+    ## 6    Banana              Cesar                <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó   Little Limitation     2 #FFE566      2
+    ## 8    Banana              Chocó                <NA>     2 #FFE566      2
+    ## 9    Banana            Córdoba                <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       No Limitation     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderate Limitation     1 #FFDA00      1
+    ## 12   Banana              Huila                <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderate Limitation    11 #FFDA00     11
+    ## 14   Banana         La Guajira                <NA>    11 #FFDA00     11
+    ## 15   Banana          Magdalena Moderate Limitation    13 #FFDA00     13
+    ## 16   Banana          Magdalena                <NA>    13 #FFDA00     13
+    ## 17   Banana               <NA>                <NA>    43 #FFDA00     43
+    ## 18   Banana            Quindío Moderate Limitation     1 #FFDA00      1
+    ## 19   Banana            Quindío                <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderate Limitation     1 #FFDA00      1
+    ## 21   Banana          Risaralda                <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia  Extreme Limitation     2 #28B463      2
+    ## 23 Plantain          Antioquia                <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca Moderate Limitation     2 #59C981      2
+    ## 25 Plantain             Arauca                <NA>     2 #59C981      2
+    ## 26 Plantain          Atlántico Moderate Limitation     1 #59C981      1
+    ## 27 Plantain          Atlántico                <NA>     1 #59C981      1
+    ## 28 Plantain            Bolívar Moderate Limitation     1 #59C981      1
+    ## 29 Plantain            Bolívar                <NA>     1 #59C981      1
+    ## 30 Plantain             Caldas   Little Limitation     7 #8CDE9F      7
+    ## 31 Plantain             Caldas                <NA>     7 #8CDE9F      7
+    ## 32 Plantain           Casanare   Little Limitation     2 #8CDE9F      2
+    ## 33 Plantain           Casanare                <NA>     2 #8CDE9F      2
+    ## 34 Plantain              Chocó                <NA>     1 #BEF4BE      1
+    ## 35 Plantain              Chocó       No Limitation     1 #BEF4BE      1
+    ## 36 Plantain            Córdoba Moderate Limitation     1 #59C981      1
+    ## 37 Plantain            Córdoba                <NA>     1 #59C981      1
+    ## 38 Plantain              Huila Moderate Limitation     1 #59C981      1
+    ## 39 Plantain              Huila                <NA>     1 #59C981      1
+    ## 40 Plantain         La Guajira Moderate Limitation     4 #59C981      4
+    ## 41 Plantain         La Guajira                <NA>     4 #59C981      4
+    ## 42 Plantain          Magdalena Moderate Limitation     3 #59C981      3
+    ## 43 Plantain          Magdalena                <NA>     3 #59C981      3
+    ## 44 Plantain               Meta   Little Limitation    11 #8CDE9F     11
+    ## 45 Plantain               Meta                <NA>    11 #8CDE9F     11
+    ## 46 Plantain               <NA>                <NA>    56 #59C981     56
+    ## 47 Plantain Norte De Santander  Extreme Limitation     1 #28B463      1
+    ## 48 Plantain Norte De Santander                <NA>     1 #28B463      1
+    ## 49 Plantain            Quindío   Little Limitation     6 #8CDE9F      6
+    ## 50 Plantain            Quindío                <NA>     6 #8CDE9F      6
+    ## 51 Plantain          Risaralda   Little Limitation    10 #8CDE9F     10
+    ## 52 Plantain          Risaralda                <NA>    10 #8CDE9F     10
+    ## 53 Plantain          Santander Moderate Limitation     1 #59C981      1
+    ## 54 Plantain          Santander                <NA>     1 #59C981      1
+    ## 55 Plantain              Sucre Moderate Limitation     1 #59C981      1
+    ## 56 Plantain              Sucre                <NA>     1 #59C981      1
+    ## 57 Plantain             Tolima Moderate Limitation     1 #59C981      1
+    ## 58 Plantain             Tolima                <NA>     1 #59C981      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.8009259 0.44186047 0.19907407 0.55813953 #FFDA00
+    ## 2           NA     2 0.8009259 0.44186047 0.19907407 0.55813953 #FFDA00
+    ## 3           NA     3 0.8628389 0.29457364 0.06858054 0.14728682 #FFDA00
+    ## 4           NA     2 0.8628389 0.29457364 0.06858054 0.14728682 #FFDA00
+    ## 5           NA     3 0.9314195 0.29457364 0.06858054 0.14728682 #FFDA00
+    ## 6           NA     2 0.9314195 0.29457364 0.06858054 0.14728682 #FFDA00
+    ## 7           NA     3 0.5656566 0.00000000 0.29718235 0.06797853 #FFE566
+    ## 8           NA     2 0.5656566 0.00000000 0.29718235 0.06797853 #FFE566
+    ## 9           NA     2 0.8628389 0.14728682 0.06858054 0.14728682 #FFF2CC
+    ## 10          NA     3 0.8628389 0.14728682 0.06858054 0.14728682 #FFF2CC
+    ## 11          NA     3 0.9314195 0.14728682 0.06858054 0.14728682 #FFDA00
+    ## 12          NA     2 0.9314195 0.14728682 0.06858054 0.14728682 #FFDA00
+    ## 13          NA     3 0.5656566 0.06797853 0.29718235 0.37388193 #FFDA00
+    ## 14          NA     2 0.5656566 0.06797853 0.29718235 0.37388193 #FFDA00
+    ## 15          NA     3 0.5656566 0.44186047 0.23526936 0.55813953 #FFDA00
+    ## 16          NA     2 0.5656566 0.44186047 0.23526936 0.55813953 #FFDA00
+    ## 17          NA     1 0.5656566 0.00000000 0.43434343 1.00000000 #FFDA00
+    ## 18          NA     3 0.8628389 0.00000000 0.06858054 0.14728682 #FFDA00
+    ## 19          NA     2 0.8628389 0.00000000 0.06858054 0.14728682 #FFDA00
+    ## 20          NA     3 0.9314195 0.00000000 0.06858054 0.14728682 #FFDA00
+    ## 21          NA     2 0.9314195 0.00000000 0.06858054 0.14728682 #FFDA00
+    ## 22          NA     3 0.4866442 0.36931818 0.07901235 0.25568182 #28B463
+    ## 23          NA     2 0.4866442 0.36931818 0.07901235 0.25568182 #28B463
+    ## 24          NA     3 0.2101010 0.18465909 0.10940171 0.18465909 #59C981
+    ## 25          NA     2 0.2101010 0.18465909 0.10940171 0.18465909 #59C981
+    ## 26          NA     3 0.3195027 0.24621212 0.08205128 0.12310606 #59C981
+    ## 27          NA     2 0.3195027 0.24621212 0.08205128 0.12310606 #59C981
+    ## 28          NA     3 0.4015540 0.24621212 0.08205128 0.12310606 #59C981
+    ## 29          NA     2 0.4015540 0.24621212 0.08205128 0.12310606 #59C981
+    ## 30          NA     3 0.0000000 0.28846154 0.21010101 0.33653846 #8CDE9F
+    ## 31          NA     2 0.0000000 0.28846154 0.21010101 0.33653846 #8CDE9F
+    ## 32          NA     3 0.2101010 0.00000000 0.10940171 0.18465909 #8CDE9F
+    ## 33          NA     2 0.2101010 0.00000000 0.10940171 0.18465909 #8CDE9F
+    ## 34          NA     2 0.4836053 0.24621212 0.08205128 0.12310606 #BEF4BE
+    ## 35          NA     3 0.4836053 0.24621212 0.08205128 0.12310606 #BEF4BE
+    ## 36          NA     3 0.3195027 0.12310606 0.08205128 0.12310606 #59C981
+    ## 37          NA     2 0.3195027 0.12310606 0.08205128 0.12310606 #59C981
+    ## 38          NA     3 0.3195027 0.00000000 0.08205128 0.12310606 #59C981
+    ## 39          NA     2 0.3195027 0.00000000 0.08205128 0.12310606 #59C981
+    ## 40          NA     3 0.2101010 0.36931818 0.15802469 0.25568182 #59C981
+    ## 41          NA     2 0.2101010 0.36931818 0.15802469 0.25568182 #59C981
+    ## 42          NA     3 0.3681257 0.36931818 0.11851852 0.25568182 #59C981
+    ## 43          NA     2 0.3681257 0.36931818 0.11851852 0.25568182 #59C981
+    ## 44          NA     3 0.0000000 0.62500000 0.29629630 0.37500000 #8CDE9F
+    ## 45          NA     2 0.0000000 0.62500000 0.29629630 0.37500000 #8CDE9F
+    ## 46          NA     1 0.0000000 0.00000000 0.56565657 1.00000000 #59C981
+    ## 47          NA     3 0.4015540 0.12310606 0.08205128 0.12310606 #28B463
+    ## 48          NA     2 0.4015540 0.12310606 0.08205128 0.12310606 #28B463
+    ## 49          NA     3 0.0000000 0.00000000 0.21010101 0.28846154 #8CDE9F
+    ## 50          NA     2 0.0000000 0.00000000 0.21010101 0.28846154 #8CDE9F
+    ## 51          NA     3 0.2962963 0.62500000 0.26936027 0.37500000 #8CDE9F
+    ## 52          NA     2 0.2962963 0.62500000 0.26936027 0.37500000 #8CDE9F
+    ## 53          NA     3 0.4836053 0.12310606 0.08205128 0.12310606 #59C981
+    ## 54          NA     2 0.4836053 0.12310606 0.08205128 0.12310606 #59C981
+    ## 55          NA     3 0.4015540 0.00000000 0.08205128 0.12310606 #59C981
+    ## 56          NA     2 0.4015540 0.00000000 0.08205128 0.12310606 #59C981
+    ## 57          NA     3 0.4836053 0.00000000 0.08205128 0.12310606 #59C981
+    ## 58          NA     2 0.4836053 0.00000000 0.08205128 0.12310606 #59C981
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_31, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_31-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in    ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderate Limitation    11 #FFDA00     11
+    ## 2    Banana          Antioquia                <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas Moderate Limitation     1 #FFDA00      1
+    ## 4    Banana             Caldas                <NA>     1 #FFDA00      1
+    ## 5    Banana              Cesar Moderate Limitation     1 #FFDA00      1
+    ## 6    Banana              Cesar                <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó                <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó       No Limitation     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       No Limitation     1 #FFF2CC      1
+    ## 11   Banana              Huila Moderate Limitation     1 #FFDA00      1
+    ## 12   Banana              Huila                <NA>     1 #FFDA00      1
+    ## 13   Banana         La Guajira Moderate Limitation     9 #FFDA00      9
+    ## 14   Banana         La Guajira                <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena Moderate Limitation    12 #FFDA00     12
+    ## 16   Banana          Magdalena                <NA>    12 #FFDA00     12
+    ## 17   Banana               <NA>                <NA>    40 #FFDA00     40
+    ## 18   Banana            Quindío Moderate Limitation     1 #FFDA00      1
+    ## 19   Banana            Quindío                <NA>     1 #FFDA00      1
+    ## 20   Banana          Risaralda Moderate Limitation     1 #FFDA00      1
+    ## 21   Banana          Risaralda                <NA>     1 #FFDA00      1
+    ## 22 Plantain          Antioquia Moderate Limitation     2 #28B463      2
+    ## 23 Plantain          Antioquia                <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca Moderate Limitation     2 #28B463      2
+    ## 25 Plantain             Arauca                <NA>     2 #28B463      2
+    ## 26 Plantain          Atlántico Moderate Limitation     1 #28B463      1
+    ## 27 Plantain          Atlántico                <NA>     1 #28B463      1
+    ## 28 Plantain            Bolívar Moderate Limitation     1 #28B463      1
+    ## 29 Plantain            Bolívar                <NA>     1 #28B463      1
+    ## 30 Plantain             Caldas   Little Limitation     7 #59C981      7
+    ## 31 Plantain             Caldas                <NA>     7 #59C981      7
+    ## 32 Plantain           Casanare   Little Limitation     2 #59C981      2
+    ## 33 Plantain           Casanare                <NA>     2 #59C981      2
+    ## 34 Plantain              Chocó                <NA>     1 #8CDE9F      1
+    ## 35 Plantain              Chocó       No Limitation     1 #8CDE9F      1
+    ## 36 Plantain            Córdoba Moderate Limitation     1 #28B463      1
+    ## 37 Plantain            Córdoba                <NA>     1 #28B463      1
+    ## 38 Plantain              Huila Moderate Limitation     1 #28B463      1
+    ## 39 Plantain              Huila                <NA>     1 #28B463      1
+    ## 40 Plantain         La Guajira Moderate Limitation     4 #28B463      4
+    ## 41 Plantain         La Guajira                <NA>     4 #28B463      4
+    ## 42 Plantain          Magdalena Moderate Limitation     3 #28B463      3
+    ## 43 Plantain          Magdalena                <NA>     3 #28B463      3
+    ## 44 Plantain               Meta   Little Limitation    10 #59C981     10
+    ## 45 Plantain               Meta                <NA>    10 #59C981     10
+    ## 46 Plantain               <NA>                <NA>    55 #28B463     55
+    ## 47 Plantain Norte De Santander  Extreme Limitation     1 #BEF4BE      1
+    ## 48 Plantain Norte De Santander                <NA>     1 #BEF4BE      1
+    ## 49 Plantain            Quindío   Little Limitation     6 #59C981      6
+    ## 50 Plantain            Quindío                <NA>     6 #59C981      6
+    ## 51 Plantain          Risaralda   Little Limitation    10 #59C981     10
+    ## 52 Plantain          Risaralda                <NA>    10 #59C981     10
+    ## 53 Plantain          Santander Moderate Limitation     1 #28B463      1
+    ## 54 Plantain          Santander                <NA>     1 #28B463      1
+    ## 55 Plantain              Sucre Moderate Limitation     1 #28B463      1
+    ## 56 Plantain              Sucre                <NA>     1 #28B463      1
+    ## 57 Plantain             Tolima Moderate Limitation     1 #28B463      1
+    ## 58 Plantain             Tolima                <NA>     1 #28B463      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7986270 0.42500000 0.20137300 0.57500000 #FFDA00
+    ## 2           NA     2 0.7986270 0.42500000 0.20137300 0.57500000 #FFDA00
+    ## 3           NA     3 0.8513932 0.28333333 0.07430341 0.14166667 #FFDA00
+    ## 4           NA     2 0.8513932 0.28333333 0.07430341 0.14166667 #FFDA00
+    ## 5           NA     3 0.9256966 0.28333333 0.07430341 0.14166667 #FFDA00
+    ## 6           NA     2 0.9256966 0.28333333 0.07430341 0.14166667 #FFDA00
+    ## 7           NA     2 0.5789474 0.00000000 0.27244582 0.07727273 #FFF2CC
+    ## 8           NA     3 0.5789474 0.00000000 0.27244582 0.07727273 #FFF2CC
+    ## 9           NA     2 0.8513932 0.14166667 0.07430341 0.14166667 #FFF2CC
+    ## 10          NA     3 0.8513932 0.14166667 0.07430341 0.14166667 #FFF2CC
+    ## 11          NA     3 0.9256966 0.14166667 0.07430341 0.14166667 #FFDA00
+    ## 12          NA     2 0.9256966 0.14166667 0.07430341 0.14166667 #FFDA00
+    ## 13          NA     3 0.5789474 0.07727273 0.27244582 0.34772727 #FFDA00
+    ## 14          NA     2 0.5789474 0.07727273 0.27244582 0.34772727 #FFDA00
+    ## 15          NA     3 0.5789474 0.42500000 0.21967963 0.57500000 #FFDA00
+    ## 16          NA     2 0.5789474 0.42500000 0.21967963 0.57500000 #FFDA00
+    ## 17          NA     1 0.5789474 0.00000000 0.42105263 1.00000000 #FFDA00
+    ## 18          NA     3 0.8513932 0.00000000 0.07430341 0.14166667 #FFDA00
+    ## 19          NA     2 0.8513932 0.00000000 0.07430341 0.14166667 #FFDA00
+    ## 20          NA     3 0.9256966 0.00000000 0.07430341 0.14166667 #FFDA00
+    ## 21          NA     2 0.9256966 0.00000000 0.07430341 0.14166667 #FFDA00
+    ## 22          NA     3 0.4980785 0.37603306 0.08086884 0.26033058 #28B463
+    ## 23          NA     2 0.4980785 0.37603306 0.08086884 0.26033058 #28B463
+    ## 24          NA     3 0.2150376 0.18801653 0.11197224 0.18801653 #28B463
+    ## 25          NA     2 0.2150376 0.18801653 0.11197224 0.18801653 #28B463
+    ## 26          NA     3 0.3270098 0.25068871 0.08397918 0.12534435 #28B463
+    ## 27          NA     2 0.3270098 0.25068871 0.08397918 0.12534435 #28B463
+    ## 28          NA     3 0.4109890 0.25068871 0.08397918 0.12534435 #28B463
+    ## 29          NA     2 0.4109890 0.25068871 0.08397918 0.12534435 #28B463
+    ## 30          NA     3 0.0000000 0.29370629 0.21503759 0.34265734 #59C981
+    ## 31          NA     2 0.0000000 0.29370629 0.21503759 0.34265734 #59C981
+    ## 32          NA     3 0.2150376 0.00000000 0.11197224 0.18801653 #59C981
+    ## 33          NA     2 0.2150376 0.00000000 0.11197224 0.18801653 #59C981
+    ## 34          NA     2 0.4949682 0.25068871 0.08397918 0.12534435 #8CDE9F
+    ## 35          NA     3 0.4949682 0.25068871 0.08397918 0.12534435 #8CDE9F
+    ## 36          NA     3 0.3270098 0.12534435 0.08397918 0.12534435 #28B463
+    ## 37          NA     2 0.3270098 0.12534435 0.08397918 0.12534435 #28B463
+    ## 38          NA     3 0.3270098 0.00000000 0.08397918 0.12534435 #28B463
+    ## 39          NA     2 0.3270098 0.00000000 0.08397918 0.12534435 #28B463
+    ## 40          NA     3 0.2150376 0.37603306 0.16173768 0.26033058 #28B463
+    ## 41          NA     2 0.2150376 0.37603306 0.16173768 0.26033058 #28B463
+    ## 42          NA     3 0.3767753 0.37603306 0.12130326 0.26033058 #28B463
+    ## 43          NA     2 0.3767753 0.37603306 0.12130326 0.26033058 #28B463
+    ## 44          NA     3 0.0000000 0.63636364 0.28947368 0.36363636 #59C981
+    ## 45          NA     2 0.0000000 0.63636364 0.28947368 0.36363636 #59C981
+    ## 46          NA     1 0.0000000 0.00000000 0.57894737 1.00000000 #28B463
+    ## 47          NA     3 0.4109890 0.12534435 0.08397918 0.12534435 #BEF4BE
+    ## 48          NA     2 0.4109890 0.12534435 0.08397918 0.12534435 #BEF4BE
+    ## 49          NA     3 0.0000000 0.00000000 0.21503759 0.29370629 #59C981
+    ## 50          NA     2 0.0000000 0.00000000 0.21503759 0.29370629 #59C981
+    ## 51          NA     3 0.2894737 0.63636364 0.28947368 0.36363636 #59C981
+    ## 52          NA     2 0.2894737 0.63636364 0.28947368 0.36363636 #59C981
+    ## 53          NA     3 0.4949682 0.12534435 0.08397918 0.12534435 #28B463
+    ## 54          NA     2 0.4949682 0.12534435 0.08397918 0.12534435 #28B463
+    ## 55          NA     3 0.4109890 0.00000000 0.08397918 0.12534435 #28B463
+    ## 56          NA     2 0.4109890 0.00000000 0.08397918 0.12534435 #28B463
+    ## 57          NA     3 0.4949682 0.00000000 0.08397918 0.12534435 #28B463
+    ## 58          NA     2 0.4949682 0.00000000 0.08397918 0.12534435 #28B463
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q31_no_weight<- question_31 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =31))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q31_no_weight<- full_join(codes_department, nal_q31_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q31_no_weight$cat<- factor(nal_q31_no_weight$cat, levels = level_31)
+colmap(departamentos, data = nal_q31_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q31_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_31-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q31_weight<- inner_join(question_31, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q31_weight<- nal_q31_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =31)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q31_weight<- full_join(codes_department, nal_q31_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q31_weight$cat_weighted<- factor(nal_q31_weight$cat_weighted, levels = level_31)
+colmap(departamentos, data = nal_q31_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q31_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_31-4.png)<!-- -->
+
+## Question 36: What percentage of banana producers are engaged in the production of their own planting material?
+
+``` r
+#selecting only question 36----
+question_36<- filter(individual_surveys, question_number==36)
+#unique(question_36$numeric_answer)
+#dput(unique(question_36$answer_in_english))
+#organizing the order of the levels
+level_36<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_36$answer_in_english<- factor(question_36$answer_in_english,levels = level_36)
+question_36<- filter(question_36, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_36<- question_36 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(36, mean =average, language = "en"))
+```
+
+    ## Warning: There were 4 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(36, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 3 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_36<- inner_join(question_36, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_36<- add_weights_question_36 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(36, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 6 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(36, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q36_no_weighted<- tapply(avg_dept_no_weight_36$ave_cat, avg_dept_no_weight_36$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question36_no_weighted<- palette_banana(length(levels_per_crop_Q36_no_weighted$Banana))
+colors_plantain_question36_no_weighted<- palette_plantain(length(levels_per_crop_Q36_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_36 <- list(
+  Banana = levels_per_crop_Q36_no_weighted$Banana,
+  Plantain = levels_per_crop_Q36_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_36 <- list(
+  Banana = colors_banana_question36_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question36_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_36 <- assign_group_color(data = avg_dept_no_weight_36, levels_by_crop = levels_by_crop_no_weighted_36, colors_by_crop = colors_by_crop_no_weighted_36,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q36_weighted<- tapply(avg_dept_weight_36$ave_cat_weighted, avg_dept_weight_36$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question36_weighted<- palette_banana(length(levels_per_crop_Q36_weighted$Banana))
+colors_plantain_question36_weighted<- palette_plantain(length(levels_per_crop_Q36_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_36 <- list(
+  Banana = levels_per_crop_Q36_weighted$Banana,
+  Plantain = levels_per_crop_Q36_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_36 <- list(
+  Banana = colors_banana_question36_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question36_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_36 <- assign_group_color(data = avg_dept_weight_36, levels_by_crop = levels_by_crop_weighted_36, colors_by_crop = colors_by_crop_weighted_36,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_36, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_36-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia 41%-50%    11 #FFE566     11          NA     3
+    ## 2    Banana          Antioquia    <NA>    11 #FFE566     11          NA     2
+    ## 3    Banana             Caldas 71%-80%     1 #FFF2CC      1          NA     3
+    ## 4    Banana             Caldas    <NA>     1 #FFF2CC      1          NA     2
+    ## 5    Banana              Cesar 11%-20%     1 #FFE033      1          NA     3
+    ## 6    Banana              Cesar    <NA>     1 #FFE033      1          NA     2
+    ## 7    Banana              Chocó 41%-50%     2 #FFE566      2          NA     3
+    ## 8    Banana              Chocó    <NA>     2 #FFE566      2          NA     2
+    ## 9    Banana            Córdoba      0%     1 #FFEB99      1          NA     3
+    ## 10   Banana            Córdoba    <NA>     1 #FFEB99      1          NA     2
+    ## 11   Banana              Huila 71%-80%     1 #FFF2CC      1          NA     3
+    ## 12   Banana              Huila    <NA>     1 #FFF2CC      1          NA     2
+    ## 13   Banana         La Guajira 21%-30%    10 #FFDA00     10          NA     3
+    ## 14   Banana         La Guajira    <NA>    10 #FFDA00     10          NA     2
+    ## 15   Banana          Magdalena 21%-30%    11 #FFDA00     11          NA     3
+    ## 16   Banana          Magdalena    <NA>    11 #FFDA00     11          NA     2
+    ## 17   Banana               <NA>    <NA>    40 #FFF2CC     40          NA     1
+    ## 18   Banana            Quindío 71%-80%     1 #FFF2CC      1          NA     3
+    ## 19   Banana            Quindío    <NA>     1 #FFF2CC      1          NA     2
+    ## 20   Banana          Risaralda 71%-80%     1 #FFF2CC      1          NA     3
+    ## 21   Banana          Risaralda    <NA>     1 #FFF2CC      1          NA     2
+    ## 22 Plantain          Antioquia 51%-60%     2 #28B463      2          NA     3
+    ## 23 Plantain          Antioquia    <NA>     2 #28B463      2          NA     2
+    ## 24 Plantain             Arauca  1%-10%     2 #BEF4BE      2          NA     3
+    ## 25 Plantain             Arauca    <NA>     2 #BEF4BE      2          NA     2
+    ## 26 Plantain          Atlántico  1%-10%     1 #BEF4BE      1          NA     3
+    ## 27 Plantain          Atlántico    <NA>     1 #BEF4BE      1          NA     2
+    ## 28 Plantain            Bolívar  1%-10%     1 #BEF4BE      1          NA     3
+    ## 29 Plantain            Bolívar    <NA>     1 #BEF4BE      1          NA     2
+    ## 30 Plantain             Caldas 31%-40%     7 #8CDE9F      7          NA     3
+    ## 31 Plantain             Caldas    <NA>     7 #8CDE9F      7          NA     2
+    ## 32 Plantain           Casanare  1%-10%     2 #BEF4BE      2          NA     3
+    ## 33 Plantain           Casanare    <NA>     2 #BEF4BE      2          NA     2
+    ## 34 Plantain            Córdoba  1%-10%     1 #BEF4BE      1          NA     3
+    ## 35 Plantain            Córdoba    <NA>     1 #BEF4BE      1          NA     2
+    ## 36 Plantain              Huila  1%-10%     1 #BEF4BE      1          NA     3
+    ## 37 Plantain              Huila    <NA>     1 #BEF4BE      1          NA     2
+    ## 38 Plantain         La Guajira 41%-50%     4 #59C981      4          NA     3
+    ## 39 Plantain         La Guajira    <NA>     4 #59C981      4          NA     2
+    ## 40 Plantain          Magdalena 31%-40%     3 #8CDE9F      3          NA     3
+    ## 41 Plantain          Magdalena    <NA>     3 #8CDE9F      3          NA     2
+    ## 42 Plantain               Meta 41%-50%    11 #59C981     11          NA     3
+    ## 43 Plantain               Meta    <NA>    11 #59C981     11          NA     2
+    ## 44 Plantain               <NA>    <NA>    56 #BEF4BE     56          NA     1
+    ## 45 Plantain Norte De Santander  1%-10%     1 #BEF4BE      1          NA     3
+    ## 46 Plantain Norte De Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 47 Plantain            Quindío 41%-50%     6 #59C981      6          NA     3
+    ## 48 Plantain            Quindío    <NA>     6 #59C981      6          NA     2
+    ## 49 Plantain          Risaralda 41%-50%    11 #59C981     11          NA     3
+    ## 50 Plantain          Risaralda    <NA>    11 #59C981     11          NA     2
+    ## 51 Plantain          Santander  1%-10%     1 #BEF4BE      1          NA     3
+    ## 52 Plantain          Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 53 Plantain              Sucre  1%-10%     1 #BEF4BE      1          NA     3
+    ## 54 Plantain              Sucre    <NA>     1 #BEF4BE      1          NA     2
+    ## 55 Plantain             Tolima  1%-10%     1 #BEF4BE      1          NA     3
+    ## 56 Plantain             Tolima    <NA>     1 #BEF4BE      1          NA     2
+    ##           x0        y0          w         h   color
+    ## 1  0.5833333 0.4500000 0.20833333 0.5500000 #FFE566
+    ## 2  0.5833333 0.4500000 0.20833333 0.5500000 #FFE566
+    ## 3  0.8611111 0.3000000 0.06944444 0.1500000 #FFF2CC
+    ## 4  0.8611111 0.3000000 0.06944444 0.1500000 #FFF2CC
+    ## 5  0.9305556 0.3000000 0.06944444 0.1500000 #FFE033
+    ## 6  0.9305556 0.3000000 0.06944444 0.1500000 #FFE033
+    ## 7  0.5833333 0.0000000 0.27777778 0.0750000 #FFE566
+    ## 8  0.5833333 0.0000000 0.27777778 0.0750000 #FFE566
+    ## 9  0.8611111 0.1500000 0.06944444 0.1500000 #FFEB99
+    ## 10 0.8611111 0.1500000 0.06944444 0.1500000 #FFEB99
+    ## 11 0.9305556 0.1500000 0.06944444 0.1500000 #FFF2CC
+    ## 12 0.9305556 0.1500000 0.06944444 0.1500000 #FFF2CC
+    ## 13 0.5833333 0.0750000 0.27777778 0.3750000 #FFDA00
+    ## 14 0.5833333 0.0750000 0.27777778 0.3750000 #FFDA00
+    ## 15 0.7916667 0.4500000 0.20833333 0.5500000 #FFDA00
+    ## 16 0.7916667 0.4500000 0.20833333 0.5500000 #FFDA00
+    ## 17 0.5833333 0.0000000 0.41666667 1.0000000 #FFF2CC
+    ## 18 0.8611111 0.0000000 0.06944444 0.1500000 #FFF2CC
+    ## 19 0.8611111 0.0000000 0.06944444 0.1500000 #FFF2CC
+    ## 20 0.9305556 0.0000000 0.06944444 0.1500000 #FFF2CC
+    ## 21 0.9305556 0.0000000 0.06944444 0.1500000 #FFF2CC
+    ## 22 0.5032680 0.3469388 0.08006536 0.2602041 #28B463
+    ## 23 0.5032680 0.3469388 0.08006536 0.2602041 #28B463
+    ## 24 0.2230392 0.1734694 0.12009804 0.1734694 #BEF4BE
+    ## 25 0.2230392 0.1734694 0.12009804 0.1734694 #BEF4BE
+    ## 26 0.3431373 0.2312925 0.09007353 0.1156463 #BEF4BE
+    ## 27 0.3431373 0.2312925 0.09007353 0.1156463 #BEF4BE
+    ## 28 0.3431373 0.1156463 0.09007353 0.1156463 #BEF4BE
+    ## 29 0.3431373 0.1156463 0.09007353 0.1156463 #BEF4BE
+    ## 30 0.0000000 0.2802198 0.22303922 0.3269231 #8CDE9F
+    ## 31 0.0000000 0.2802198 0.22303922 0.3269231 #8CDE9F
+    ## 32 0.2230392 0.0000000 0.12009804 0.1734694 #BEF4BE
+    ## 33 0.2230392 0.0000000 0.12009804 0.1734694 #BEF4BE
+    ## 34 0.3431373 0.0000000 0.09007353 0.1156463 #BEF4BE
+    ## 35 0.3431373 0.0000000 0.09007353 0.1156463 #BEF4BE
+    ## 36 0.4332108 0.2081633 0.07506127 0.1387755 #BEF4BE
+    ## 37 0.4332108 0.2081633 0.07506127 0.1387755 #BEF4BE
+    ## 38 0.2230392 0.3469388 0.16013072 0.2602041 #59C981
+    ## 39 0.2230392 0.3469388 0.16013072 0.2602041 #59C981
+    ## 40 0.3831699 0.3469388 0.12009804 0.2602041 #8CDE9F
+    ## 41 0.3831699 0.3469388 0.12009804 0.2602041 #8CDE9F
+    ## 42 0.0000000 0.6071429 0.29166667 0.3928571 #59C981
+    ## 43 0.0000000 0.6071429 0.29166667 0.3928571 #59C981
+    ## 44 0.0000000 0.0000000 0.58333333 1.0000000 #BEF4BE
+    ## 45 0.5082721 0.2081633 0.07506127 0.1387755 #BEF4BE
+    ## 46 0.5082721 0.2081633 0.07506127 0.1387755 #BEF4BE
+    ## 47 0.0000000 0.0000000 0.22303922 0.2802198 #59C981
+    ## 48 0.0000000 0.0000000 0.22303922 0.2802198 #59C981
+    ## 49 0.2916667 0.6071429 0.29166667 0.3928571 #59C981
+    ## 50 0.2916667 0.6071429 0.29166667 0.3928571 #59C981
+    ## 51 0.4332108 0.1040816 0.10008170 0.1040816 #BEF4BE
+    ## 52 0.4332108 0.1040816 0.10008170 0.1040816 #BEF4BE
+    ## 53 0.4332108 0.0000000 0.10008170 0.1040816 #BEF4BE
+    ## 54 0.4332108 0.0000000 0.10008170 0.1040816 #BEF4BE
+    ## 55 0.5332925 0.0000000 0.05004085 0.2081633 #BEF4BE
+    ## 56 0.5332925 0.0000000 0.05004085 0.2081633 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_36, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_36-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia          51%-60%    11 #FFE351     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFE351     11
+    ## 3    Banana             Caldas          71%-80%     1 #FFF2CC      1
+    ## 4    Banana             Caldas             <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar          11%-20%     1 #FFDE28      1
+    ## 6    Banana              Cesar             <NA>     1 #FFDE28      1
+    ## 7    Banana              Chocó          31%-40%     2 #FFE87A      2
+    ## 8    Banana              Chocó             <NA>     2 #FFE87A      2
+    ## 9    Banana            Córdoba               0%     1 #FFEDA3      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFEDA3      1
+    ## 11   Banana              Huila          71%-80%     1 #FFF2CC      1
+    ## 12   Banana              Huila             <NA>     1 #FFF2CC      1
+    ## 13   Banana         La Guajira          21%-30%     9 #FFDA00      9
+    ## 14   Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena          21%-30%    10 #FFDA00     10
+    ## 16   Banana          Magdalena             <NA>    10 #FFDA00     10
+    ## 17   Banana               <NA>             <NA>    38 #FFF2CC     38
+    ## 18   Banana            Quindío          71%-80%     1 #FFF2CC      1
+    ## 19   Banana            Quindío             <NA>     1 #FFF2CC      1
+    ## 20   Banana          Risaralda          71%-80%     1 #FFF2CC      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia          61%-70%     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca           1%-10%     2 #98E4A7      2
+    ## 25 Plantain             Arauca             <NA>     2 #98E4A7      2
+    ## 26 Plantain          Atlántico           1%-10%     1 #98E4A7      1
+    ## 27 Plantain          Atlántico             <NA>     1 #98E4A7      1
+    ## 28 Plantain            Bolívar           1%-10%     1 #98E4A7      1
+    ## 29 Plantain            Bolívar             <NA>     1 #98E4A7      1
+    ## 30 Plantain             Caldas          31%-40%     7 #4DC479      7
+    ## 31 Plantain             Caldas             <NA>     7 #4DC479      7
+    ## 32 Plantain           Casanare           1%-10%     2 #98E4A7      2
+    ## 33 Plantain           Casanare             <NA>     2 #98E4A7      2
+    ## 34 Plantain            Córdoba           1%-10%     1 #98E4A7      1
+    ## 35 Plantain            Córdoba             <NA>     1 #98E4A7      1
+    ## 36 Plantain              Huila           1%-10%     1 #98E4A7      1
+    ## 37 Plantain              Huila             <NA>     1 #98E4A7      1
+    ## 38 Plantain         La Guajira          31%-40%     4 #4DC479      4
+    ## 39 Plantain         La Guajira             <NA>     4 #4DC479      4
+    ## 40 Plantain          Magdalena          21%-30%     3 #BEF4BE      3
+    ## 41 Plantain          Magdalena             <NA>     3 #BEF4BE      3
+    ## 42 Plantain               Meta          41%-50%    10 #73D490     10
+    ## 43 Plantain               Meta             <NA>    10 #73D490     10
+    ## 44 Plantain               <NA>             <NA>    55 #98E4A7     55
+    ## 45 Plantain Norte De Santander           1%-10%     1 #98E4A7      1
+    ## 46 Plantain Norte De Santander             <NA>     1 #98E4A7      1
+    ## 47 Plantain            Quindío          41%-50%     6 #73D490      6
+    ## 48 Plantain            Quindío             <NA>     6 #73D490      6
+    ## 49 Plantain          Risaralda          31%-40%    11 #4DC479     11
+    ## 50 Plantain          Risaralda             <NA>    11 #4DC479     11
+    ## 51 Plantain          Santander           1%-10%     1 #98E4A7      1
+    ## 52 Plantain          Santander             <NA>     1 #98E4A7      1
+    ## 53 Plantain              Sucre           1%-10%     1 #98E4A7      1
+    ## 54 Plantain              Sucre             <NA>     1 #98E4A7      1
+    ## 55 Plantain             Tolima           1%-10%     1 #98E4A7      1
+    ## 56 Plantain             Tolima             <NA>     1 #98E4A7      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5913978 0.44736842 0.21402970 0.55263158 #FFE351
+    ## 2           NA     2 0.5913978 0.44736842 0.21402970 0.55263158 #FFE351
+    ## 3           NA     3 0.8557875 0.29824561 0.07210626 0.14912281 #FFF2CC
+    ## 4           NA     2 0.8557875 0.29824561 0.07210626 0.14912281 #FFF2CC
+    ## 5           NA     3 0.9278937 0.29824561 0.07210626 0.14912281 #FFDE28
+    ## 6           NA     2 0.9278937 0.29824561 0.07210626 0.14912281 #FFDE28
+    ## 7           NA     3 0.5913978 0.00000000 0.26438963 0.08133971 #FFE87A
+    ## 8           NA     2 0.5913978 0.00000000 0.26438963 0.08133971 #FFE87A
+    ## 9           NA     3 0.8557875 0.14912281 0.07210626 0.14912281 #FFEDA3
+    ## 10          NA     2 0.8557875 0.14912281 0.07210626 0.14912281 #FFEDA3
+    ## 11          NA     3 0.9278937 0.14912281 0.07210626 0.14912281 #FFF2CC
+    ## 12          NA     2 0.9278937 0.14912281 0.07210626 0.14912281 #FFF2CC
+    ## 13          NA     3 0.5913978 0.08133971 0.26438963 0.36602871 #FFDA00
+    ## 14          NA     2 0.5913978 0.08133971 0.26438963 0.36602871 #FFDA00
+    ## 15          NA     3 0.8054275 0.44736842 0.19457245 0.55263158 #FFDA00
+    ## 16          NA     2 0.8054275 0.44736842 0.19457245 0.55263158 #FFDA00
+    ## 17          NA     1 0.5913978 0.00000000 0.40860215 1.00000000 #FFF2CC
+    ## 18          NA     3 0.8557875 0.00000000 0.07210626 0.14912281 #FFF2CC
+    ## 19          NA     2 0.8557875 0.00000000 0.07210626 0.14912281 #FFF2CC
+    ## 20          NA     3 0.9278937 0.00000000 0.07210626 0.14912281 #FFF2CC
+    ## 21          NA     2 0.9278937 0.00000000 0.07210626 0.14912281 #FFF2CC
+    ## 22          NA     3 0.5102256 0.35324675 0.08117225 0.26493506 #28B463
+    ## 23          NA     2 0.5102256 0.35324675 0.08117225 0.26493506 #28B463
+    ## 24          NA     3 0.2261227 0.17662338 0.12175838 0.17662338 #98E4A7
+    ## 25          NA     2 0.2261227 0.17662338 0.12175838 0.17662338 #98E4A7
+    ## 26          NA     3 0.3478811 0.23549784 0.09131879 0.11774892 #98E4A7
+    ## 27          NA     2 0.3478811 0.23549784 0.09131879 0.11774892 #98E4A7
+    ## 28          NA     3 0.3478811 0.11774892 0.09131879 0.11774892 #98E4A7
+    ## 29          NA     2 0.3478811 0.11774892 0.09131879 0.11774892 #98E4A7
+    ## 30          NA     3 0.0000000 0.28531469 0.22612271 0.33286713 #4DC479
+    ## 31          NA     2 0.0000000 0.28531469 0.22612271 0.33286713 #4DC479
+    ## 32          NA     3 0.2261227 0.00000000 0.12175838 0.17662338 #98E4A7
+    ## 33          NA     2 0.2261227 0.00000000 0.12175838 0.17662338 #98E4A7
+    ## 34          NA     3 0.3478811 0.00000000 0.09131879 0.11774892 #98E4A7
+    ## 35          NA     2 0.3478811 0.00000000 0.09131879 0.11774892 #98E4A7
+    ## 36          NA     3 0.4391999 0.21194805 0.07609899 0.14129870 #98E4A7
+    ## 37          NA     2 0.4391999 0.21194805 0.07609899 0.14129870 #98E4A7
+    ## 38          NA     3 0.2261227 0.35324675 0.16234451 0.26493506 #4DC479
+    ## 39          NA     2 0.2261227 0.35324675 0.16234451 0.26493506 #4DC479
+    ## 40          NA     3 0.3884672 0.35324675 0.12175838 0.26493506 #BEF4BE
+    ## 41          NA     2 0.3884672 0.35324675 0.12175838 0.26493506 #BEF4BE
+    ## 42          NA     3 0.3097798 0.61818182 0.28161802 0.38181818 #73D490
+    ## 43          NA     2 0.3097798 0.61818182 0.28161802 0.38181818 #73D490
+    ## 44          NA     1 0.0000000 0.00000000 0.59139785 1.00000000 #98E4A7
+    ## 45          NA     3 0.5152989 0.21194805 0.07609899 0.14129870 #98E4A7
+    ## 46          NA     2 0.5152989 0.21194805 0.07609899 0.14129870 #98E4A7
+    ## 47          NA     3 0.0000000 0.00000000 0.22612271 0.28531469 #73D490
+    ## 48          NA     2 0.0000000 0.00000000 0.22612271 0.28531469 #73D490
+    ## 49          NA     3 0.0000000 0.61818182 0.30977983 0.38181818 #4DC479
+    ## 50          NA     2 0.0000000 0.61818182 0.30977983 0.38181818 #4DC479
+    ## 51          NA     3 0.4391999 0.10597403 0.10146532 0.10597403 #98E4A7
+    ## 52          NA     2 0.4391999 0.10597403 0.10146532 0.10597403 #98E4A7
+    ## 53          NA     3 0.4391999 0.00000000 0.10146532 0.10597403 #98E4A7
+    ## 54          NA     2 0.4391999 0.00000000 0.10146532 0.10597403 #98E4A7
+    ## 55          NA     3 0.5406652 0.00000000 0.05073266 0.21194805 #98E4A7
+    ## 56          NA     2 0.5406652 0.00000000 0.05073266 0.21194805 #98E4A7
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q36_no_weight<- question_36 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =36))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q36_no_weight<- full_join(codes_department, nal_q36_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q36_no_weight$cat<- factor(nal_q36_no_weight$cat, levels = level_36)
+colmap(departamentos, data = nal_q36_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q36_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_36-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q36_weight<- inner_join(question_36, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q36_weight<- nal_q36_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =36)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q36_weight<- full_join(codes_department, nal_q36_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q36_weight$cat_weighted<- factor(nal_q36_weight$cat_weighted, levels = level_36)
+colmap(departamentos, data = nal_q36_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q36_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_36-4.png)<!-- -->
+
+## Question 37: If cost were not a concern, what is the likelihood that these regions would implement biosecurity strategies to mitigate or prevent Foc R4T?
+
+``` r
+#selecting only question 37----
+question_37<- filter(individual_surveys, question_number==37)
+#unique(question_37$numeric_answer)
+#dput(unique(question_37$answer_in_english))
+#organizing the order of the levels
+level_37<- c("Extremely Unlikely", "Very Unlikely", "Unlikely", "Somewhat Unlikely", "Neutral", "Somewhat Likely", "Likely", "Very Likely", "Extremely Likely", "Unsure")
+question_37$answer_in_english<- factor(question_37$answer_in_english,levels = level_37)
+question_37<- filter(question_37, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_37<- question_37 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(37, mean =average, language = "en"))
+```
+
+    ## Warning: There were 5 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(37, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_37<- inner_join(question_37, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_37<- add_weights_question_37 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(37, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(37, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q37_no_weighted<- tapply(avg_dept_no_weight_37$ave_cat, avg_dept_no_weight_37$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question37_no_weighted<- palette_banana(length(levels_per_crop_Q37_no_weighted$Banana))
+colors_plantain_question37_no_weighted<- palette_plantain(length(levels_per_crop_Q37_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_37 <- list(
+  Banana = levels_per_crop_Q37_no_weighted$Banana,
+  Plantain = levels_per_crop_Q37_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_37 <- list(
+  Banana = colors_banana_question37_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question37_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_37 <- assign_group_color(data = avg_dept_no_weight_37, levels_by_crop = levels_by_crop_no_weighted_37, colors_by_crop = colors_by_crop_no_weighted_37,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q37_weighted<- tapply(avg_dept_weight_37$ave_cat_weighted, avg_dept_weight_37$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question37_weighted<- palette_banana(length(levels_per_crop_Q37_weighted$Banana))
+colors_plantain_question37_weighted<- palette_plantain(length(levels_per_crop_Q37_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_37 <- list(
+  Banana = levels_per_crop_Q37_weighted$Banana,
+  Plantain = levels_per_crop_Q37_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_37 <- list(
+  Banana = colors_banana_question37_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question37_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_37 <- assign_group_color(data = avg_dept_weight_37, levels_by_crop = levels_by_crop_weighted_37, colors_by_crop = colors_by_crop_weighted_37,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_37, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_37-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in           ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia              <NA>    11 #FFF2CC     11
+    ## 2    Banana          Antioquia       Very Likely    11 #FFF2CC     11
+    ## 3    Banana             Caldas              <NA>     1 #FFDA00      1
+    ## 4    Banana             Caldas   Somewhat Likely     1 #FFDA00      1
+    ## 5    Banana              Cesar              <NA>     2 #FFDA00      2
+    ## 6    Banana              Cesar   Somewhat Likely     2 #FFDA00      2
+    ## 7    Banana              Chocó              <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó       Very Likely     2 #FFF2CC      2
+    ## 9    Banana            Córdoba              <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       Very Likely     1 #FFF2CC      1
+    ## 11   Banana              Huila              <NA>     1 #FFDA00      1
+    ## 12   Banana              Huila   Somewhat Likely     1 #FFDA00      1
+    ## 13   Banana         La Guajira              <NA>    11 #FFDA00     11
+    ## 14   Banana         La Guajira   Somewhat Likely    11 #FFDA00     11
+    ## 15   Banana          Magdalena              <NA>    12 #FFDA00     12
+    ## 16   Banana          Magdalena   Somewhat Likely    12 #FFDA00     12
+    ## 17   Banana               <NA>              <NA>    43 #FFDA00     43
+    ## 18   Banana            Quindío              <NA>     1 #FFDA00      1
+    ## 19   Banana            Quindío   Somewhat Likely     1 #FFDA00      1
+    ## 20   Banana          Risaralda              <NA>     1 #FFDA00      1
+    ## 21   Banana          Risaralda   Somewhat Likely     1 #FFDA00      1
+    ## 22 Plantain          Antioquia              <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia       Very Likely     2 #28B463      2
+    ## 24 Plantain             Arauca              <NA>     2 #BEF4BE      2
+    ## 25 Plantain             Arauca Somewhat Unlikely     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico            Likely     1 #59C981      1
+    ## 27 Plantain          Atlántico              <NA>     1 #59C981      1
+    ## 28 Plantain            Bolívar            Likely     1 #59C981      1
+    ## 29 Plantain            Bolívar              <NA>     1 #59C981      1
+    ## 30 Plantain             Caldas              <NA>     7 #8CDE9F      7
+    ## 31 Plantain             Caldas   Somewhat Likely     7 #8CDE9F      7
+    ## 32 Plantain           Casanare              <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare Somewhat Unlikely     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba            Likely     1 #59C981      1
+    ## 35 Plantain            Córdoba              <NA>     1 #59C981      1
+    ## 36 Plantain              Huila            Likely     1 #59C981      1
+    ## 37 Plantain              Huila              <NA>     1 #59C981      1
+    ## 38 Plantain         La Guajira            Likely     4 #59C981      4
+    ## 39 Plantain         La Guajira              <NA>     4 #59C981      4
+    ## 40 Plantain          Magdalena            Likely     3 #59C981      3
+    ## 41 Plantain          Magdalena              <NA>     3 #59C981      3
+    ## 42 Plantain               Meta              <NA>    11 #8CDE9F     11
+    ## 43 Plantain               Meta   Somewhat Likely    11 #8CDE9F     11
+    ## 44 Plantain               <NA>              <NA>    55 #59C981     55
+    ## 45 Plantain Norte De Santander            Likely     1 #59C981      1
+    ## 46 Plantain Norte De Santander              <NA>     1 #59C981      1
+    ## 47 Plantain            Quindío              <NA>     6 #8CDE9F      6
+    ## 48 Plantain            Quindío   Somewhat Likely     6 #8CDE9F      6
+    ## 49 Plantain          Risaralda              <NA>    10 #8CDE9F     10
+    ## 50 Plantain          Risaralda   Somewhat Likely    10 #8CDE9F     10
+    ## 51 Plantain          Santander            Likely     1 #59C981      1
+    ## 52 Plantain          Santander              <NA>     1 #59C981      1
+    ## 53 Plantain              Sucre              <NA>     1 #8CDE9F      1
+    ## 54 Plantain              Sucre   Somewhat Likely     1 #8CDE9F      1
+    ## 55 Plantain             Tolima            Likely     1 #59C981      1
+    ## 56 Plantain             Tolima              <NA>     1 #59C981      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.7901508 0.46511628 0.20984916 0.53488372 #FFF2CC
+    ## 2           NA     3 0.7901508 0.46511628 0.20984916 0.53488372 #FFF2CC
+    ## 3           NA     2 0.9488095 0.26578073 0.05119048 0.19933555 #FFDA00
+    ## 4           NA     3 0.9488095 0.26578073 0.05119048 0.19933555 #FFDA00
+    ## 5           NA     2 0.5612245 0.00000000 0.28520408 0.07155635 #FFDA00
+    ## 6           NA     3 0.5612245 0.00000000 0.28520408 0.07155635 #FFDA00
+    ## 7           NA     2 0.8464286 0.26578073 0.10238095 0.19933555 #FFF2CC
+    ## 8           NA     3 0.8464286 0.26578073 0.10238095 0.19933555 #FFF2CC
+    ## 9           NA     2 0.8464286 0.13289037 0.07678571 0.13289037 #FFF2CC
+    ## 10          NA     3 0.8464286 0.13289037 0.07678571 0.13289037 #FFF2CC
+    ## 11          NA     2 0.9232143 0.13289037 0.07678571 0.13289037 #FFDA00
+    ## 12          NA     3 0.9232143 0.13289037 0.07678571 0.13289037 #FFDA00
+    ## 13          NA     2 0.5612245 0.07155635 0.28520408 0.39355993 #FFDA00
+    ## 14          NA     3 0.5612245 0.07155635 0.28520408 0.39355993 #FFDA00
+    ## 15          NA     2 0.5612245 0.46511628 0.22892635 0.53488372 #FFDA00
+    ## 16          NA     3 0.5612245 0.46511628 0.22892635 0.53488372 #FFDA00
+    ## 17          NA     1 0.5612245 0.00000000 0.43877551 1.00000000 #FFDA00
+    ## 18          NA     2 0.8464286 0.00000000 0.07678571 0.13289037 #FFDA00
+    ## 19          NA     3 0.8464286 0.00000000 0.07678571 0.13289037 #FFDA00
+    ## 20          NA     2 0.9232143 0.00000000 0.07678571 0.13289037 #FFDA00
+    ## 21          NA     3 0.9232143 0.00000000 0.07678571 0.13289037 #FFDA00
+    ## 22          NA     2 0.4841937 0.35324675 0.07703081 0.26493506 #28B463
+    ## 23          NA     3 0.4841937 0.35324675 0.07703081 0.26493506 #28B463
+    ## 24          NA     2 0.2145858 0.17662338 0.11554622 0.17662338 #BEF4BE
+    ## 25          NA     3 0.2145858 0.17662338 0.11554622 0.17662338 #BEF4BE
+    ## 26          NA     3 0.3301321 0.22077922 0.07703081 0.13246753 #59C981
+    ## 27          NA     2 0.3301321 0.22077922 0.07703081 0.13246753 #59C981
+    ## 28          NA     3 0.4071629 0.22077922 0.07703081 0.13246753 #59C981
+    ## 29          NA     2 0.4071629 0.22077922 0.07703081 0.13246753 #59C981
+    ## 30          NA     2 0.0000000 0.28531469 0.21458583 0.33286713 #8CDE9F
+    ## 31          NA     3 0.0000000 0.28531469 0.21458583 0.33286713 #8CDE9F
+    ## 32          NA     2 0.2145858 0.00000000 0.11554622 0.17662338 #BEF4BE
+    ## 33          NA     3 0.2145858 0.00000000 0.11554622 0.17662338 #BEF4BE
+    ## 34          NA     3 0.4841937 0.22077922 0.07703081 0.13246753 #59C981
+    ## 35          NA     2 0.4841937 0.22077922 0.07703081 0.13246753 #59C981
+    ## 36          NA     3 0.3301321 0.11038961 0.09243697 0.11038961 #59C981
+    ## 37          NA     2 0.3301321 0.11038961 0.09243697 0.11038961 #59C981
+    ## 38          NA     3 0.2145858 0.35324675 0.15406162 0.26493506 #59C981
+    ## 39          NA     2 0.2145858 0.35324675 0.15406162 0.26493506 #59C981
+    ## 40          NA     3 0.3686475 0.35324675 0.11554622 0.26493506 #59C981
+    ## 41          NA     2 0.3686475 0.35324675 0.11554622 0.26493506 #59C981
+    ## 42          NA     2 0.0000000 0.61818182 0.29397473 0.38181818 #8CDE9F
+    ## 43          NA     3 0.0000000 0.61818182 0.29397473 0.38181818 #8CDE9F
+    ## 44          NA     1 0.0000000 0.00000000 0.56122449 1.00000000 #59C981
+    ## 45          NA     3 0.3301321 0.00000000 0.09243697 0.11038961 #59C981
+    ## 46          NA     2 0.3301321 0.00000000 0.09243697 0.11038961 #59C981
+    ## 47          NA     2 0.0000000 0.00000000 0.21458583 0.28531469 #8CDE9F
+    ## 48          NA     3 0.0000000 0.00000000 0.21458583 0.28531469 #8CDE9F
+    ## 49          NA     2 0.2939747 0.61818182 0.26724976 0.38181818 #8CDE9F
+    ## 50          NA     3 0.2939747 0.61818182 0.26724976 0.38181818 #8CDE9F
+    ## 51          NA     3 0.4225690 0.07359307 0.06932773 0.14718615 #59C981
+    ## 52          NA     2 0.4225690 0.07359307 0.06932773 0.14718615 #59C981
+    ## 53          NA     2 0.4918968 0.07359307 0.06932773 0.14718615 #8CDE9F
+    ## 54          NA     3 0.4918968 0.07359307 0.06932773 0.14718615 #8CDE9F
+    ## 55          NA     3 0.4225690 0.00000000 0.13865546 0.07359307 #59C981
+    ## 56          NA     2 0.4225690 0.00000000 0.13865546 0.07359307 #59C981
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_37, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_37-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in  ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia              <NA>    11 #FFF2CC     11
+    ## 2    Banana          Antioquia       Very Likely    11 #FFF2CC     11
+    ## 3    Banana             Caldas              <NA>     1 #FFDA00      1
+    ## 4    Banana             Caldas   Somewhat Likely     1 #FFDA00      1
+    ## 5    Banana              Cesar              <NA>     2 #FFDA00      2
+    ## 6    Banana              Cesar   Somewhat Likely     2 #FFDA00      2
+    ## 7    Banana              Chocó              <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó       Very Likely     2 #FFF2CC      2
+    ## 9    Banana            Córdoba              <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       Very Likely     1 #FFF2CC      1
+    ## 11   Banana              Huila              <NA>     1 #FFDA00      1
+    ## 12   Banana              Huila   Somewhat Likely     1 #FFDA00      1
+    ## 13   Banana         La Guajira              <NA>     9 #FFDA00      9
+    ## 14   Banana         La Guajira   Somewhat Likely     9 #FFDA00      9
+    ## 15   Banana          Magdalena            Likely    11 #FFE566     11
+    ## 16   Banana          Magdalena              <NA>    11 #FFE566     11
+    ## 17   Banana               <NA>              <NA>    40 #FFDA00     40
+    ## 18   Banana            Quindío              <NA>     1 #FFDA00      1
+    ## 19   Banana            Quindío   Somewhat Likely     1 #FFDA00      1
+    ## 20   Banana          Risaralda              <NA>     1 #FFDA00      1
+    ## 21   Banana          Risaralda   Somewhat Likely     1 #FFDA00      1
+    ## 22 Plantain          Antioquia              <NA>     2 #28B463      2
+    ## 23 Plantain          Antioquia       Very Likely     2 #28B463      2
+    ## 24 Plantain             Arauca              <NA>     2 #BEF4BE      2
+    ## 25 Plantain             Arauca Somewhat Unlikely     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico            Likely     1 #59C981      1
+    ## 27 Plantain          Atlántico              <NA>     1 #59C981      1
+    ## 28 Plantain            Bolívar            Likely     1 #59C981      1
+    ## 29 Plantain            Bolívar              <NA>     1 #59C981      1
+    ## 30 Plantain             Caldas              <NA>     7 #8CDE9F      7
+    ## 31 Plantain             Caldas   Somewhat Likely     7 #8CDE9F      7
+    ## 32 Plantain           Casanare              <NA>     2 #BEF4BE      2
+    ## 33 Plantain           Casanare Somewhat Unlikely     2 #BEF4BE      2
+    ## 34 Plantain            Córdoba            Likely     1 #59C981      1
+    ## 35 Plantain            Córdoba              <NA>     1 #59C981      1
+    ## 36 Plantain              Huila            Likely     1 #59C981      1
+    ## 37 Plantain              Huila              <NA>     1 #59C981      1
+    ## 38 Plantain         La Guajira            Likely     4 #59C981      4
+    ## 39 Plantain         La Guajira              <NA>     4 #59C981      4
+    ## 40 Plantain          Magdalena            Likely     3 #59C981      3
+    ## 41 Plantain          Magdalena              <NA>     3 #59C981      3
+    ## 42 Plantain               Meta              <NA>    10 #8CDE9F     10
+    ## 43 Plantain               Meta   Somewhat Likely    10 #8CDE9F     10
+    ## 44 Plantain               <NA>              <NA>    54 #59C981     54
+    ## 45 Plantain Norte De Santander            Likely     1 #59C981      1
+    ## 46 Plantain Norte De Santander              <NA>     1 #59C981      1
+    ## 47 Plantain            Quindío              <NA>     6 #8CDE9F      6
+    ## 48 Plantain            Quindío   Somewhat Likely     6 #8CDE9F      6
+    ## 49 Plantain          Risaralda              <NA>    10 #8CDE9F     10
+    ## 50 Plantain          Risaralda   Somewhat Likely    10 #8CDE9F     10
+    ## 51 Plantain          Santander            Likely     1 #59C981      1
+    ## 52 Plantain          Santander              <NA>     1 #59C981      1
+    ## 53 Plantain              Sucre              <NA>     1 #8CDE9F      1
+    ## 54 Plantain              Sucre   Somewhat Likely     1 #8CDE9F      1
+    ## 55 Plantain             Tolima            Likely     1 #59C981      1
+    ## 56 Plantain             Tolima              <NA>     1 #59C981      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     2 0.5744681 0.45000000 0.21276596 0.55000000 #FFF2CC
+    ## 2           NA     3 0.5744681 0.45000000 0.21276596 0.55000000 #FFF2CC
+    ## 3           NA     2 0.9448385 0.25714286 0.05516154 0.19285714 #FFDA00
+    ## 4           NA     3 0.9448385 0.25714286 0.05516154 0.19285714 #FFDA00
+    ## 5           NA     2 0.5744681 0.00000000 0.26004728 0.08181818 #FFDA00
+    ## 6           NA     3 0.5744681 0.00000000 0.26004728 0.08181818 #FFDA00
+    ## 7           NA     2 0.8345154 0.25714286 0.11032309 0.19285714 #FFF2CC
+    ## 8           NA     3 0.8345154 0.25714286 0.11032309 0.19285714 #FFF2CC
+    ## 9           NA     2 0.8345154 0.12857143 0.08274232 0.12857143 #FFF2CC
+    ## 10          NA     3 0.8345154 0.12857143 0.08274232 0.12857143 #FFF2CC
+    ## 11          NA     2 0.9172577 0.12857143 0.08274232 0.12857143 #FFDA00
+    ## 12          NA     3 0.9172577 0.12857143 0.08274232 0.12857143 #FFDA00
+    ## 13          NA     2 0.5744681 0.08181818 0.26004728 0.36818182 #FFDA00
+    ## 14          NA     3 0.5744681 0.08181818 0.26004728 0.36818182 #FFDA00
+    ## 15          NA     3 0.7872340 0.45000000 0.21276596 0.55000000 #FFE566
+    ## 16          NA     2 0.7872340 0.45000000 0.21276596 0.55000000 #FFE566
+    ## 17          NA     1 0.5744681 0.00000000 0.42553191 1.00000000 #FFDA00
+    ## 18          NA     2 0.8345154 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 19          NA     3 0.8345154 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 20          NA     2 0.9172577 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 21          NA     3 0.9172577 0.00000000 0.08274232 0.12857143 #FFDA00
+    ## 22          NA     2 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 23          NA     3 0.4956195 0.35978836 0.07884856 0.26984127 #28B463
+    ## 24          NA     2 0.2196496 0.17989418 0.11827284 0.17989418 #BEF4BE
+    ## 25          NA     3 0.2196496 0.17989418 0.11827284 0.17989418 #BEF4BE
+    ## 26          NA     3 0.3379224 0.22486772 0.07884856 0.13492063 #59C981
+    ## 27          NA     2 0.3379224 0.22486772 0.07884856 0.13492063 #59C981
+    ## 28          NA     3 0.4167710 0.22486772 0.07884856 0.13492063 #59C981
+    ## 29          NA     2 0.4167710 0.22486772 0.07884856 0.13492063 #59C981
+    ## 30          NA     2 0.0000000 0.29059829 0.21964956 0.33903134 #8CDE9F
+    ## 31          NA     3 0.0000000 0.29059829 0.21964956 0.33903134 #8CDE9F
+    ## 32          NA     2 0.2196496 0.00000000 0.11827284 0.17989418 #BEF4BE
+    ## 33          NA     3 0.2196496 0.00000000 0.11827284 0.17989418 #BEF4BE
+    ## 34          NA     3 0.4956195 0.22486772 0.07884856 0.13492063 #59C981
+    ## 35          NA     2 0.4956195 0.22486772 0.07884856 0.13492063 #59C981
+    ## 36          NA     3 0.3379224 0.11243386 0.09461827 0.11243386 #59C981
+    ## 37          NA     2 0.3379224 0.11243386 0.09461827 0.11243386 #59C981
+    ## 38          NA     3 0.2196496 0.35978836 0.15769712 0.26984127 #59C981
+    ## 39          NA     2 0.2196496 0.35978836 0.15769712 0.26984127 #59C981
+    ## 40          NA     3 0.3773467 0.35978836 0.11827284 0.26984127 #59C981
+    ## 41          NA     2 0.3773467 0.35978836 0.11827284 0.26984127 #59C981
+    ## 42          NA     2 0.0000000 0.62962963 0.28723404 0.37037037 #8CDE9F
+    ## 43          NA     3 0.0000000 0.62962963 0.28723404 0.37037037 #8CDE9F
+    ## 44          NA     1 0.0000000 0.00000000 0.57446809 1.00000000 #59C981
+    ## 45          NA     3 0.3379224 0.00000000 0.09461827 0.11243386 #59C981
+    ## 46          NA     2 0.3379224 0.00000000 0.09461827 0.11243386 #59C981
+    ## 47          NA     2 0.0000000 0.00000000 0.21964956 0.29059829 #8CDE9F
+    ## 48          NA     3 0.0000000 0.00000000 0.21964956 0.29059829 #8CDE9F
+    ## 49          NA     2 0.2872340 0.62962963 0.28723404 0.37037037 #8CDE9F
+    ## 50          NA     3 0.2872340 0.62962963 0.28723404 0.37037037 #8CDE9F
+    ## 51          NA     3 0.4325407 0.07495591 0.07096370 0.14991182 #59C981
+    ## 52          NA     2 0.4325407 0.07495591 0.07096370 0.14991182 #59C981
+    ## 53          NA     2 0.5035044 0.07495591 0.07096370 0.14991182 #8CDE9F
+    ## 54          NA     3 0.5035044 0.07495591 0.07096370 0.14991182 #8CDE9F
+    ## 55          NA     3 0.4325407 0.00000000 0.14192741 0.07495591 #59C981
+    ## 56          NA     2 0.4325407 0.00000000 0.14192741 0.07495591 #59C981
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q37_no_weight<- question_37 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =37))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q37_no_weight<- full_join(codes_department, nal_q37_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q37_no_weight$cat<- factor(nal_q37_no_weight$cat, levels = level_37)
+colmap(departamentos, data = nal_q37_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q37_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_37-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q37_weight<- inner_join(question_37, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q37_weight<- nal_q37_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =37)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q37_weight<- full_join(codes_department, nal_q37_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q37_weight$cat_weighted<- factor(nal_q37_weight$cat_weighted, levels = level_37)
+colmap(departamentos, data = nal_q37_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q37_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_37-4.png)<!-- -->
+
+## Question 39: What are the risks associated with the introduction or reintroduction of TR4 through any of Colombia’s borders?
+
+``` r
+#selecting only question 39----
+question_39<- filter(individual_surveys, question_number==39)
+#unique(question_39$numeric_answer)
+#dput(unique(question_39$answer_in_english))
+#organizing the order of the levels
+level_39<- c("Very Low Risk", "Low Risk", "Moderate Risk", "High Risk", "Not Sure")
+question_39$answer_in_english<- factor(question_39$answer_in_english,levels = level_39)
+question_39<- filter(question_39, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_39<- question_39 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(39, mean =average, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(39, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_39<- inner_join(question_39, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_39<- add_weights_question_39 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(39, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 9 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(39, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q39_no_weighted<- tapply(avg_dept_no_weight_39$ave_cat, avg_dept_no_weight_39$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question39_no_weighted<- palette_banana(length(levels_per_crop_Q39_no_weighted$Banana))
+colors_plantain_question39_no_weighted<- palette_plantain(length(levels_per_crop_Q39_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_39 <- list(
+  Banana = levels_per_crop_Q39_no_weighted$Banana,
+  Plantain = levels_per_crop_Q39_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_39 <- list(
+  Banana = colors_banana_question39_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question39_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_39 <- assign_group_color(data = avg_dept_no_weight_39, levels_by_crop = levels_by_crop_no_weighted_39, colors_by_crop = colors_by_crop_no_weighted_39,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q39_weighted<- tapply(avg_dept_weight_39$ave_cat_weighted, avg_dept_weight_39$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question39_weighted<- palette_banana(length(levels_per_crop_Q39_weighted$Banana))
+colors_plantain_question39_weighted<- palette_plantain(length(levels_per_crop_Q39_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_39 <- list(
+  Banana = levels_per_crop_Q39_weighted$Banana,
+  Plantain = levels_per_crop_Q39_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_39 <- list(
+  Banana = colors_banana_question39_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question39_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_39 <- assign_group_color(data = avg_dept_weight_39, levels_by_crop = levels_by_crop_weighted_39, colors_by_crop = colors_by_crop_weighted_39,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_39, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_39-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in       ave_cat vSize  vColor stdErr vColorValue
+    ## 1    Banana          Antioquia     High Risk    11 #FFDA00     11          NA
+    ## 2    Banana          Antioquia          <NA>    11 #FFDA00     11          NA
+    ## 3    Banana             Arauca     High Risk     1 #FFDA00      1          NA
+    ## 4    Banana             Arauca          <NA>     1 #FFDA00      1          NA
+    ## 5    Banana             Caldas          <NA>     1 #FFF2CC      1          NA
+    ## 6    Banana             Caldas Very Low Risk     1 #FFF2CC      1          NA
+    ## 7    Banana              Cesar Moderate Risk     2 #FFE566      2          NA
+    ## 8    Banana              Cesar          <NA>     2 #FFE566      2          NA
+    ## 9    Banana              Chocó Moderate Risk     2 #FFE566      2          NA
+    ## 10   Banana              Chocó          <NA>     2 #FFE566      2          NA
+    ## 11   Banana            Córdoba Moderate Risk     1 #FFE566      1          NA
+    ## 12   Banana            Córdoba          <NA>     1 #FFE566      1          NA
+    ## 13   Banana              Huila          <NA>     1 #FFF2CC      1          NA
+    ## 14   Banana              Huila Very Low Risk     1 #FFF2CC      1          NA
+    ## 15   Banana         La Guajira     High Risk    10 #FFDA00     10          NA
+    ## 16   Banana         La Guajira          <NA>    10 #FFDA00     10          NA
+    ## 17   Banana          Magdalena Moderate Risk    10 #FFE566     10          NA
+    ## 18   Banana          Magdalena          <NA>    10 #FFE566     10          NA
+    ## 19   Banana               <NA>          <NA>    41 #FFE566     41          NA
+    ## 20   Banana            Quindío          <NA>     1 #FFF2CC      1          NA
+    ## 21   Banana            Quindío Very Low Risk     1 #FFF2CC      1          NA
+    ## 22   Banana          Risaralda          <NA>     1 #FFF2CC      1          NA
+    ## 23   Banana          Risaralda Very Low Risk     1 #FFF2CC      1          NA
+    ## 24 Plantain          Antioquia Moderate Risk     2 #28B463      2          NA
+    ## 25 Plantain          Antioquia          <NA>     2 #28B463      2          NA
+    ## 26 Plantain             Arauca     High Risk     1 #59C981      1          NA
+    ## 27 Plantain             Arauca          <NA>     1 #59C981      1          NA
+    ## 28 Plantain          Atlántico      Low Risk     1 #BEF4BE      1          NA
+    ## 29 Plantain          Atlántico          <NA>     1 #BEF4BE      1          NA
+    ## 30 Plantain            Bolívar      Low Risk     1 #BEF4BE      1          NA
+    ## 31 Plantain            Bolívar          <NA>     1 #BEF4BE      1          NA
+    ## 32 Plantain             Caldas Moderate Risk     7 #28B463      7          NA
+    ## 33 Plantain             Caldas          <NA>     7 #28B463      7          NA
+    ## 34 Plantain           Casanare      Low Risk     1 #BEF4BE      1          NA
+    ## 35 Plantain           Casanare          <NA>     1 #BEF4BE      1          NA
+    ## 36 Plantain              Chocó          <NA>     1 #8CDE9F      1          NA
+    ## 37 Plantain              Chocó Very Low Risk     1 #8CDE9F      1          NA
+    ## 38 Plantain            Córdoba      Low Risk     1 #BEF4BE      1          NA
+    ## 39 Plantain            Córdoba          <NA>     1 #BEF4BE      1          NA
+    ## 40 Plantain              Huila      Low Risk     1 #BEF4BE      1          NA
+    ## 41 Plantain              Huila          <NA>     1 #BEF4BE      1          NA
+    ## 42 Plantain         La Guajira     High Risk     4 #59C981      4          NA
+    ## 43 Plantain         La Guajira          <NA>     4 #59C981      4          NA
+    ## 44 Plantain          Magdalena Moderate Risk     3 #28B463      3          NA
+    ## 45 Plantain          Magdalena          <NA>     3 #28B463      3          NA
+    ## 46 Plantain               Meta Moderate Risk     9 #28B463      9          NA
+    ## 47 Plantain               Meta          <NA>     9 #28B463      9          NA
+    ## 48 Plantain               <NA>          <NA>    50 #BEF4BE     50          NA
+    ## 49 Plantain Norte De Santander Moderate Risk     1 #28B463      1          NA
+    ## 50 Plantain Norte De Santander          <NA>     1 #28B463      1          NA
+    ## 51 Plantain            Quindío Moderate Risk     5 #28B463      5          NA
+    ## 52 Plantain            Quindío          <NA>     5 #28B463      5          NA
+    ## 53 Plantain          Risaralda Moderate Risk     9 #28B463      9          NA
+    ## 54 Plantain          Risaralda          <NA>     9 #28B463      9          NA
+    ## 55 Plantain          Santander      Low Risk     1 #BEF4BE      1          NA
+    ## 56 Plantain          Santander          <NA>     1 #BEF4BE      1          NA
+    ## 57 Plantain              Sucre      Low Risk     1 #BEF4BE      1          NA
+    ## 58 Plantain              Sucre          <NA>     1 #BEF4BE      1          NA
+    ## 59 Plantain             Tolima      Low Risk     1 #BEF4BE      1          NA
+    ## 60 Plantain             Tolima          <NA>     1 #BEF4BE      1          NA
+    ##    level        x0         y0          w          h   color
+    ## 1      3 0.5494505 0.48780488 0.23600209 0.51219512 #FFDA00
+    ## 2      2 0.5494505 0.48780488 0.23600209 0.51219512 #FFDA00
+    ## 3      3 0.9399267 0.30487805 0.06007326 0.18292683 #FFDA00
+    ## 4      2 0.9399267 0.30487805 0.06007326 0.18292683 #FFDA00
+    ## 5      2 0.8197802 0.18292683 0.09010989 0.12195122 #FFF2CC
+    ## 6      3 0.8197802 0.18292683 0.09010989 0.12195122 #FFF2CC
+    ## 7      3 0.5494505 0.00000000 0.27032967 0.08130081 #FFE566
+    ## 8      2 0.5494505 0.00000000 0.27032967 0.08130081 #FFE566
+    ## 9      3 0.8197802 0.30487805 0.12014652 0.18292683 #FFE566
+    ## 10     2 0.8197802 0.30487805 0.12014652 0.18292683 #FFE566
+    ## 11     3 0.9098901 0.18292683 0.09010989 0.12195122 #FFE566
+    ## 12     2 0.9098901 0.18292683 0.09010989 0.12195122 #FFE566
+    ## 13     2 0.8197802 0.09146341 0.12014652 0.09146341 #FFF2CC
+    ## 14     3 0.8197802 0.09146341 0.12014652 0.09146341 #FFF2CC
+    ## 15     3 0.7854526 0.48780488 0.21454736 0.51219512 #FFDA00
+    ## 16     2 0.7854526 0.48780488 0.21454736 0.51219512 #FFDA00
+    ## 17     3 0.5494505 0.08130081 0.27032967 0.40650407 #FFE566
+    ## 18     2 0.5494505 0.08130081 0.27032967 0.40650407 #FFE566
+    ## 19     1 0.5494505 0.00000000 0.45054945 1.00000000 #FFE566
+    ## 20     2 0.8197802 0.00000000 0.12014652 0.09146341 #FFF2CC
+    ## 21     3 0.8197802 0.00000000 0.12014652 0.09146341 #FFF2CC
+    ## 22     2 0.9399267 0.00000000 0.06007326 0.18292683 #FFF2CC
+    ## 23     3 0.9399267 0.00000000 0.06007326 0.18292683 #FFF2CC
+    ## 24     3 0.3586691 0.35200000 0.19078144 0.11520000 #28B463
+    ## 25     2 0.3586691 0.35200000 0.19078144 0.11520000 #28B463
+    ## 26     3 0.2060440 0.23466667 0.09365634 0.11733333 #59C981
+    ## 27     2 0.2060440 0.23466667 0.09365634 0.11733333 #59C981
+    ## 28     3 0.2060440 0.11733333 0.09365634 0.11733333 #BEF4BE
+    ## 29     2 0.2060440 0.11733333 0.09365634 0.11733333 #BEF4BE
+    ## 30     3 0.2060440 0.00000000 0.09365634 0.11733333 #BEF4BE
+    ## 31     2 0.2060440 0.00000000 0.09365634 0.11733333 #BEF4BE
+    ## 32     3 0.0000000 0.26666667 0.20604396 0.37333333 #28B463
+    ## 33     2 0.0000000 0.26666667 0.20604396 0.37333333 #28B463
+    ## 34     3 0.2997003 0.23466667 0.09365634 0.11733333 #BEF4BE
+    ## 35     2 0.2997003 0.23466667 0.09365634 0.11733333 #BEF4BE
+    ## 36     2 0.2997003 0.11733333 0.09365634 0.11733333 #8CDE9F
+    ## 37     3 0.2997003 0.11733333 0.09365634 0.11733333 #8CDE9F
+    ## 38     3 0.2997003 0.00000000 0.09365634 0.11733333 #BEF4BE
+    ## 39     2 0.2997003 0.00000000 0.09365634 0.11733333 #BEF4BE
+    ## 40     3 0.3933566 0.21120000 0.07804695 0.14080000 #BEF4BE
+    ## 41     2 0.3933566 0.21120000 0.07804695 0.14080000 #BEF4BE
+    ## 42     3 0.2060440 0.35200000 0.15262515 0.28800000 #59C981
+    ## 43     2 0.2060440 0.35200000 0.15262515 0.28800000 #59C981
+    ## 44     3 0.3586691 0.46720000 0.19078144 0.17280000 #28B463
+    ## 45     2 0.3586691 0.46720000 0.19078144 0.17280000 #28B463
+    ## 46     3 0.0000000 0.64000000 0.27472527 0.36000000 #28B463
+    ## 47     2 0.0000000 0.64000000 0.27472527 0.36000000 #28B463
+    ## 48     1 0.0000000 0.00000000 0.54945055 1.00000000 #BEF4BE
+    ## 49     3 0.4714036 0.21120000 0.07804695 0.14080000 #28B463
+    ## 50     2 0.4714036 0.21120000 0.07804695 0.14080000 #28B463
+    ## 51     3 0.0000000 0.00000000 0.20604396 0.26666667 #28B463
+    ## 52     2 0.0000000 0.00000000 0.20604396 0.26666667 #28B463
+    ## 53     3 0.2747253 0.64000000 0.27472527 0.36000000 #28B463
+    ## 54     2 0.2747253 0.64000000 0.27472527 0.36000000 #28B463
+    ## 55     3 0.3933566 0.10560000 0.10406260 0.10560000 #BEF4BE
+    ## 56     2 0.3933566 0.10560000 0.10406260 0.10560000 #BEF4BE
+    ## 57     3 0.3933566 0.00000000 0.10406260 0.10560000 #BEF4BE
+    ## 58     2 0.3933566 0.00000000 0.10406260 0.10560000 #BEF4BE
+    ## 59     3 0.4974192 0.00000000 0.05203130 0.21120000 #BEF4BE
+    ## 60     2 0.4974192 0.00000000 0.05203130 0.21120000 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_39, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_39-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia        High Risk    11 #FFDA00     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas             <NA>     1 #FFF2CC      1
+    ## 4    Banana             Caldas    Very Low Risk     1 #FFF2CC      1
+    ## 5    Banana              Cesar    Moderate Risk     1 #FFE566      1
+    ## 6    Banana              Cesar             <NA>     1 #FFE566      1
+    ## 7    Banana              Chocó    Moderate Risk     2 #FFE566      2
+    ## 8    Banana              Chocó             <NA>     2 #FFE566      2
+    ## 9    Banana            Córdoba    Moderate Risk     1 #FFE566      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFE566      1
+    ## 11   Banana              Huila             <NA>     1 #FFF2CC      1
+    ## 12   Banana              Huila    Very Low Risk     1 #FFF2CC      1
+    ## 13   Banana         La Guajira        High Risk     9 #FFDA00      9
+    ## 14   Banana         La Guajira             <NA>     9 #FFDA00      9
+    ## 15   Banana          Magdalena    Moderate Risk    10 #FFE566     10
+    ## 16   Banana          Magdalena             <NA>    10 #FFE566     10
+    ## 17   Banana               <NA>             <NA>    38 #FFE566     38
+    ## 18   Banana            Quindío             <NA>     1 #FFF2CC      1
+    ## 19   Banana            Quindío    Very Low Risk     1 #FFF2CC      1
+    ## 20   Banana          Risaralda             <NA>     1 #FFF2CC      1
+    ## 21   Banana          Risaralda    Very Low Risk     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia    Moderate Risk     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca        High Risk     1 #59C981      1
+    ## 25 Plantain             Arauca             <NA>     1 #59C981      1
+    ## 26 Plantain          Atlántico         Low Risk     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico             <NA>     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar         Low Risk     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar             <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas    Moderate Risk     7 #28B463      7
+    ## 31 Plantain             Caldas             <NA>     7 #28B463      7
+    ## 32 Plantain           Casanare         Low Risk     1 #BEF4BE      1
+    ## 33 Plantain           Casanare             <NA>     1 #BEF4BE      1
+    ## 34 Plantain              Chocó             <NA>     1 #8CDE9F      1
+    ## 35 Plantain              Chocó    Very Low Risk     1 #8CDE9F      1
+    ## 36 Plantain            Córdoba         Low Risk     1 #BEF4BE      1
+    ## 37 Plantain            Córdoba             <NA>     1 #BEF4BE      1
+    ## 38 Plantain              Huila         Low Risk     1 #BEF4BE      1
+    ## 39 Plantain              Huila             <NA>     1 #BEF4BE      1
+    ## 40 Plantain         La Guajira        High Risk     4 #59C981      4
+    ## 41 Plantain         La Guajira             <NA>     4 #59C981      4
+    ## 42 Plantain          Magdalena    Moderate Risk     3 #28B463      3
+    ## 43 Plantain          Magdalena             <NA>     3 #28B463      3
+    ## 44 Plantain               Meta    Moderate Risk     8 #28B463      8
+    ## 45 Plantain               Meta             <NA>     8 #28B463      8
+    ## 46 Plantain               <NA>             <NA>    49 #BEF4BE     49
+    ## 47 Plantain Norte De Santander    Moderate Risk     1 #28B463      1
+    ## 48 Plantain Norte De Santander             <NA>     1 #28B463      1
+    ## 49 Plantain            Quindío    Moderate Risk     5 #28B463      5
+    ## 50 Plantain            Quindío             <NA>     5 #28B463      5
+    ## 51 Plantain          Risaralda    Moderate Risk     9 #28B463      9
+    ## 52 Plantain          Risaralda             <NA>     9 #28B463      9
+    ## 53 Plantain          Santander         Low Risk     1 #BEF4BE      1
+    ## 54 Plantain          Santander             <NA>     1 #BEF4BE      1
+    ## 55 Plantain              Sucre         Low Risk     1 #BEF4BE      1
+    ## 56 Plantain              Sucre             <NA>     1 #BEF4BE      1
+    ## 57 Plantain             Tolima         Low Risk     1 #BEF4BE      1
+    ## 58 Plantain             Tolima             <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5632184 0.44736842 0.22879037 0.55263158 #FFDA00
+    ## 2           NA     2 0.5632184 0.44736842 0.22879037 0.55263158 #FFDA00
+    ## 3           NA     2 0.8458418 0.29824561 0.07707911 0.14912281 #FFF2CC
+    ## 4           NA     3 0.8458418 0.29824561 0.07707911 0.14912281 #FFF2CC
+    ## 5           NA     3 0.9229209 0.29824561 0.07707911 0.14912281 #FFE566
+    ## 6           NA     2 0.9229209 0.29824561 0.07707911 0.14912281 #FFE566
+    ## 7           NA     3 0.5632184 0.00000000 0.28262339 0.08133971 #FFE566
+    ## 8           NA     2 0.5632184 0.00000000 0.28262339 0.08133971 #FFE566
+    ## 9           NA     3 0.8458418 0.14912281 0.07707911 0.14912281 #FFE566
+    ## 10          NA     2 0.8458418 0.14912281 0.07707911 0.14912281 #FFE566
+    ## 11          NA     2 0.9229209 0.14912281 0.07707911 0.14912281 #FFF2CC
+    ## 12          NA     3 0.9229209 0.14912281 0.07707911 0.14912281 #FFF2CC
+    ## 13          NA     3 0.5632184 0.08133971 0.28262339 0.36602871 #FFDA00
+    ## 14          NA     2 0.5632184 0.08133971 0.28262339 0.36602871 #FFDA00
+    ## 15          NA     3 0.7920088 0.44736842 0.20799124 0.55263158 #FFE566
+    ## 16          NA     2 0.7920088 0.44736842 0.20799124 0.55263158 #FFE566
+    ## 17          NA     1 0.5632184 0.00000000 0.43678161 1.00000000 #FFE566
+    ## 18          NA     2 0.8458418 0.00000000 0.07707911 0.14912281 #FFF2CC
+    ## 19          NA     3 0.8458418 0.00000000 0.07707911 0.14912281 #FFF2CC
+    ## 20          NA     2 0.9229209 0.00000000 0.07707911 0.14912281 #FFF2CC
+    ## 21          NA     3 0.9229209 0.00000000 0.07707911 0.14912281 #FFF2CC
+    ## 22          NA     3 0.3676564 0.35918367 0.19556194 0.11755102 #28B463
+    ## 23          NA     2 0.3676564 0.35918367 0.19556194 0.11755102 #28B463
+    ## 24          NA     3 0.2112069 0.23945578 0.09600313 0.11972789 #59C981
+    ## 25          NA     2 0.2112069 0.23945578 0.09600313 0.11972789 #59C981
+    ## 26          NA     3 0.2112069 0.11972789 0.09600313 0.11972789 #BEF4BE
+    ## 27          NA     2 0.2112069 0.11972789 0.09600313 0.11972789 #BEF4BE
+    ## 28          NA     3 0.2112069 0.00000000 0.09600313 0.11972789 #BEF4BE
+    ## 29          NA     2 0.2112069 0.00000000 0.09600313 0.11972789 #BEF4BE
+    ## 30          NA     3 0.0000000 0.27210884 0.21120690 0.38095238 #28B463
+    ## 31          NA     2 0.0000000 0.27210884 0.21120690 0.38095238 #28B463
+    ## 32          NA     3 0.3072100 0.23945578 0.09600313 0.11972789 #BEF4BE
+    ## 33          NA     2 0.3072100 0.23945578 0.09600313 0.11972789 #BEF4BE
+    ## 34          NA     2 0.3072100 0.11972789 0.09600313 0.11972789 #8CDE9F
+    ## 35          NA     3 0.3072100 0.11972789 0.09600313 0.11972789 #8CDE9F
+    ## 36          NA     3 0.3072100 0.00000000 0.09600313 0.11972789 #BEF4BE
+    ## 37          NA     2 0.3072100 0.00000000 0.09600313 0.11972789 #BEF4BE
+    ## 38          NA     3 0.4032132 0.21551020 0.08000261 0.14367347 #BEF4BE
+    ## 39          NA     2 0.4032132 0.21551020 0.08000261 0.14367347 #BEF4BE
+    ## 40          NA     3 0.2112069 0.35918367 0.15644955 0.29387755 #59C981
+    ## 41          NA     2 0.2112069 0.35918367 0.15644955 0.29387755 #59C981
+    ## 42          NA     3 0.3676564 0.47673469 0.19556194 0.17632653 #28B463
+    ## 43          NA     2 0.3676564 0.47673469 0.19556194 0.17632653 #28B463
+    ## 44          NA     3 0.2981744 0.65306122 0.26504395 0.34693878 #28B463
+    ## 45          NA     2 0.2981744 0.65306122 0.26504395 0.34693878 #28B463
+    ## 46          NA     1 0.0000000 0.00000000 0.56321839 1.00000000 #BEF4BE
+    ## 47          NA     3 0.4832158 0.21551020 0.08000261 0.14367347 #28B463
+    ## 48          NA     2 0.4832158 0.21551020 0.08000261 0.14367347 #28B463
+    ## 49          NA     3 0.0000000 0.00000000 0.21120690 0.27210884 #28B463
+    ## 50          NA     2 0.0000000 0.00000000 0.21120690 0.27210884 #28B463
+    ## 51          NA     3 0.0000000 0.65306122 0.29817444 0.34693878 #28B463
+    ## 52          NA     2 0.0000000 0.65306122 0.29817444 0.34693878 #28B463
+    ## 53          NA     3 0.4032132 0.10775510 0.10667015 0.10775510 #BEF4BE
+    ## 54          NA     2 0.4032132 0.10775510 0.10667015 0.10775510 #BEF4BE
+    ## 55          NA     3 0.4032132 0.00000000 0.10667015 0.10775510 #BEF4BE
+    ## 56          NA     2 0.4032132 0.00000000 0.10667015 0.10775510 #BEF4BE
+    ## 57          NA     3 0.5098833 0.00000000 0.05333507 0.21551020 #BEF4BE
+    ## 58          NA     2 0.5098833 0.00000000 0.05333507 0.21551020 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q39_no_weight<- question_39 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =39))%>%
+  rename(EKE.expert.in = expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q39_no_weight<- full_join(codes_department, nal_q39_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q39_no_weight$cat<- factor(nal_q39_no_weight$cat, levels = level_39)
+colmap(departamentos, data = nal_q39_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q39_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_39-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q39_weight<- inner_join(question_39, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q39_weight<- nal_q39_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =39)) %>%
+  rename(EKE.expert.in=expert_in)
+```
+
+    ## Warning: There was 1 warning in `mutate()`.
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+
+``` r
+nal_q39_weight<- full_join(codes_department, nal_q39_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q39_weight$cat_weighted<- factor(nal_q39_weight$cat_weighted, levels = level_39)
+colmap(departamentos, data = nal_q39_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q39_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/question_39-4.png)<!-- -->
+
+## Question 40: Considering the economic, social, and environmental characteristics of each sub-region, how feasible would it be to contain future outbreaks of R4T in these areas?
+
+``` r
+#selecting only question 40----
+question_40<- filter(individual_surveys, question_number==40)
+#unique(question_40$numeric_answer)
+#dput(unique(question_40$answer_in_english))
+#organizing the order of the levels
+level_40<- c("Slightly Feasible", "Moderately Feasible", "Very Feasible", "Extremely Feasible")
+question_40$answer_in_english<- factor(question_40$answer_in_english,levels = level_40)
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_40<- question_40 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(40, mean =average, language = "en"))
+```
+
+    ## Warning: There were 5 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(40, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
+
+``` r
+#weighted 
+add_weights_question_40<- inner_join(question_40, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+avg_dept_weight_40<- add_weights_question_40 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(40, mean =average_weighted, language = "en"))
+```
+
+    ## Warning: There were 7 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(40, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
+
+``` r
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q40_no_weighted<- tapply(avg_dept_no_weight_40$ave_cat, avg_dept_no_weight_40$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question40_no_weighted<- palette_banana(length(levels_per_crop_Q40_no_weighted$Banana))
+colors_plantain_question40_no_weighted<- palette_plantain(length(levels_per_crop_Q40_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_40 <- list(
+  Banana = levels_per_crop_Q40_no_weighted$Banana,
+  Plantain = levels_per_crop_Q40_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_40 <- list(
+  Banana = colors_banana_question40_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question40_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_40 <- assign_group_color(data = avg_dept_no_weight_40, levels_by_crop = levels_by_crop_no_weighted_40, colors_by_crop = colors_by_crop_no_weighted_40,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q40_weighted<- tapply(avg_dept_weight_40$ave_cat_weighted, avg_dept_weight_40$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question40_weighted<- palette_banana(length(levels_per_crop_Q40_weighted$Banana))
+colors_plantain_question40_weighted<- palette_plantain(length(levels_per_crop_Q40_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_40 <- list(
+  Banana = levels_per_crop_Q40_weighted$Banana,
+  Plantain = levels_per_crop_Q40_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_40 <- list(
+  Banana = colors_banana_question40_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question40_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_40 <- assign_group_color(data = avg_dept_weight_40, levels_by_crop = levels_by_crop_weighted_40, colors_by_crop = colors_by_crop_weighted_40,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_40, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/questions_40-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in             ave_cat vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Feasible    11 #FFDA00     11
+    ## 2    Banana          Antioquia                <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas                <NA>     1 #FFF2CC      1
+    ## 4    Banana             Caldas   Slightly Feasible     1 #FFF2CC      1
+    ## 5    Banana              Cesar Moderately Feasible     1 #FFDA00      1
+    ## 6    Banana              Cesar                <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó                <NA>     2 #FFF2CC      2
+    ## 8    Banana              Chocó   Slightly Feasible     2 #FFF2CC      2
+    ## 9    Banana            Córdoba                <NA>     1 #FFE566      1
+    ## 10   Banana            Córdoba       Very Feasible     1 #FFE566      1
+    ## 11   Banana              Huila                <NA>     1 #FFF2CC      1
+    ## 12   Banana              Huila   Slightly Feasible     1 #FFF2CC      1
+    ## 13   Banana         La Guajira Moderately Feasible    11 #FFDA00     11
+    ## 14   Banana         La Guajira                <NA>    11 #FFDA00     11
+    ## 15   Banana          Magdalena Moderately Feasible    12 #FFDA00     12
+    ## 16   Banana          Magdalena                <NA>    12 #FFDA00     12
+    ## 17   Banana               Meta                <NA>     1 #FFE566      1
+    ## 18   Banana               Meta       Very Feasible     1 #FFE566      1
+    ## 19   Banana               <NA>                <NA>    43 #FFF2CC     43
+    ## 20   Banana            Quindío                <NA>     1 #FFF2CC      1
+    ## 21   Banana            Quindío   Slightly Feasible     1 #FFF2CC      1
+    ## 22   Banana          Risaralda                <NA>     1 #FFF2CC      1
+    ## 23   Banana          Risaralda   Slightly Feasible     1 #FFF2CC      1
+    ## 24 Plantain          Antioquia                <NA>     2 #28B463      2
+    ## 25 Plantain          Antioquia   Slightly Feasible     2 #28B463      2
+    ## 26 Plantain             Arauca                <NA>     2 #BEF4BE      2
+    ## 27 Plantain             Arauca       Very Feasible     2 #BEF4BE      2
+    ## 28 Plantain          Atlántico                <NA>     1 #28B463      1
+    ## 29 Plantain          Atlántico   Slightly Feasible     1 #28B463      1
+    ## 30 Plantain            Bolívar                <NA>     1 #28B463      1
+    ## 31 Plantain            Bolívar   Slightly Feasible     1 #28B463      1
+    ## 32 Plantain             Caldas Moderately Feasible     7 #73D490      7
+    ## 33 Plantain             Caldas                <NA>     7 #73D490      7
+    ## 34 Plantain           Casanare Moderately Feasible     2 #73D490      2
+    ## 35 Plantain           Casanare                <NA>     2 #73D490      2
+    ## 36 Plantain              Chocó                <NA>     1 #28B463      1
+    ## 37 Plantain              Chocó   Slightly Feasible     1 #28B463      1
+    ## 38 Plantain            Córdoba                <NA>     1 #28B463      1
+    ## 39 Plantain            Córdoba   Slightly Feasible     1 #28B463      1
+    ## 40 Plantain              Huila                <NA>     1 #28B463      1
+    ## 41 Plantain              Huila   Slightly Feasible     1 #28B463      1
+    ## 42 Plantain         La Guajira Moderately Feasible     4 #73D490      4
+    ## 43 Plantain         La Guajira                <NA>     4 #73D490      4
+    ## 44 Plantain          Magdalena Moderately Feasible     3 #73D490      3
+    ## 45 Plantain          Magdalena                <NA>     3 #73D490      3
+    ## 46 Plantain               Meta                <NA>    11 #BEF4BE     11
+    ## 47 Plantain               Meta       Very Feasible    11 #BEF4BE     11
+    ## 48 Plantain               <NA>                <NA>    55 #28B463     55
+    ## 49 Plantain Norte De Santander                <NA>     1 #28B463      1
+    ## 50 Plantain Norte De Santander   Slightly Feasible     1 #28B463      1
+    ## 51 Plantain            Quindío Moderately Feasible     7 #73D490      7
+    ## 52 Plantain            Quindío                <NA>     7 #73D490      7
+    ## 53 Plantain          Risaralda Moderately Feasible     8 #73D490      8
+    ## 54 Plantain          Risaralda                <NA>     8 #73D490      8
+    ## 55 Plantain          Santander                <NA>     1 #28B463      1
+    ## 56 Plantain          Santander   Slightly Feasible     1 #28B463      1
+    ## 57 Plantain              Sucre                <NA>     1 #28B463      1
+    ## 58 Plantain              Sucre   Slightly Feasible     1 #28B463      1
+    ## 59 Plantain             Tolima                <NA>     1 #28B463      1
+    ## 60 Plantain             Tolima   Slightly Feasible     1 #28B463      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7901508 0.46511628 0.20984916 0.53488372 #FFDA00
+    ## 2           NA     2 0.7901508 0.46511628 0.20984916 0.53488372 #FFDA00
+    ## 3           NA     2 0.8464286 0.33222591 0.07678571 0.13289037 #FFF2CC
+    ## 4           NA     3 0.8464286 0.33222591 0.07678571 0.13289037 #FFF2CC
+    ## 5           NA     3 0.9232143 0.33222591 0.07678571 0.13289037 #FFDA00
+    ## 6           NA     2 0.9232143 0.33222591 0.07678571 0.13289037 #FFDA00
+    ## 7           NA     2 0.5612245 0.00000000 0.28520408 0.07155635 #FFF2CC
+    ## 8           NA     3 0.5612245 0.00000000 0.28520408 0.07155635 #FFF2CC
+    ## 9           NA     2 0.8464286 0.19933555 0.07678571 0.13289037 #FFE566
+    ## 10          NA     3 0.8464286 0.19933555 0.07678571 0.13289037 #FFE566
+    ## 11          NA     2 0.9232143 0.19933555 0.07678571 0.13289037 #FFF2CC
+    ## 12          NA     3 0.9232143 0.19933555 0.07678571 0.13289037 #FFF2CC
+    ## 13          NA     3 0.5612245 0.07155635 0.28520408 0.39355993 #FFDA00
+    ## 14          NA     2 0.5612245 0.07155635 0.28520408 0.39355993 #FFDA00
+    ## 15          NA     3 0.5612245 0.46511628 0.22892635 0.53488372 #FFDA00
+    ## 16          NA     2 0.5612245 0.46511628 0.22892635 0.53488372 #FFDA00
+    ## 17          NA     2 0.8464286 0.09966777 0.10238095 0.09966777 #FFE566
+    ## 18          NA     3 0.8464286 0.09966777 0.10238095 0.09966777 #FFE566
+    ## 19          NA     1 0.5612245 0.00000000 0.43877551 1.00000000 #FFF2CC
+    ## 20          NA     2 0.8464286 0.00000000 0.10238095 0.09966777 #FFF2CC
+    ## 21          NA     3 0.8464286 0.00000000 0.10238095 0.09966777 #FFF2CC
+    ## 22          NA     2 0.9488095 0.00000000 0.05119048 0.19933555 #FFF2CC
+    ## 23          NA     3 0.9488095 0.00000000 0.05119048 0.19933555 #FFF2CC
+    ## 24          NA     2 0.3621695 0.32222222 0.09952750 0.20505051 #28B463
+    ## 25          NA     3 0.3621695 0.32222222 0.09952750 0.20505051 #28B463
+    ## 26          NA     2 0.4616970 0.32222222 0.09952750 0.20505051 #BEF4BE
+    ## 27          NA     3 0.4616970 0.32222222 0.09952750 0.20505051 #BEF4BE
+    ## 28          NA     2 0.2128783 0.00000000 0.06333568 0.16111111 #28B463
+    ## 29          NA     3 0.2128783 0.00000000 0.06333568 0.16111111 #28B463
+    ## 30          NA     2 0.2762139 0.00000000 0.06333568 0.16111111 #28B463
+    ## 31          NA     3 0.2762139 0.00000000 0.06333568 0.16111111 #28B463
+    ## 32          NA     3 0.4101256 0.52727273 0.15109890 0.47272727 #73D490
+    ## 33          NA     2 0.4101256 0.52727273 0.15109890 0.47272727 #73D490
+    ## 34          NA     3 0.2128783 0.16111111 0.12667136 0.16111111 #73D490
+    ## 35          NA     2 0.2128783 0.16111111 0.12667136 0.16111111 #73D490
+    ## 36          NA     2 0.3395496 0.21481481 0.09500352 0.10740741 #28B463
+    ## 37          NA     3 0.3395496 0.21481481 0.09500352 0.10740741 #28B463
+    ## 38          NA     2 0.3395496 0.10740741 0.09500352 0.10740741 #28B463
+    ## 39          NA     3 0.3395496 0.10740741 0.09500352 0.10740741 #28B463
+    ## 40          NA     2 0.3395496 0.00000000 0.09500352 0.10740741 #28B463
+    ## 41          NA     3 0.3395496 0.00000000 0.09500352 0.10740741 #28B463
+    ## 42          NA     3 0.0000000 0.00000000 0.21287825 0.19173554 #73D490
+    ## 43          NA     2 0.0000000 0.00000000 0.21287825 0.19173554 #73D490
+    ## 44          NA     3 0.2128783 0.32222222 0.14929124 0.20505051 #73D490
+    ## 45          NA     2 0.2128783 0.32222222 0.14929124 0.20505051 #73D490
+    ## 46          NA     2 0.0000000 0.52727273 0.23744113 0.47272727 #BEF4BE
+    ## 47          NA     3 0.0000000 0.52727273 0.23744113 0.47272727 #BEF4BE
+    ## 48          NA     1 0.0000000 0.00000000 0.56122449 1.00000000 #28B463
+    ## 49          NA     2 0.4345531 0.16111111 0.06333568 0.16111111 #28B463
+    ## 50          NA     3 0.4345531 0.16111111 0.06333568 0.16111111 #28B463
+    ## 51          NA     3 0.0000000 0.19173554 0.21287825 0.33553719 #73D490
+    ## 52          NA     2 0.0000000 0.19173554 0.21287825 0.33553719 #73D490
+    ## 53          NA     3 0.2374411 0.52727273 0.17268446 0.47272727 #73D490
+    ## 54          NA     2 0.2374411 0.52727273 0.17268446 0.47272727 #73D490
+    ## 55          NA     2 0.4978888 0.16111111 0.06333568 0.16111111 #28B463
+    ## 56          NA     3 0.4978888 0.16111111 0.06333568 0.16111111 #28B463
+    ## 57          NA     2 0.4345531 0.00000000 0.06333568 0.16111111 #28B463
+    ## 58          NA     3 0.4345531 0.00000000 0.06333568 0.16111111 #28B463
+    ## 59          NA     2 0.4978888 0.00000000 0.06333568 0.16111111 #28B463
+    ## 60          NA     3 0.4978888 0.00000000 0.06333568 0.16111111 #28B463
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+tree_map_3(data = avg_dept_weight_40, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+```
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/questions_40-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in    ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia Moderately Feasible    11 #FFDA00     11
+    ## 2    Banana          Antioquia                <NA>    11 #FFDA00     11
+    ## 3    Banana             Caldas                <NA>     1 #FFE566      1
+    ## 4    Banana             Caldas   Slightly Feasible     1 #FFE566      1
+    ## 5    Banana              Cesar Moderately Feasible     1 #FFDA00      1
+    ## 6    Banana              Cesar                <NA>     1 #FFDA00      1
+    ## 7    Banana              Chocó                <NA>     2 #FFE566      2
+    ## 8    Banana              Chocó   Slightly Feasible     2 #FFE566      2
+    ## 9    Banana            Córdoba                <NA>     1 #FFF2CC      1
+    ## 10   Banana            Córdoba       Very Feasible     1 #FFF2CC      1
+    ## 11   Banana              Huila                <NA>     1 #FFE566      1
+    ## 12   Banana              Huila   Slightly Feasible     1 #FFE566      1
+    ## 13   Banana         La Guajira Moderately Feasible    10 #FFDA00     10
+    ## 14   Banana         La Guajira                <NA>    10 #FFDA00     10
+    ## 15   Banana          Magdalena Moderately Feasible    12 #FFDA00     12
+    ## 16   Banana          Magdalena                <NA>    12 #FFDA00     12
+    ## 17   Banana               <NA>                <NA>    41 #FFE566     41
+    ## 18   Banana            Quindío                <NA>     1 #FFE566      1
+    ## 19   Banana            Quindío   Slightly Feasible     1 #FFE566      1
+    ## 20   Banana          Risaralda                <NA>     1 #FFE566      1
+    ## 21   Banana          Risaralda   Slightly Feasible     1 #FFE566      1
+    ## 22 Plantain          Antioquia Moderately Feasible     2 #28B463      2
+    ## 23 Plantain          Antioquia                <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca                <NA>     2 #BEF4BE      2
+    ## 25 Plantain             Arauca       Very Feasible     2 #BEF4BE      2
+    ## 26 Plantain          Atlántico                <NA>     1 #73D490      1
+    ## 27 Plantain          Atlántico   Slightly Feasible     1 #73D490      1
+    ## 28 Plantain            Bolívar                <NA>     1 #73D490      1
+    ## 29 Plantain            Bolívar   Slightly Feasible     1 #73D490      1
+    ## 30 Plantain             Caldas Moderately Feasible     7 #28B463      7
+    ## 31 Plantain             Caldas                <NA>     7 #28B463      7
+    ## 32 Plantain           Casanare Moderately Feasible     2 #28B463      2
+    ## 33 Plantain           Casanare                <NA>     2 #28B463      2
+    ## 34 Plantain              Chocó                <NA>     1 #73D490      1
+    ## 35 Plantain              Chocó   Slightly Feasible     1 #73D490      1
+    ## 36 Plantain            Córdoba                <NA>     1 #73D490      1
+    ## 37 Plantain            Córdoba   Slightly Feasible     1 #73D490      1
+    ## 38 Plantain              Huila                <NA>     1 #73D490      1
+    ## 39 Plantain              Huila   Slightly Feasible     1 #73D490      1
+    ## 40 Plantain         La Guajira Moderately Feasible     4 #28B463      4
+    ## 41 Plantain         La Guajira                <NA>     4 #28B463      4
+    ## 42 Plantain          Magdalena Moderately Feasible     3 #28B463      3
+    ## 43 Plantain          Magdalena                <NA>     3 #28B463      3
+    ## 44 Plantain               Meta                <NA>    10 #BEF4BE     10
+    ## 45 Plantain               Meta       Very Feasible    10 #BEF4BE     10
+    ## 46 Plantain               <NA>                <NA>    53 #73D490     53
+    ## 47 Plantain Norte De Santander                <NA>     1 #73D490      1
+    ## 48 Plantain Norte De Santander   Slightly Feasible     1 #73D490      1
+    ## 49 Plantain            Quindío Moderately Feasible     6 #28B463      6
+    ## 50 Plantain            Quindío                <NA>     6 #28B463      6
+    ## 51 Plantain          Risaralda Moderately Feasible     8 #28B463      8
+    ## 52 Plantain          Risaralda                <NA>     8 #28B463      8
+    ## 53 Plantain          Santander                <NA>     1 #73D490      1
+    ## 54 Plantain          Santander   Slightly Feasible     1 #73D490      1
+    ## 55 Plantain              Sucre                <NA>     1 #73D490      1
+    ## 56 Plantain              Sucre   Slightly Feasible     1 #73D490      1
+    ## 57 Plantain             Tolima                <NA>     1 #73D490      1
+    ## 58 Plantain             Tolima   Slightly Feasible     1 #73D490      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.7913969 0.43902439 0.20860315 0.56097561 #FFDA00
+    ## 2           NA     2 0.7913969 0.43902439 0.20860315 0.56097561 #FFDA00
+    ## 3           NA     2 0.8546099 0.29268293 0.07269504 0.14634146 #FFE566
+    ## 4           NA     3 0.8546099 0.29268293 0.07269504 0.14634146 #FFE566
+    ## 5           NA     3 0.9273050 0.29268293 0.07269504 0.14634146 #FFDA00
+    ## 6           NA     2 0.9273050 0.29268293 0.07269504 0.14634146 #FFDA00
+    ## 7           NA     2 0.5638298 0.00000000 0.29078014 0.07317073 #FFE566
+    ## 8           NA     3 0.5638298 0.00000000 0.29078014 0.07317073 #FFE566
+    ## 9           NA     2 0.8546099 0.14634146 0.07269504 0.14634146 #FFF2CC
+    ## 10          NA     3 0.8546099 0.14634146 0.07269504 0.14634146 #FFF2CC
+    ## 11          NA     2 0.9273050 0.14634146 0.07269504 0.14634146 #FFE566
+    ## 12          NA     3 0.9273050 0.14634146 0.07269504 0.14634146 #FFE566
+    ## 13          NA     3 0.5638298 0.07317073 0.29078014 0.36585366 #FFDA00
+    ## 14          NA     2 0.5638298 0.07317073 0.29078014 0.36585366 #FFDA00
+    ## 15          NA     3 0.5638298 0.43902439 0.22756707 0.56097561 #FFDA00
+    ## 16          NA     2 0.5638298 0.43902439 0.22756707 0.56097561 #FFDA00
+    ## 17          NA     1 0.5638298 0.00000000 0.43617021 1.00000000 #FFE566
+    ## 18          NA     2 0.8546099 0.00000000 0.07269504 0.14634146 #FFE566
+    ## 19          NA     3 0.8546099 0.00000000 0.07269504 0.14634146 #FFE566
+    ## 20          NA     2 0.9273050 0.00000000 0.07269504 0.14634146 #FFE566
+    ## 21          NA     3 0.9273050 0.00000000 0.07269504 0.14634146 #FFE566
+    ## 22          NA     3 0.4850726 0.39022298 0.07875718 0.27015437 #28B463
+    ## 23          NA     2 0.4850726 0.39022298 0.07875718 0.27015437 #28B463
+    ## 24          NA     2 0.2094225 0.19511149 0.10904840 0.19511149 #BEF4BE
+    ## 25          NA     3 0.2094225 0.19511149 0.10904840 0.19511149 #BEF4BE
+    ## 26          NA     2 0.3184709 0.26014866 0.08178630 0.13007433 #73D490
+    ## 27          NA     3 0.3184709 0.26014866 0.08178630 0.13007433 #73D490
+    ## 28          NA     2 0.4002572 0.26014866 0.08178630 0.13007433 #73D490
+    ## 29          NA     3 0.4002572 0.26014866 0.08178630 0.13007433 #73D490
+    ## 30          NA     3 0.0000000 0.30478955 0.20942249 0.35558781 #28B463
+    ## 31          NA     2 0.0000000 0.30478955 0.20942249 0.35558781 #28B463
+    ## 32          NA     3 0.2094225 0.00000000 0.10904840 0.19511149 #28B463
+    ## 33          NA     2 0.2094225 0.00000000 0.10904840 0.19511149 #28B463
+    ## 34          NA     2 0.4820435 0.26014866 0.08178630 0.13007433 #73D490
+    ## 35          NA     3 0.4820435 0.26014866 0.08178630 0.13007433 #73D490
+    ## 36          NA     2 0.3184709 0.13007433 0.08178630 0.13007433 #73D490
+    ## 37          NA     3 0.3184709 0.13007433 0.08178630 0.13007433 #73D490
+    ## 38          NA     2 0.3184709 0.00000000 0.08178630 0.13007433 #73D490
+    ## 39          NA     3 0.3184709 0.00000000 0.08178630 0.13007433 #73D490
+    ## 40          NA     3 0.2094225 0.39022298 0.15751435 0.27015437 #28B463
+    ## 41          NA     2 0.2094225 0.39022298 0.15751435 0.27015437 #28B463
+    ## 42          NA     3 0.3669368 0.39022298 0.11813576 0.27015437 #28B463
+    ## 43          NA     2 0.3669368 0.39022298 0.11813576 0.27015437 #28B463
+    ## 44          NA     2 0.0000000 0.66037736 0.31323877 0.33962264 #BEF4BE
+    ## 45          NA     3 0.0000000 0.66037736 0.31323877 0.33962264 #BEF4BE
+    ## 46          NA     1 0.0000000 0.00000000 0.56382979 1.00000000 #73D490
+    ## 47          NA     2 0.4002572 0.13007433 0.08178630 0.13007433 #73D490
+    ## 48          NA     3 0.4002572 0.13007433 0.08178630 0.13007433 #73D490
+    ## 49          NA     3 0.0000000 0.00000000 0.20942249 0.30478955 #28B463
+    ## 50          NA     2 0.0000000 0.00000000 0.20942249 0.30478955 #28B463
+    ## 51          NA     3 0.3132388 0.66037736 0.25059102 0.33962264 #28B463
+    ## 52          NA     2 0.3132388 0.66037736 0.25059102 0.33962264 #28B463
+    ## 53          NA     2 0.4820435 0.13007433 0.08178630 0.13007433 #73D490
+    ## 54          NA     3 0.4820435 0.13007433 0.08178630 0.13007433 #73D490
+    ## 55          NA     2 0.4002572 0.00000000 0.08178630 0.13007433 #73D490
+    ## 56          NA     3 0.4002572 0.00000000 0.08178630 0.13007433 #73D490
+    ## 57          NA     2 0.4820435 0.00000000 0.08178630 0.13007433 #73D490
+    ## 58          NA     3 0.4820435 0.00000000 0.08178630 0.13007433 #73D490
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+``` r
+#Map of Colombia  
+#non weighted
+nal_q40_no_weight<- question_40 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =40))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q40_no_weight<- full_join(codes_department, nal_q40_no_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q40_no_weight$cat<- factor(nal_q40_no_weight$cat, levels = level_40)
+colmap(departamentos, data = nal_q40_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q40_no_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/questions_40-3.png)<!-- -->
+
+``` r
+# weighted
+nal_q40_weight<- inner_join(question_40, experience_of_each_expert)
+```
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+``` r
+nal_q40_weight<- nal_q40_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =40)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q40_weight<- full_join(codes_department, nal_q40_weight)
+```
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+
+``` r
+nal_q40_weight$cat_weighted<- factor(nal_q40_weight$cat_weighted, levels = level_40)
+colmap(departamentos, data = nal_q40_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q40_weight$cat))-1), na.value = "#eeeeee")
+```
+
+    ## Scale for fill is already present.
+    ## Adding another scale for fill, which will replace the existing scale.
+
+![](README_files/figure-gfm/questions_40-4.png)<!-- -->

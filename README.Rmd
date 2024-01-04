@@ -1358,3 +1358,1953 @@ nal_q13_weight$cat_weighted<- factor(nal_q13_weight$cat_weighted, levels = c("Ev
 colmap(departamentos, data = nal_q13_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q13_weight$cat))-1), na.value = "#eeeeee")
 ```
+
+## Question 16: `r unique(individual_surveys$question_in_english)[16]`
+
+```{r questoin_16}
+#selecting only question 16----
+question_16<- filter(individual_surveys, question_number==16)
+#unique(question_16$numeric_answer)
+#dput(unique(question_16$answer_in_english))
+#organizing the order of the levels
+level_16<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_16$answer_in_english<- factor(question_16$answer_in_english,levels = level_16)
+question_16<- filter(question_16, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_16<- question_16 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(16, mean =average, language = "en"))
+#weighted 
+add_weights_question_16<- inner_join(question_16, experience_of_each_expert)
+avg_dept_weight_16<- add_weights_question_16 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(16, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q16_no_weighted<- tapply(avg_dept_no_weight_16$ave_cat, avg_dept_no_weight_16$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question16_no_weighted<- palette_banana(length(levels_per_crop_Q16_no_weighted$Banana))
+colors_plantain_question16_no_weighted<- palette_plantain(length(levels_per_crop_Q16_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_16 <- list(
+  Banana = levels_per_crop_Q16_no_weighted$Banana,
+  Plantain = levels_per_crop_Q16_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_16 <- list(
+  Banana = colors_banana_question16_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question16_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_16 <- assign_group_color(data = avg_dept_no_weight_16, levels_by_crop = levels_by_crop_no_weighted_16, colors_by_crop = colors_by_crop_no_weighted_16,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q16_weighted<- tapply(avg_dept_weight_16$ave_cat_weighted, avg_dept_weight_16$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question16_weighted<- palette_banana(length(levels_per_crop_Q16_weighted$Banana))
+colors_plantain_question16_weighted<- palette_plantain(length(levels_per_crop_Q16_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_16 <- list(
+  Banana = levels_per_crop_Q16_weighted$Banana,
+  Plantain = levels_per_crop_Q16_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_16 <- list(
+  Banana = colors_banana_question16_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question16_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_16 <- assign_group_color(data = avg_dept_weight_16, levels_by_crop = levels_by_crop_weighted_16, colors_by_crop = colors_by_crop_weighted_16,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_16, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_16, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q16_no_weight<- question_16 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =16))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q16_no_weight<- full_join(codes_department, nal_q16_no_weight)
+nal_q16_no_weight$cat<- factor(nal_q16_no_weight$cat, levels = level_16)
+colmap(departamentos, data = nal_q16_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q16_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q16_weight<- inner_join(question_16, experience_of_each_expert)
+nal_q16_weight<- nal_q16_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =16)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q16_weight<- full_join(codes_department, nal_q16_weight)
+nal_q16_weight$cat_weighted<- factor(nal_q16_weight$cat_weighted, levels = level_16)
+colmap(departamentos, data = nal_q16_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q16_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 17: `r unique(individual_surveys$question_in_english)[17]`
+
+```{r question_17}
+#selecting only question 17----
+question_17<- filter(individual_surveys, question_number==17)
+#unique(question_17$numeric_answer)
+#dput(unique(question_17$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_17 <- question_17 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "71%-80%,81%-90%" ~ "81%-90%",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_17 <- question_17 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "9,10" ~ "10.5",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_17<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_17$answer_in_english<- factor(question_17$answer_in_english,levels = level_17)
+question_17<- filter(question_17, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_17<- question_17 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(17, mean =average, language = "en"))
+#weighted 
+add_weights_question_17<- inner_join(question_17, experience_of_each_expert)
+avg_dept_weight_17<- add_weights_question_17 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(17, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q17_no_weighted<- tapply(avg_dept_no_weight_17$ave_cat, avg_dept_no_weight_17$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question17_no_weighted<- palette_banana(length(levels_per_crop_Q17_no_weighted$Banana))
+colors_plantain_question17_no_weighted<- palette_plantain(length(levels_per_crop_Q17_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_17 <- list(
+  Banana = levels_per_crop_Q17_no_weighted$Banana,
+  Plantain = levels_per_crop_Q17_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_17 <- list(
+  Banana = colors_banana_question17_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question17_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_17 <- assign_group_color(data = avg_dept_no_weight_17, levels_by_crop = levels_by_crop_no_weighted_17, colors_by_crop = colors_by_crop_no_weighted_17,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q17_weighted<- tapply(avg_dept_weight_17$ave_cat_weighted, avg_dept_weight_17$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question17_weighted<- palette_banana(length(levels_per_crop_Q17_weighted$Banana))
+colors_plantain_question17_weighted<- palette_plantain(length(levels_per_crop_Q17_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_17 <- list(
+  Banana = levels_per_crop_Q17_weighted$Banana,
+  Plantain = levels_per_crop_Q17_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_17 <- list(
+  Banana = colors_banana_question17_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question17_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_17 <- assign_group_color(data = avg_dept_weight_17, levels_by_crop = levels_by_crop_weighted_17, colors_by_crop = colors_by_crop_weighted_17,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_17, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_17, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q17_no_weight<- question_17 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =17))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q17_no_weight<- full_join(codes_department, nal_q17_no_weight)
+nal_q17_no_weight$cat<- factor(nal_q17_no_weight$cat, levels = level_17)
+colmap(departamentos, data = nal_q17_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q17_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q17_weight<- inner_join(question_17, experience_of_each_expert)
+nal_q17_weight<- nal_q17_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =17)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q17_weight<- full_join(codes_department, nal_q17_weight)
+nal_q17_weight$cat_weighted<- factor(nal_q17_weight$cat_weighted, levels = level_17)
+colmap(departamentos, data = nal_q17_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q17_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 18: `r unique(individual_surveys$question_in_english)[18]`
+
+```{r question_18}
+#selecting only question 18----
+question_18<- filter(individual_surveys, question_number==18)
+#unique(question_18$numeric_answer)
+#dput(unique(question_18$answer_in_english))
+#organizing the order of the levels
+level_18<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_18$answer_in_english<- factor(question_18$answer_in_english,levels = level_18)
+question_18<- filter(question_18, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_18<- question_18 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(18, mean =average, language = "en"))
+#weighted 
+add_weights_question_18<- inner_join(question_18, experience_of_each_expert)
+avg_dept_weight_18<- add_weights_question_18 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(18, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q18_no_weighted<- tapply(avg_dept_no_weight_18$ave_cat, avg_dept_no_weight_18$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question18_no_weighted<- palette_banana(length(levels_per_crop_Q18_no_weighted$Banana))
+colors_plantain_question18_no_weighted<- palette_plantain(length(levels_per_crop_Q18_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_18 <- list(
+  Banana = levels_per_crop_Q18_no_weighted$Banana,
+  Plantain = levels_per_crop_Q18_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_18 <- list(
+  Banana = colors_banana_question18_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question18_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_18 <- assign_group_color(data = avg_dept_no_weight_18, levels_by_crop = levels_by_crop_no_weighted_18, colors_by_crop = colors_by_crop_no_weighted_18,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q18_weighted<- tapply(avg_dept_weight_18$ave_cat_weighted, avg_dept_weight_18$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question18_weighted<- palette_banana(length(levels_per_crop_Q18_weighted$Banana))
+colors_plantain_question18_weighted<- palette_plantain(length(levels_per_crop_Q18_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_18 <- list(
+  Banana = levels_per_crop_Q18_weighted$Banana,
+  Plantain = levels_per_crop_Q18_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_18 <- list(
+  Banana = colors_banana_question18_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question18_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_18 <- assign_group_color(data = avg_dept_weight_18, levels_by_crop = levels_by_crop_weighted_18, colors_by_crop = colors_by_crop_weighted_18,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_18, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_18, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q18_no_weight<- question_18 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =18))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q18_no_weight<- full_join(codes_department, nal_q18_no_weight)
+nal_q18_no_weight$cat<- factor(nal_q18_no_weight$cat, levels = level_18)
+colmap(departamentos, data = nal_q18_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q18_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q18_weight<- inner_join(question_18, experience_of_each_expert)
+nal_q18_weight<- nal_q18_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =18)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q18_weight<- full_join(codes_department, nal_q18_weight)
+nal_q18_weight$cat_weighted<- factor(nal_q18_weight$cat_weighted, levels = level_18)
+colmap(departamentos, data = nal_q18_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q18_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 19: `r unique(individual_surveys$question_in_english)[19]`
+
+```{r question_19}
+#selecting only question 19----
+question_19<- filter(individual_surveys, question_number==19)
+#unique(question_19$numeric_answer)
+#dput(unique(question_19$answer_in_english))
+#organizing the order of the levels
+level_19<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_19$answer_in_english<- factor(question_19$answer_in_english,levels = level_19)
+question_19<- filter(question_19, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_19<- question_19 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(19, mean =average, language = "en"))
+#weighted 
+add_weights_question_19<- inner_join(question_19, experience_of_each_expert)
+avg_dept_weight_19<- add_weights_question_19 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(19, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q19_no_weighted<- tapply(avg_dept_no_weight_19$ave_cat, avg_dept_no_weight_19$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question19_no_weighted<- palette_banana(length(levels_per_crop_Q19_no_weighted$Banana))
+colors_plantain_question19_no_weighted<- palette_plantain(length(levels_per_crop_Q19_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_19 <- list(
+  Banana = levels_per_crop_Q19_no_weighted$Banana,
+  Plantain = levels_per_crop_Q19_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_19 <- list(
+  Banana = colors_banana_question19_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question19_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_19 <- assign_group_color(data = avg_dept_no_weight_19, levels_by_crop = levels_by_crop_no_weighted_19, colors_by_crop = colors_by_crop_no_weighted_19,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q19_weighted<- tapply(avg_dept_weight_19$ave_cat_weighted, avg_dept_weight_19$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question19_weighted<- palette_banana(length(levels_per_crop_Q19_weighted$Banana))
+colors_plantain_question19_weighted<- palette_plantain(length(levels_per_crop_Q19_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_19 <- list(
+  Banana = levels_per_crop_Q19_weighted$Banana,
+  Plantain = levels_per_crop_Q19_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_19 <- list(
+  Banana = colors_banana_question19_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question19_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_19 <- assign_group_color(data = avg_dept_weight_19, levels_by_crop = levels_by_crop_weighted_19, colors_by_crop = colors_by_crop_weighted_19,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_19, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_19, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q19_no_weight<- question_19 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =19))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q19_no_weight<- full_join(codes_department, nal_q19_no_weight)
+nal_q19_no_weight$cat<- factor(nal_q19_no_weight$cat, levels = level_19)
+colmap(departamentos, data = nal_q19_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q19_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q19_weight<- inner_join(question_19, experience_of_each_expert)
+nal_q19_weight<- nal_q19_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =19)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q19_weight<- full_join(codes_department, nal_q19_weight)
+nal_q19_weight$cat_weighted<- factor(nal_q19_weight$cat_weighted, levels = level_19)
+colmap(departamentos, data = nal_q19_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q19_weight$cat))-1), na.value = "#eeeeee")
+
+```
+
+
+
+## Question 20: `r unique(individual_surveys$question_in_english)[20]`
+
+```{r question_20}
+#selecting only question 20----
+question_20<- filter(individual_surveys, question_number==20)
+#unique(question_20$numeric_answer)
+#dput(unique(question_20$answer_in_english))
+#organizing the order of the levels
+level_20<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_20$answer_in_english<- factor(question_20$answer_in_english,levels = level_20)
+question_20<- filter(question_20, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_20<- question_20 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(20, mean =average, language = "en"))
+#weighted 
+add_weights_question_20<- inner_join(question_20, experience_of_each_expert)
+avg_dept_weight_20<- add_weights_question_20 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(20, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q20_no_weighted<- tapply(avg_dept_no_weight_20$ave_cat, avg_dept_no_weight_20$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question20_no_weighted<- palette_banana(length(levels_per_crop_Q20_no_weighted$Banana))
+colors_plantain_question20_no_weighted<- palette_plantain(length(levels_per_crop_Q20_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_20 <- list(
+  Banana = levels_per_crop_Q20_no_weighted$Banana,
+  Plantain = levels_per_crop_Q20_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_20 <- list(
+  Banana = colors_banana_question20_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question20_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_20 <- assign_group_color(data = avg_dept_no_weight_20, levels_by_crop = levels_by_crop_no_weighted_20, colors_by_crop = colors_by_crop_no_weighted_20,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q20_weighted<- tapply(avg_dept_weight_20$ave_cat_weighted, avg_dept_weight_20$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question20_weighted<- palette_banana(length(levels_per_crop_Q20_weighted$Banana))
+colors_plantain_question20_weighted<- palette_plantain(length(levels_per_crop_Q20_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_20 <- list(
+  Banana = levels_per_crop_Q20_weighted$Banana,
+  Plantain = levels_per_crop_Q20_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_20 <- list(
+  Banana = colors_banana_question20_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question20_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_20 <- assign_group_color(data = avg_dept_weight_20, levels_by_crop = levels_by_crop_weighted_20, colors_by_crop = colors_by_crop_weighted_20,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_20, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_20, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q20_no_weight<- question_20 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =20))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q20_no_weight<- full_join(codes_department, nal_q20_no_weight)
+nal_q20_no_weight$cat<- factor(nal_q20_no_weight$cat, levels = level_20)
+colmap(departamentos, data = nal_q20_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q20_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q20_weight<- inner_join(question_20, experience_of_each_expert)
+nal_q20_weight<- nal_q20_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =20)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q20_weight<- full_join(codes_department, nal_q20_weight)
+nal_q20_weight$cat_weighted<- factor(nal_q20_weight$cat_weighted, levels = level_20)
+colmap(departamentos, data = nal_q20_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q20_weight$cat))-1), na.value = "#eeeeee")
+```
+
+
+
+## Question 21: `r unique(individual_surveys$question_in_english)[21]`
+
+```{r question_21}
+#selecting only question 21----
+question_21<- filter(individual_surveys, question_number==21)
+#unique(question_21$numeric_answer)
+#dput(unique(question_21$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_21 <- question_21 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "Daily,Weekly,Biweekly,Monthly,Quarterly,As Needed" ~ "As Needed",
+    answer_in_english == "Bimonthly,Quarterly" ~ "Quarterly",
+    answer_in_english == "Biweekly,Monthly" ~ "Monthly",
+    answer_in_english == "Weekly,Biweekly" ~ "Biweekly",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_21 <- question_21 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "1,2,3,4,6,9" ~ "9",
+    numeric_answer == "5,6" ~ "5.5",
+    numeric_answer == "3,4" ~ "3.5",
+    numeric_answer == "2,3" ~ "2.5",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_21<- c("Daily", "Weekly", "Biweekly", "Monthly", "Bimonthly", "Quarterly", "Semiannually", "Annually", "As Needed", "Unsupervised", "Not Sure")
+question_21$answer_in_english<- factor(question_21$answer_in_english,levels = level_21)
+question_21<- filter(question_21, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_21<- question_21 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(21, mean =average, language = "en"))
+#weighted 
+add_weights_question_21<- inner_join(question_21, experience_of_each_expert)
+avg_dept_weight_21<- add_weights_question_21 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(21, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q21_no_weighted<- tapply(avg_dept_no_weight_21$ave_cat, avg_dept_no_weight_21$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question21_no_weighted<- palette_banana(length(levels_per_crop_Q21_no_weighted$Banana))
+colors_plantain_question21_no_weighted<- palette_plantain(length(levels_per_crop_Q21_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_21 <- list(
+  Banana = levels_per_crop_Q21_no_weighted$Banana,
+  Plantain = levels_per_crop_Q21_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_21 <- list(
+  Banana = colors_banana_question21_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question21_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_21 <- assign_group_color(data = avg_dept_no_weight_21, levels_by_crop = levels_by_crop_no_weighted_21, colors_by_crop = colors_by_crop_no_weighted_21,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q21_weighted<- tapply(avg_dept_weight_21$ave_cat_weighted, avg_dept_weight_21$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question21_weighted<- palette_banana(length(levels_per_crop_Q21_weighted$Banana))
+colors_plantain_question21_weighted<- palette_plantain(length(levels_per_crop_Q21_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_21 <- list(
+  Banana = levels_per_crop_Q21_weighted$Banana,
+  Plantain = levels_per_crop_Q21_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_21 <- list(
+  Banana = colors_banana_question21_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question21_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_21 <- assign_group_color(data = avg_dept_weight_21, levels_by_crop = levels_by_crop_weighted_21, colors_by_crop = colors_by_crop_weighted_21,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_21, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_21, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q21_no_weight<- question_21 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =21))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q21_no_weight<- full_join(codes_department, nal_q21_no_weight)
+nal_q21_no_weight$cat<- factor(nal_q21_no_weight$cat, levels = level_21)
+colmap(departamentos, data = nal_q21_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q21_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q21_weight<- inner_join(question_21, experience_of_each_expert)
+nal_q21_weight<- nal_q21_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =21)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q21_weight<- full_join(codes_department, nal_q21_weight)
+nal_q21_weight$cat_weighted<- factor(nal_q21_weight$cat_weighted, levels = level_21)
+colmap(departamentos, data = nal_q21_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q21_weight$cat))-1), na.value = "#eeeeee")
+```
+
+
+## Question 22: `r unique(individual_surveys$question_in_english)[22]`
+
+```{r question_22}
+#selecting only question 22----
+question_22<- filter(individual_surveys, question_number==22)
+#unique(question_22$numeric_answer)
+#dput(unique(question_22$answer_in_english))
+
+#organizing the order of the levels
+level_22<- c("Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_22$answer_in_english<- factor(question_22$answer_in_english,levels = level_22)
+question_22<- filter(question_22, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_22<- question_22 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(22, mean =average, language = "en"))
+#weighted 
+add_weights_question_22<- inner_join(question_22, experience_of_each_expert)
+avg_dept_weight_22<- add_weights_question_22 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(22, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q22_no_weighted<- tapply(avg_dept_no_weight_22$ave_cat, avg_dept_no_weight_22$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question22_no_weighted<- palette_banana(length(levels_per_crop_Q22_no_weighted$Banana))
+colors_plantain_question22_no_weighted<- palette_plantain(length(levels_per_crop_Q22_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_22 <- list(
+  Banana = levels_per_crop_Q22_no_weighted$Banana,
+  Plantain = levels_per_crop_Q22_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_22 <- list(
+  Banana = colors_banana_question22_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question22_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_22 <- assign_group_color(data = avg_dept_no_weight_22, levels_by_crop = levels_by_crop_no_weighted_22, colors_by_crop = colors_by_crop_no_weighted_22,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q22_weighted<- tapply(avg_dept_weight_22$ave_cat_weighted, avg_dept_weight_22$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question22_weighted<- palette_banana(length(levels_per_crop_Q22_weighted$Banana))
+colors_plantain_question22_weighted<- palette_plantain(length(levels_per_crop_Q22_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_22 <- list(
+  Banana = levels_per_crop_Q22_weighted$Banana,
+  Plantain = levels_per_crop_Q22_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_22 <- list(
+  Banana = colors_banana_question22_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question22_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_22 <- assign_group_color(data = avg_dept_weight_22, levels_by_crop = levels_by_crop_weighted_22, colors_by_crop = colors_by_crop_weighted_22,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_22, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_22, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q22_no_weight<- question_22 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =22))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q22_no_weight<- full_join(codes_department, nal_q22_no_weight)
+nal_q22_no_weight$cat<- factor(nal_q22_no_weight$cat, levels = level_22)
+colmap(departamentos, data = nal_q22_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q22_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q22_weight<- inner_join(question_22, experience_of_each_expert)
+nal_q22_weight<- nal_q22_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =22)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q22_weight<- full_join(codes_department, nal_q22_weight)
+nal_q22_weight$cat_weighted<- factor(nal_q22_weight$cat_weighted, levels = level_22)
+colmap(departamentos, data = nal_q22_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q22_weight$cat))-1), na.value = "#eeeeee")
+
+```
+
+## Question 23: `r unique(individual_surveys$question_in_english)[23]`
+
+```{r question_23}
+#selecting only question 23----
+question_23<- filter(individual_surveys, question_number==23)
+#unique(question_23$numeric_answer)
+#dput(unique(question_23$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_23 <- question_23 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "Extremely Effective,Unsure" ~ "Unsure",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_23 <- question_23 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "5,6" ~ "6",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_23<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_23$answer_in_english<- factor(question_23$answer_in_english,levels = level_23)
+question_23<- filter(question_23, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_23<- question_23 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(23, mean =average, language = "en"))
+#weighted 
+add_weights_question_23<- inner_join(question_23, experience_of_each_expert)
+avg_dept_weight_23<- add_weights_question_23 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(23, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q23_no_weighted<- tapply(avg_dept_no_weight_23$ave_cat, avg_dept_no_weight_23$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question23_no_weighted<- palette_banana(length(levels_per_crop_Q23_no_weighted$Banana))
+colors_plantain_question23_no_weighted<- palette_plantain(length(levels_per_crop_Q23_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_23 <- list(
+  Banana = levels_per_crop_Q23_no_weighted$Banana,
+  Plantain = levels_per_crop_Q23_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_23 <- list(
+  Banana = colors_banana_question23_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question23_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_23 <- assign_group_color(data = avg_dept_no_weight_23, levels_by_crop = levels_by_crop_no_weighted_23, colors_by_crop = colors_by_crop_no_weighted_23,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q23_weighted<- tapply(avg_dept_weight_23$ave_cat_weighted, avg_dept_weight_23$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question23_weighted<- palette_banana(length(levels_per_crop_Q23_weighted$Banana))
+colors_plantain_question23_weighted<- palette_plantain(length(levels_per_crop_Q23_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_23 <- list(
+  Banana = levels_per_crop_Q23_weighted$Banana,
+  Plantain = levels_per_crop_Q23_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_23 <- list(
+  Banana = colors_banana_question23_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question23_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_23 <- assign_group_color(data = avg_dept_weight_23, levels_by_crop = levels_by_crop_weighted_23, colors_by_crop = colors_by_crop_weighted_23,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_23, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_23, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q23_no_weight<- question_23 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =23))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q23_no_weight<- full_join(codes_department, nal_q23_no_weight)
+nal_q23_no_weight$cat<- factor(nal_q23_no_weight$cat, levels = level_23)
+colmap(departamentos, data = nal_q23_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q23_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q23_weight<- inner_join(question_23, experience_of_each_expert)
+nal_q23_weight<- nal_q23_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =23)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q23_weight<- full_join(codes_department, nal_q23_weight)
+nal_q23_weight$cat_weighted<- factor(nal_q23_weight$cat_weighted, levels = level_23)
+colmap(departamentos, data = nal_q23_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q23_weight$cat))-1), na.value = "#eeeeee")
+
+```
+
+## Question 24: `r unique(individual_surveys$question_in_english)[24]`
+```{r question_24}
+#selecting only question 24----
+question_24<- filter(individual_surveys, question_number==24)
+#unique(question_24$numeric_answer)
+#dput(unique(question_24$answer_in_english))
+#organizing the order of the levels
+level_24<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_24$answer_in_english<- factor(question_24$answer_in_english,levels = level_24)
+question_24<- filter(question_24, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_24<- question_24 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(24, mean =average, language = "en"))
+#weighted 
+add_weights_question_24<- inner_join(question_24, experience_of_each_expert)
+avg_dept_weight_24<- add_weights_question_24 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(24, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q24_no_weighted<- tapply(avg_dept_no_weight_24$ave_cat, avg_dept_no_weight_24$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question24_no_weighted<- palette_banana(length(levels_per_crop_Q24_no_weighted$Banana))
+colors_plantain_question24_no_weighted<- palette_plantain(length(levels_per_crop_Q24_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_24 <- list(
+  Banana = levels_per_crop_Q24_no_weighted$Banana,
+  Plantain = levels_per_crop_Q24_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_24 <- list(
+  Banana = colors_banana_question24_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question24_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_24 <- assign_group_color(data = avg_dept_no_weight_24, levels_by_crop = levels_by_crop_no_weighted_24, colors_by_crop = colors_by_crop_no_weighted_24,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q24_weighted<- tapply(avg_dept_weight_24$ave_cat_weighted, avg_dept_weight_24$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question24_weighted<- palette_banana(length(levels_per_crop_Q24_weighted$Banana))
+colors_plantain_question24_weighted<- palette_plantain(length(levels_per_crop_Q24_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_24 <- list(
+  Banana = levels_per_crop_Q24_weighted$Banana,
+  Plantain = levels_per_crop_Q24_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_24 <- list(
+  Banana = colors_banana_question24_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question24_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_24 <- assign_group_color(data = avg_dept_weight_24, levels_by_crop = levels_by_crop_weighted_24, colors_by_crop = colors_by_crop_weighted_24,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_24, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_24, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q24_no_weight<- question_24 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =24))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q24_no_weight<- full_join(codes_department, nal_q24_no_weight)
+nal_q24_no_weight$cat<- factor(nal_q24_no_weight$cat, levels = level_24)
+colmap(departamentos, data = nal_q24_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q24_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q24_weight<- inner_join(question_24, experience_of_each_expert)
+nal_q24_weight<- nal_q24_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =24)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q24_weight<- full_join(codes_department, nal_q24_weight)
+nal_q24_weight$cat_weighted<- factor(nal_q24_weight$cat_weighted, levels = level_24)
+colmap(departamentos, data = nal_q24_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q24_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 25: `r unique(individual_surveys$question_in_english)[25]`
+```{r question_25}
+#selecting only question 25----
+question_25<- filter(individual_surveys, question_number==25)
+#unique(question_25$numeric_answer)
+#dput(unique(question_25$answer_in_english))
+#organizing the order of the levels
+level_25<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_25$answer_in_english<- factor(question_25$answer_in_english,levels = level_25)
+question_25<- filter(question_25, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_25<- question_25 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(25, mean =average, language = "en"))
+#weighted 
+add_weights_question_25<- inner_join(question_25, experience_of_each_expert)
+avg_dept_weight_25<- add_weights_question_25 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(25, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q25_no_weighted<- tapply(avg_dept_no_weight_25$ave_cat, avg_dept_no_weight_25$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question25_no_weighted<- palette_banana(length(levels_per_crop_Q25_no_weighted$Banana))
+colors_plantain_question25_no_weighted<- palette_plantain(length(levels_per_crop_Q25_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_25 <- list(
+  Banana = levels_per_crop_Q25_no_weighted$Banana,
+  Plantain = levels_per_crop_Q25_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_25 <- list(
+  Banana = colors_banana_question25_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question25_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_25 <- assign_group_color(data = avg_dept_no_weight_25, levels_by_crop = levels_by_crop_no_weighted_25, colors_by_crop = colors_by_crop_no_weighted_25,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q25_weighted<- tapply(avg_dept_weight_25$ave_cat_weighted, avg_dept_weight_25$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question25_weighted<- palette_banana(length(levels_per_crop_Q25_weighted$Banana))
+colors_plantain_question25_weighted<- palette_plantain(length(levels_per_crop_Q25_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_25 <- list(
+  Banana = levels_per_crop_Q25_weighted$Banana,
+  Plantain = levels_per_crop_Q25_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_25 <- list(
+  Banana = colors_banana_question25_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question25_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_25 <- assign_group_color(data = avg_dept_weight_25, levels_by_crop = levels_by_crop_weighted_25, colors_by_crop = colors_by_crop_weighted_25,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_25, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_25, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q25_no_weight<- question_25 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =25))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q25_no_weight<- full_join(codes_department, nal_q25_no_weight)
+nal_q25_no_weight$cat<- factor(nal_q25_no_weight$cat, levels = level_25)
+colmap(departamentos, data = nal_q25_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q25_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q25_weight<- inner_join(question_25, experience_of_each_expert)
+nal_q25_weight<- nal_q25_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =25)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q25_weight<- full_join(codes_department, nal_q25_weight)
+nal_q25_weight$cat_weighted<- factor(nal_q25_weight$cat_weighted, levels = level_25)
+colmap(departamentos, data = nal_q25_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q25_weight$cat))-1), na.value = "#eeeeee")
+
+```
+
+## Question 26: `r unique(individual_surveys$question_in_english)[26]`
+```{r question_26}
+#selecting only question 26----
+question_26<- filter(individual_surveys, question_number==26)
+#unique(question_26$numeric_answer)
+#dput(unique(question_26$answer_in_english))
+#organizing the order of the levels
+level_26<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
+question_26$answer_in_english<- factor(question_26$answer_in_english,levels = level_26)
+question_26<- filter(question_26, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_26<- question_26 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(26, mean =average, language = "en"))
+#weighted 
+add_weights_question_26<- inner_join(question_26, experience_of_each_expert)
+avg_dept_weight_26<- add_weights_question_26 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(26, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q26_no_weighted<- tapply(avg_dept_no_weight_26$ave_cat, avg_dept_no_weight_26$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question26_no_weighted<- palette_banana(length(levels_per_crop_Q26_no_weighted$Banana))
+colors_plantain_question26_no_weighted<- palette_plantain(length(levels_per_crop_Q26_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_26 <- list(
+  Banana = levels_per_crop_Q26_no_weighted$Banana,
+  Plantain = levels_per_crop_Q26_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_26 <- list(
+  Banana = colors_banana_question26_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question26_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_26 <- assign_group_color(data = avg_dept_no_weight_26, levels_by_crop = levels_by_crop_no_weighted_26, colors_by_crop = colors_by_crop_no_weighted_26,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q26_weighted<- tapply(avg_dept_weight_26$ave_cat_weighted, avg_dept_weight_26$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question26_weighted<- palette_banana(length(levels_per_crop_Q26_weighted$Banana))
+colors_plantain_question26_weighted<- palette_plantain(length(levels_per_crop_Q26_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_26 <- list(
+  Banana = levels_per_crop_Q26_weighted$Banana,
+  Plantain = levels_per_crop_Q26_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_26 <- list(
+  Banana = colors_banana_question26_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question26_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_26 <- assign_group_color(data = avg_dept_weight_26, levels_by_crop = levels_by_crop_weighted_26, colors_by_crop = colors_by_crop_weighted_26,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_26, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_26, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q26_no_weight<- question_26 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =26))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q26_no_weight<- full_join(codes_department, nal_q26_no_weight)
+nal_q26_no_weight$cat<- factor(nal_q26_no_weight$cat, levels = level_26)
+colmap(departamentos, data = nal_q26_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q26_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q26_weight<- inner_join(question_26, experience_of_each_expert)
+nal_q26_weight<- nal_q26_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =26)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q26_weight<- full_join(codes_department, nal_q26_weight)
+nal_q26_weight$cat_weighted<- factor(nal_q26_weight$cat_weighted, levels = level_26)
+colmap(departamentos, data = nal_q26_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q26_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 28: `r unique(individual_surveys$question_in_english)[28]`
+```{r question_28}
+#selecting only question 28----
+question_28<- filter(individual_surveys, question_number==28)
+#unique(question_28$numeric_answer)
+#dput(unique(question_28$answer_in_english))
+
+#organizing the order of the levels
+level_28<- c("Not Significant", "Somewhat Significant", "Very Significant","Not Sure")
+question_28$answer_in_english<- factor(question_28$answer_in_english,levels = level_28)
+question_28<- filter(question_28, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_28<- question_28 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(28, mean =average, language = "en"))
+#weighted 
+add_weights_question_28<- inner_join(question_28, experience_of_each_expert)
+avg_dept_weight_28<- add_weights_question_28 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(28, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q28_no_weighted<- tapply(avg_dept_no_weight_28$ave_cat, avg_dept_no_weight_28$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question28_no_weighted<- palette_banana(length(levels_per_crop_Q28_no_weighted$Banana))
+colors_plantain_question28_no_weighted<- palette_plantain(length(levels_per_crop_Q28_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_28 <- list(
+  Banana = levels_per_crop_Q28_no_weighted$Banana,
+  Plantain = levels_per_crop_Q28_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_28 <- list(
+  Banana = colors_banana_question28_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question28_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_28 <- assign_group_color(data = avg_dept_no_weight_28, levels_by_crop = levels_by_crop_no_weighted_28, colors_by_crop = colors_by_crop_no_weighted_28,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q28_weighted<- tapply(avg_dept_weight_28$ave_cat_weighted, avg_dept_weight_28$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question28_weighted<- palette_banana(length(levels_per_crop_Q28_weighted$Banana))
+colors_plantain_question28_weighted<- palette_plantain(length(levels_per_crop_Q28_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_28 <- list(
+  Banana = levels_per_crop_Q28_weighted$Banana,
+  Plantain = levels_per_crop_Q28_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_28 <- list(
+  Banana = colors_banana_question28_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question28_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_28 <- assign_group_color(data = avg_dept_weight_28, levels_by_crop = levels_by_crop_weighted_28, colors_by_crop = colors_by_crop_weighted_28,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_28, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_28, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q28_no_weight<- question_28 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =28))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q28_no_weight<- full_join(codes_department, nal_q28_no_weight)
+nal_q28_no_weight$cat<- factor(nal_q28_no_weight$cat, levels = level_28)
+colmap(departamentos, data = nal_q28_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q28_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q28_weight<- inner_join(question_28, experience_of_each_expert)
+nal_q28_weight<- nal_q28_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =28)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q28_weight<- full_join(codes_department, nal_q28_weight)
+nal_q28_weight$cat_weighted<- factor(nal_q28_weight$cat_weighted, levels = level_28)
+colmap(departamentos, data = nal_q28_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q28_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 29: `r unique(individual_surveys$question_in_english)[29]`
+
+```{r question_29}
+#selecting only question 29----
+question_29<- filter(individual_surveys, question_number==29)
+#unique(question_29$numeric_answer)
+#dput(unique(question_29$answer_in_english))
+
+#organizing the order of the levels
+level_29<- c("No Measures", "Some Measures", "Significant Measures","Not Sure")
+question_29$answer_in_english<- factor(question_29$answer_in_english,levels = level_29)
+question_29<- filter(question_29, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_29<- question_29 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(29, mean =average, language = "en"))
+#weighted 
+add_weights_question_29<- inner_join(question_29, experience_of_each_expert)
+avg_dept_weight_29<- add_weights_question_29 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(29, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q29_no_weighted<- tapply(avg_dept_no_weight_29$ave_cat, avg_dept_no_weight_29$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question29_no_weighted<- palette_banana(length(levels_per_crop_Q29_no_weighted$Banana))
+colors_plantain_question29_no_weighted<- palette_plantain(length(levels_per_crop_Q29_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_29 <- list(
+  Banana = levels_per_crop_Q29_no_weighted$Banana,
+  Plantain = levels_per_crop_Q29_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_29 <- list(
+  Banana = colors_banana_question29_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question29_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_29 <- assign_group_color(data = avg_dept_no_weight_29, levels_by_crop = levels_by_crop_no_weighted_29, colors_by_crop = colors_by_crop_no_weighted_29,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q29_weighted<- tapply(avg_dept_weight_29$ave_cat_weighted, avg_dept_weight_29$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question29_weighted<- palette_banana(length(levels_per_crop_Q29_weighted$Banana))
+colors_plantain_question29_weighted<- palette_plantain(length(levels_per_crop_Q29_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_29 <- list(
+  Banana = levels_per_crop_Q29_weighted$Banana,
+  Plantain = levels_per_crop_Q29_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_29 <- list(
+  Banana = colors_banana_question29_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question29_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_29 <- assign_group_color(data = avg_dept_weight_29, levels_by_crop = levels_by_crop_weighted_29, colors_by_crop = colors_by_crop_weighted_29,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_29, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_29, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q29_no_weight<- question_29 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =29))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q29_no_weight<- full_join(codes_department, nal_q29_no_weight)
+nal_q29_no_weight$cat<- factor(nal_q29_no_weight$cat, levels = level_29)
+colmap(departamentos, data = nal_q29_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q29_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q29_weight<- inner_join(question_29, experience_of_each_expert)
+nal_q29_weight<- nal_q29_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =29)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q29_weight<- full_join(codes_department, nal_q29_weight)
+nal_q29_weight$cat_weighted<- factor(nal_q29_weight$cat_weighted, levels = level_29)
+colmap(departamentos, data = nal_q29_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q29_weight$cat))-1), na.value = "#eeeeee")
+```
+
+
+## Question 30: `r unique(individual_surveys$question_in_english)[30]`
+
+```{r question_30}
+#selecting only question 30----
+question_30<- filter(individual_surveys, question_number==30)
+#unique(question_30$numeric_answer)
+#dput(unique(question_30$answer_in_english))
+
+#organizing the order of the levels
+level_30<- c("No Limitation", "Little Limitation",  "Moderate Limitation", "Extreme Limitation", "Unsure")
+question_30$answer_in_english<- factor(question_30$answer_in_english,levels = level_30)
+question_30<- filter(question_30, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_30<- question_30 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(30, mean =average, language = "en"))
+#weighted 
+add_weights_question_30<- inner_join(question_30, experience_of_each_expert)
+avg_dept_weight_30<- add_weights_question_30 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(30, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q30_no_weighted<- tapply(avg_dept_no_weight_30$ave_cat, avg_dept_no_weight_30$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question30_no_weighted<- palette_banana(length(levels_per_crop_Q30_no_weighted$Banana))
+colors_plantain_question30_no_weighted<- palette_plantain(length(levels_per_crop_Q30_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_30 <- list(
+  Banana = levels_per_crop_Q30_no_weighted$Banana,
+  Plantain = levels_per_crop_Q30_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_30 <- list(
+  Banana = colors_banana_question30_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question30_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_30 <- assign_group_color(data = avg_dept_no_weight_30, levels_by_crop = levels_by_crop_no_weighted_30, colors_by_crop = colors_by_crop_no_weighted_30,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q30_weighted<- tapply(avg_dept_weight_30$ave_cat_weighted, avg_dept_weight_30$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question30_weighted<- palette_banana(length(levels_per_crop_Q30_weighted$Banana))
+colors_plantain_question30_weighted<- palette_plantain(length(levels_per_crop_Q30_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_30 <- list(
+  Banana = levels_per_crop_Q30_weighted$Banana,
+  Plantain = levels_per_crop_Q30_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_30 <- list(
+  Banana = colors_banana_question30_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question30_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_30 <- assign_group_color(data = avg_dept_weight_30, levels_by_crop = levels_by_crop_weighted_30, colors_by_crop = colors_by_crop_weighted_30,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_30, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_30, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q30_no_weight<- question_30 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =30))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q30_no_weight<- full_join(codes_department, nal_q30_no_weight)
+nal_q30_no_weight$cat<- factor(nal_q30_no_weight$cat, levels = level_30)
+colmap(departamentos, data = nal_q30_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q30_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q30_weight<- inner_join(question_30, experience_of_each_expert)
+nal_q30_weight<- nal_q30_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =30)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q30_weight<- full_join(codes_department, nal_q30_weight)
+nal_q30_weight$cat_weighted<- factor(nal_q30_weight$cat_weighted, levels = level_30)
+colmap(departamentos, data = nal_q30_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q30_weight$cat))-1), na.value = "#eeeeee")
+
+```
+
+
+## Question 31: `r unique(individual_surveys$question_in_english)[31]`
+
+```{r question_31}
+#selecting only question 31----
+question_31<- filter(individual_surveys, question_number==31)
+#unique(question_31$numeric_answer)
+#dput(unique(question_31$answer_in_english))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_31 <- question_31 %>%
+  mutate(answer_in_english = case_when(
+    answer_in_english == "No Limitation,Little Limitation" ~ "Little Limitation",
+    TRUE ~ answer_in_english  # This keeps all other values as they are
+  ))
+#some experts selected more than one option in this question so an intermediate answer is chosen 
+question_31 <- question_31 %>%
+  mutate(numeric_answer = case_when(
+    numeric_answer == "1,2" ~ "1.5",
+    TRUE ~ numeric_answer  # This keeps all other values as they are
+  ))
+#organizing the order of the levels
+level_31<- c("No Limitation","Little Limitation", "Moderate Limitation", "Extreme Limitation")
+question_31$answer_in_english<- factor(question_31$answer_in_english,levels = level_31)
+#question_31<- filter(question_31, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_31<- question_31 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(31, mean =average, language = "en"))
+#weighted 
+add_weights_question_31<- inner_join(question_31, experience_of_each_expert)
+avg_dept_weight_31<- add_weights_question_31 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(31, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q31_no_weighted<- tapply(avg_dept_no_weight_31$ave_cat, avg_dept_no_weight_31$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question31_no_weighted<- palette_banana(length(levels_per_crop_Q31_no_weighted$Banana))
+colors_plantain_question31_no_weighted<- palette_plantain(length(levels_per_crop_Q31_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_31 <- list(
+  Banana = levels_per_crop_Q31_no_weighted$Banana,
+  Plantain = levels_per_crop_Q31_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_31 <- list(
+  Banana = colors_banana_question31_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question31_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_31 <- assign_group_color(data = avg_dept_no_weight_31, levels_by_crop = levels_by_crop_no_weighted_31, colors_by_crop = colors_by_crop_no_weighted_31,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q31_weighted<- tapply(avg_dept_weight_31$ave_cat_weighted, avg_dept_weight_31$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question31_weighted<- palette_banana(length(levels_per_crop_Q31_weighted$Banana))
+colors_plantain_question31_weighted<- palette_plantain(length(levels_per_crop_Q31_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_31 <- list(
+  Banana = levels_per_crop_Q31_weighted$Banana,
+  Plantain = levels_per_crop_Q31_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_31 <- list(
+  Banana = colors_banana_question31_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question31_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_31 <- assign_group_color(data = avg_dept_weight_31, levels_by_crop = levels_by_crop_weighted_31, colors_by_crop = colors_by_crop_weighted_31,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_31, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_31, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q31_no_weight<- question_31 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =31))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q31_no_weight<- full_join(codes_department, nal_q31_no_weight)
+nal_q31_no_weight$cat<- factor(nal_q31_no_weight$cat, levels = level_31)
+colmap(departamentos, data = nal_q31_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q31_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q31_weight<- inner_join(question_31, experience_of_each_expert)
+nal_q31_weight<- nal_q31_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =31)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q31_weight<- full_join(codes_department, nal_q31_weight)
+nal_q31_weight$cat_weighted<- factor(nal_q31_weight$cat_weighted, levels = level_31)
+colmap(departamentos, data = nal_q31_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q31_weight$cat))-1), na.value = "#eeeeee")
+```
+
+
+## Question 36: `r unique(individual_surveys$question_in_english)[36]`
+
+```{r question_36}
+#selecting only question 36----
+question_36<- filter(individual_surveys, question_number==36)
+#unique(question_36$numeric_answer)
+#dput(unique(question_36$answer_in_english))
+#organizing the order of the levels
+level_36<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
+question_36$answer_in_english<- factor(question_36$answer_in_english,levels = level_36)
+question_36<- filter(question_36, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_36<- question_36 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(36, mean =average, language = "en"))
+#weighted 
+add_weights_question_36<- inner_join(question_36, experience_of_each_expert)
+avg_dept_weight_36<- add_weights_question_36 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(36, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q36_no_weighted<- tapply(avg_dept_no_weight_36$ave_cat, avg_dept_no_weight_36$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question36_no_weighted<- palette_banana(length(levels_per_crop_Q36_no_weighted$Banana))
+colors_plantain_question36_no_weighted<- palette_plantain(length(levels_per_crop_Q36_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_36 <- list(
+  Banana = levels_per_crop_Q36_no_weighted$Banana,
+  Plantain = levels_per_crop_Q36_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_36 <- list(
+  Banana = colors_banana_question36_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question36_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_36 <- assign_group_color(data = avg_dept_no_weight_36, levels_by_crop = levels_by_crop_no_weighted_36, colors_by_crop = colors_by_crop_no_weighted_36,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q36_weighted<- tapply(avg_dept_weight_36$ave_cat_weighted, avg_dept_weight_36$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question36_weighted<- palette_banana(length(levels_per_crop_Q36_weighted$Banana))
+colors_plantain_question36_weighted<- palette_plantain(length(levels_per_crop_Q36_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_36 <- list(
+  Banana = levels_per_crop_Q36_weighted$Banana,
+  Plantain = levels_per_crop_Q36_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_36 <- list(
+  Banana = colors_banana_question36_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question36_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_36 <- assign_group_color(data = avg_dept_weight_36, levels_by_crop = levels_by_crop_weighted_36, colors_by_crop = colors_by_crop_weighted_36,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_36, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_36, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q36_no_weight<- question_36 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =36))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q36_no_weight<- full_join(codes_department, nal_q36_no_weight)
+nal_q36_no_weight$cat<- factor(nal_q36_no_weight$cat, levels = level_36)
+colmap(departamentos, data = nal_q36_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q36_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q36_weight<- inner_join(question_36, experience_of_each_expert)
+nal_q36_weight<- nal_q36_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =36)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q36_weight<- full_join(codes_department, nal_q36_weight)
+nal_q36_weight$cat_weighted<- factor(nal_q36_weight$cat_weighted, levels = level_36)
+colmap(departamentos, data = nal_q36_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q36_weight$cat))-1), na.value = "#eeeeee")
+
+```
+
+## Question 37: `r unique(individual_surveys$question_in_english)[37]`
+
+```{r question_37}
+#selecting only question 37----
+question_37<- filter(individual_surveys, question_number==37)
+#unique(question_37$numeric_answer)
+#dput(unique(question_37$answer_in_english))
+#organizing the order of the levels
+level_37<- c("Extremely Unlikely", "Very Unlikely", "Unlikely", "Somewhat Unlikely", "Neutral", "Somewhat Likely", "Likely", "Very Likely", "Extremely Likely", "Unsure")
+question_37$answer_in_english<- factor(question_37$answer_in_english,levels = level_37)
+question_37<- filter(question_37, answer_in_english!="Unsure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_37<- question_37 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(37, mean =average, language = "en"))
+#weighted 
+add_weights_question_37<- inner_join(question_37, experience_of_each_expert)
+avg_dept_weight_37<- add_weights_question_37 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(37, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q37_no_weighted<- tapply(avg_dept_no_weight_37$ave_cat, avg_dept_no_weight_37$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question37_no_weighted<- palette_banana(length(levels_per_crop_Q37_no_weighted$Banana))
+colors_plantain_question37_no_weighted<- palette_plantain(length(levels_per_crop_Q37_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_37 <- list(
+  Banana = levels_per_crop_Q37_no_weighted$Banana,
+  Plantain = levels_per_crop_Q37_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_37 <- list(
+  Banana = colors_banana_question37_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question37_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_37 <- assign_group_color(data = avg_dept_no_weight_37, levels_by_crop = levels_by_crop_no_weighted_37, colors_by_crop = colors_by_crop_no_weighted_37,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q37_weighted<- tapply(avg_dept_weight_37$ave_cat_weighted, avg_dept_weight_37$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question37_weighted<- palette_banana(length(levels_per_crop_Q37_weighted$Banana))
+colors_plantain_question37_weighted<- palette_plantain(length(levels_per_crop_Q37_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_37 <- list(
+  Banana = levels_per_crop_Q37_weighted$Banana,
+  Plantain = levels_per_crop_Q37_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_37 <- list(
+  Banana = colors_banana_question37_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question37_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_37 <- assign_group_color(data = avg_dept_weight_37, levels_by_crop = levels_by_crop_weighted_37, colors_by_crop = colors_by_crop_weighted_37,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_37, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_37, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q37_no_weight<- question_37 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =37))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q37_no_weight<- full_join(codes_department, nal_q37_no_weight)
+nal_q37_no_weight$cat<- factor(nal_q37_no_weight$cat, levels = level_37)
+colmap(departamentos, data = nal_q37_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q37_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q37_weight<- inner_join(question_37, experience_of_each_expert)
+nal_q37_weight<- nal_q37_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =37)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q37_weight<- full_join(codes_department, nal_q37_weight)
+nal_q37_weight$cat_weighted<- factor(nal_q37_weight$cat_weighted, levels = level_37)
+colmap(departamentos, data = nal_q37_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q37_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 39: `r unique(individual_surveys$question_in_english)[39]`
+
+```{r question_39}
+#selecting only question 39----
+question_39<- filter(individual_surveys, question_number==39)
+#unique(question_39$numeric_answer)
+#dput(unique(question_39$answer_in_english))
+#organizing the order of the levels
+level_39<- c("Very Low Risk", "Low Risk", "Moderate Risk", "High Risk", "Not Sure")
+question_39$answer_in_english<- factor(question_39$answer_in_english,levels = level_39)
+question_39<- filter(question_39, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_39<- question_39 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(39, mean =average, language = "en"))
+#weighted 
+add_weights_question_39<- inner_join(question_39, experience_of_each_expert)
+avg_dept_weight_39<- add_weights_question_39 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(39, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q39_no_weighted<- tapply(avg_dept_no_weight_39$ave_cat, avg_dept_no_weight_39$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question39_no_weighted<- palette_banana(length(levels_per_crop_Q39_no_weighted$Banana))
+colors_plantain_question39_no_weighted<- palette_plantain(length(levels_per_crop_Q39_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_39 <- list(
+  Banana = levels_per_crop_Q39_no_weighted$Banana,
+  Plantain = levels_per_crop_Q39_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_39 <- list(
+  Banana = colors_banana_question39_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question39_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_39 <- assign_group_color(data = avg_dept_no_weight_39, levels_by_crop = levels_by_crop_no_weighted_39, colors_by_crop = colors_by_crop_no_weighted_39,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q39_weighted<- tapply(avg_dept_weight_39$ave_cat_weighted, avg_dept_weight_39$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question39_weighted<- palette_banana(length(levels_per_crop_Q39_weighted$Banana))
+colors_plantain_question39_weighted<- palette_plantain(length(levels_per_crop_Q39_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_39 <- list(
+  Banana = levels_per_crop_Q39_weighted$Banana,
+  Plantain = levels_per_crop_Q39_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_39 <- list(
+  Banana = colors_banana_question39_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question39_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_39 <- assign_group_color(data = avg_dept_weight_39, levels_by_crop = levels_by_crop_weighted_39, colors_by_crop = colors_by_crop_weighted_39,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_39, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_39, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q39_no_weight<- question_39 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =39))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q39_no_weight<- full_join(codes_department, nal_q39_no_weight)
+nal_q39_no_weight$cat<- factor(nal_q39_no_weight$cat, levels = level_39)
+colmap(departamentos, data = nal_q39_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q39_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q39_weight<- inner_join(question_39, experience_of_each_expert)
+nal_q39_weight<- nal_q39_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =39)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q39_weight<- full_join(codes_department, nal_q39_weight)
+nal_q39_weight$cat_weighted<- factor(nal_q39_weight$cat_weighted, levels = level_39)
+colmap(departamentos, data = nal_q39_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q39_weight$cat))-1), na.value = "#eeeeee")
+```
+
+
+## Question 40: `r unique(individual_surveys$question_in_english)[40]`
+
+```{r questions_40}
+#selecting only question 40----
+question_40<- filter(individual_surveys, question_number==40)
+#unique(question_40$numeric_answer)
+#dput(unique(question_40$answer_in_english))
+#organizing the order of the levels
+level_40<- c("Slightly Feasible", "Moderately Feasible", "Very Feasible", "Extremely Feasible")
+question_40$answer_in_english<- factor(question_40$answer_in_english,levels = level_40)
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_40<- question_40 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(40, mean =average, language = "en"))
+#weighted 
+add_weights_question_40<- inner_join(question_40, experience_of_each_expert)
+avg_dept_weight_40<- add_weights_question_40 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(40, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q40_no_weighted<- tapply(avg_dept_no_weight_40$ave_cat, avg_dept_no_weight_40$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question40_no_weighted<- palette_banana(length(levels_per_crop_Q40_no_weighted$Banana))
+colors_plantain_question40_no_weighted<- palette_plantain(length(levels_per_crop_Q40_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_40 <- list(
+  Banana = levels_per_crop_Q40_no_weighted$Banana,
+  Plantain = levels_per_crop_Q40_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_40 <- list(
+  Banana = colors_banana_question40_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question40_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_40 <- assign_group_color(data = avg_dept_no_weight_40, levels_by_crop = levels_by_crop_no_weighted_40, colors_by_crop = colors_by_crop_no_weighted_40,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q40_weighted<- tapply(avg_dept_weight_40$ave_cat_weighted, avg_dept_weight_40$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question40_weighted<- palette_banana(length(levels_per_crop_Q40_weighted$Banana))
+colors_plantain_question40_weighted<- palette_plantain(length(levels_per_crop_Q40_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_40 <- list(
+  Banana = levels_per_crop_Q40_weighted$Banana,
+  Plantain = levels_per_crop_Q40_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_40 <- list(
+  Banana = colors_banana_question40_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question40_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_40 <- assign_group_color(data = avg_dept_weight_40, levels_by_crop = levels_by_crop_weighted_40, colors_by_crop = colors_by_crop_weighted_40,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_40, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_40, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q40_no_weight<- question_40 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =40))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q40_no_weight<- full_join(codes_department, nal_q40_no_weight)
+nal_q40_no_weight$cat<- factor(nal_q40_no_weight$cat, levels = level_40)
+colmap(departamentos, data = nal_q40_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q40_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q40_weight<- inner_join(question_40, experience_of_each_expert)
+nal_q40_weight<- nal_q40_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =40)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q40_weight<- full_join(codes_department, nal_q40_weight)
+nal_q40_weight$cat_weighted<- factor(nal_q40_weight$cat_weighted, levels = level_40)
+colmap(departamentos, data = nal_q40_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q40_weight$cat))-1), na.value = "#eeeeee")
+
+```
