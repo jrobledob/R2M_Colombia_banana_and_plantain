@@ -9,7 +9,7 @@ editor_options:
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
 
 ## Libraries, Functions, and Global Variables
@@ -1261,6 +1261,280 @@ nal_q9_weight$cat_weighted<- factor(nal_q9_weight$cat_weighted, levels = c("No T
 colmap(departamentos, data = nal_q9_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q9_weight$cat))-1), na.value = "#eeeeee")
 ```
+
+
+## Question 10: `r unique(individual_surveys$question_in_english)[10]`
+
+
+
+```{r question_10}
+#selecting only question 10----
+question_10<- filter(individual_surveys, question_number==10)
+question_10$round_num_answer<- as.numeric(question_10$round_num_answer)
+#Make the abbreviations
+question_10 <- question_10 %>%
+  mutate(cat_abbreviations = case_when(
+    Add_parameters_english == "Local Certified Corms" ~ "LCC",
+    Add_parameters_english == "Local Markets (informal)" ~ "LMI",
+    Add_parameters_english == "Corms Stored From Previous Cycles Of The Same Farm" ~ "CSPCSF",
+    Add_parameters_english == "Certified Tissue Culture Plants from International Production" ~ "CTCPIP",
+    Add_parameters_english == "Certified Banana Nurseries in Colombia" ~ "CBNC",
+    Add_parameters_english == "Planting Materials Shared by Neighbors or Communities" ~ "PMSNC",
+    Add_parameters_english == "Certified Tissue Culture Plants from National Production" ~ "CTCPNP",
+    Add_parameters_english == "Planting Materials Supplied by the Government or a Research Institution" ~ "PMSGRI",
+    Add_parameters_english == "Wild Sources or Naturally Grown Sprouts" ~ "WSNGS",
+    Add_parameters_english == "Not Sure" ~ "NS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#The answers by expert by department has to sum 100%. We need to double check that
+answers_not_one_hundred_q10<- question_10 %>%
+  group_by(expert_ID, expert_in)%>%
+  summarise(new= sum(round_num_answer)) %>%
+  filter(new!=100)
+#Deletion of the values that do not sum 100
+question_10<- filter(question_10, !(expert_ID %in% answers_not_one_hundred_q10$expert_ID &
+                       expert_in %in% answers_not_one_hundred_q10$expert_in))
+#NON Weighted repeat each row by the number in the column 'round_num_answer'
+rep_question_10<- question_10 %>%
+  slice(rep(1:n(), question_10$round_num_answer))
+#counting the levels
+rep_question_10_frequencies <- count_elements_by_group(rep_question_10, "cat_abbreviations", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q10_no_weighted<- tapply(rep_question_10_frequencies$cat_abbreviations, rep_question_10_frequencies$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question10_no_weighted<- palette_banana(length(levels_per_crop_Q10_no_weighted$Banana))
+colors_plantain_question10_no_weighted<- palette_plantain(length(levels_per_crop_Q10_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_10 <- list(
+  Banana = levels_per_crop_Q10_no_weighted$Banana,
+  Plantain = levels_per_crop_Q10_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_10 <- list(
+  Banana = colors_banana_question10_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question10_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+rep_question_10_frequencies <- assign_group_color(data = rep_question_10_frequencies, levels_by_crop = levels_by_crop_no_weighted_10, colors_by_crop = colors_by_crop_no_weighted_10,answer_col =  "cat_abbreviations")
+#setting the data set for the plot 
+rep_question_10_frequencies<- data.frame(h1= "total", 
+                                         h2= as.factor(rep_question_10_frequencies$crop), 
+                                         h3= as.factor(rep_question_10_frequencies$cat_abbreviations), 
+                                         color= rep_question_10_frequencies$group_color,
+                                         weight= (rep_question_10_frequencies$n/sum(rep_question_10_frequencies$n))*100,
+                                         codes=rep_question_10_frequencies$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(rep_question_10_frequencies))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "non-weighted")
+#kable(rep_question_10_frequencies)
+#for the weighted analysis repeat the results of each expert by its weight
+rep_question_10_weighted<- inner_join(rep_question_10, experience_of_each_expert)
+rep_question_10_weighted<- rep_question_10_weighted %>%
+  slice(rep(1:n(), rep_question_10_weighted$weights))
+#counting the levels
+rep_question_10_frequencies_weighted <- count_elements_by_group(rep_question_10_weighted, "cat_abbreviations", c("crop"))
+# Now call the function
+rep_question_10_frequencies_weighted <- assign_group_color(data = rep_question_10_frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_10, colors_by_crop = colors_by_crop_no_weighted_10,answer_col =  "cat_abbreviations")
+#setting the data set for the plot 
+rep_question_10_frequencies_weighted_plot<- data.frame(h1= "total", 
+                                         h2= as.factor(rep_question_10_frequencies_weighted$crop), 
+                                         h3= as.factor(rep_question_10_frequencies_weighted$cat_abbreviations), 
+                                         color= rep_question_10_frequencies_weighted$group_color,
+                                         weight= (rep_question_10_frequencies_weighted$n/sum(rep_question_10_frequencies_weighted$n))*100,
+                                         codes=rep_question_10_frequencies_weighted$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(rep_question_10_frequencies_weighted_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "weighted")
+#kable(rep_question_10_frequencies)
+#Frequencies by department non-weighted
+question_10_frequencies_by_depto <- count_elements_by_group(rep_question_10, "cat_abbreviations", c("crop", "expert_in"))
+question_10_frequencies_by_depto <- assign_group_color(data = question_10_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_10, colors_by_crop = colors_by_crop_no_weighted_10,answer_col =  "cat_abbreviations")
+#tree map
+question_10_frequencies_by_depto<- question_10_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_10_frequencies_by_depto<- select(question_10_frequencies_by_depto,!n & !total)
+#put it in long format
+question_10_frequencies_by_depto <- question_10_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#only select top 5 for the tree map
+#for banana
+question_10_frequencies_by_depto_banana<- filter(question_10_frequencies_by_depto, cat_abbreviations %in% rep_question_10_frequencies$codes[which(rep_question_10_frequencies$h2=="Banana")], crop=="Banana")
+#for plantain
+question_10_frequencies_by_depto_plantain<- filter(question_10_frequencies_by_depto, cat_abbreviations %in% rep_question_10_frequencies$codes[which(rep_question_10_frequencies$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_10_frequencies_by_depto<- rbind(question_10_frequencies_by_depto_banana, question_10_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_10_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Sources of Planting Material Plantain - non weighted")
+#tree map only banana
+tree_map_3(data = filter(question_10_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Sources of Planting Material Banana - non weighted")
+#Frequencies by department weighted
+question_10_frequencies_by_depto_NW <- count_elements_by_group(rep_question_10_weighted, "cat_abbreviations", c("crop", "expert_in"))
+question_10_frequencies_by_depto_NW <- assign_group_color(data = question_10_frequencies_by_depto_NW, levels_by_crop = levels_by_crop_no_weighted_10, colors_by_crop = colors_by_crop_no_weighted_10,answer_col =  "cat_abbreviations")
+#tree map
+question_10_frequencies_by_depto_NW<- question_10_frequencies_by_depto_NW %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_10_frequencies_by_depto_NW<- select(question_10_frequencies_by_depto_NW,!n & !total)
+#put it in long format
+question_10_frequencies_by_depto_NW <- question_10_frequencies_by_depto_NW %>% 
+  uncount(weights = mean, .id = "id")
+#only select top 5 for the tree map
+#for banana
+question_10_frequencies_by_depto_NW_banana<- filter(question_10_frequencies_by_depto_NW, cat_abbreviations %in% rep_question_10_frequencies_weighted_plot$codes[which(rep_question_10_frequencies_weighted_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_10_frequencies_by_depto_NW_plantain<- filter(question_10_frequencies_by_depto_NW, cat_abbreviations %in% rep_question_10_frequencies_weighted_plot$codes[which(rep_question_10_frequencies_weighted_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_10_frequencies_by_depto_NW<- rbind(question_10_frequencies_by_depto_NW_banana, question_10_frequencies_by_depto_NW_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_10_frequencies_by_depto_NW, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Sources of Planting Material Plantain - weighted")
+#tree map only banana
+tree_map_3(data = filter(question_10_frequencies_by_depto_NW, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Sources of Planting Material Banana - weighted")
+#Additional top 5 diseases and pest in Colombia
+q10_top_5Colobia<- count_elements_by_group(rep_question_10, "cat_abbreviations", c("cat_abbreviations"))
+q10_top_5Colobia$mean<-round((q10_top_5Colobia$n/sum(q10_top_5Colobia$n)*100),0)
+q10_top_5Colobia$background_color<- "white"
+q10_top_5Colobia$color<- palette_soil(length(unique(q10_top_5Colobia$cat_abbreviations)))
+#sort the results by mean
+q10_top_5Colobia <- q10_top_5Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q10_top_5Colobia$cat_abbreviations<- factor(q10_top_5Colobia$cat_abbreviations, levels = q10_top_5Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q10_top_5Colobia,x_lab = "Source of Planting Material - NW", y_lab ="Proportion of Experts (%)", title = "
+Sources of Planting Material Identified by Experts" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+#Additional top 5 diseases and pest in Colombia
+q10_top_5Colobia<- count_elements_by_group(rep_question_10_weighted, "cat_abbreviations", c("cat_abbreviations"))
+q10_top_5Colobia$mean<-round((q10_top_5Colobia$n/sum(q10_top_5Colobia$n)*100),0)
+q10_top_5Colobia$background_color<- "white"
+q10_top_5Colobia$color<- palette_soil(length(unique(q10_top_5Colobia$cat_abbreviations)))
+#sort the results by mean
+q10_top_5Colobia <- q10_top_5Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q10_top_5Colobia$cat_abbreviations<- factor(q10_top_5Colobia$cat_abbreviations, levels = q10_top_5Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q10_top_5Colobia,x_lab = "Source of Planting Material - weighted", y_lab ="Proportion of Experts (%)", title = "
+Sources of Planting Material Identified by Experts" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
+## Question 11: `r unique(individual_surveys$question_in_english)[11]`
+
+```{r questoin_11}
+#selecting only question 11----
+question_11<- filter(individual_surveys, question_number==11)
+#unique(question_11$numeric_answer)
+#dput(unique(question_11$answer_in_english))
+# question_11 <- question_11 %>%
+#   mutate(answer_in_english= case_when(
+#     answer_in_english=="10 to 0" ~ "0%",
+#     answer_in_english=="9 to 1" ~ "10%",
+#     answer_in_english=="8 to 2" ~ "20%",
+#     answer_in_english=="7 to 3" ~ "30%",
+#     answer_in_english=="6 to 4" ~ "40%",
+#     answer_in_english=="5 to 5" ~ "50%",
+#     answer_in_english=="4 to 6" ~ "60%",
+#     answer_in_english=="3 to 7" ~ "70%",
+#     answer_in_english=="2 to 8" ~ "80%",
+#     answer_in_english=="1 to 9" ~ "90%",
+#     answer_in_english=="0 to 10" ~ "100%",
+#   ))
+#organizing the order of the levels
+level_11<- c("0 to 10", "1 to 9", "2 to 8", "3 to 7", "4 to 6", "5 to 5", "6 to 4", "7 to 3", "8 to 2", "9 to 1", "10 to 0")
+question_11$answer_in_english<- factor(question_11$answer_in_english,levels = level_11)
+#question_11<- filter(question_11, answer_in_english!="Not Sure")
+#average by department (weighted and no weighted)
+#not weighted 
+avg_dept_no_weight_11<- question_11 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average= mean(numeric_answer)) %>%
+  group_by(average)%>%
+  mutate(ave_cat= category_by_mean_by_question(11, mean =average, language = "en"))
+#weighted 
+add_weights_question_11<- inner_join(question_11, experience_of_each_expert)
+avg_dept_weight_11<- add_weights_question_11 %>%
+  group_by(crop, expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer))%>%
+  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted)%>%
+  mutate(ave_cat_weighted= category_by_mean_by_question(11, mean =average_weighted, language = "en"))
+
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q11_no_weighted<- tapply(avg_dept_no_weight_11$ave_cat, avg_dept_no_weight_11$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question11_no_weighted<- palette_banana(length(levels_per_crop_Q11_no_weighted$Banana))
+colors_plantain_question11_no_weighted<- palette_plantain(length(levels_per_crop_Q11_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_11 <- list(
+  Banana = levels_per_crop_Q11_no_weighted$Banana,
+  Plantain = levels_per_crop_Q11_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_11 <- list(
+  Banana = colors_banana_question11_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question11_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_no_weight_11 <- assign_group_color(data = avg_dept_no_weight_11, levels_by_crop = levels_by_crop_no_weighted_11, colors_by_crop = colors_by_crop_no_weighted_11,answer_col =  "ave_cat")
+
+#finding the levels per crop (banana and plantain) weighted
+levels_per_crop_Q11_weighted<- tapply(avg_dept_weight_11$ave_cat_weighted, avg_dept_weight_11$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question11_weighted<- palette_banana(length(levels_per_crop_Q11_weighted$Banana))
+colors_plantain_question11_weighted<- palette_plantain(length(levels_per_crop_Q11_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_weighted_11 <- list(
+  Banana = levels_per_crop_Q11_weighted$Banana,
+  Plantain = levels_per_crop_Q11_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_weighted_11 <- list(
+  Banana = colors_banana_question11_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question11_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_dept_weight_11 <- assign_group_color(data = avg_dept_weight_11, levels_by_crop = levels_by_crop_weighted_11, colors_by_crop = colors_by_crop_weighted_11,answer_col =  "ave_cat_weighted")
+
+#tree map
+tree_map_3(data = avg_dept_no_weight_11, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
+tree_map_3(data = avg_dept_weight_11, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+#Map of Colombia  
+#non weighted
+nal_q11_no_weight<- question_11 %>% group_by(expert_in) %>%
+  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  group_by(average) %>% 
+  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =11))%>%
+  rename(EKE.expert.in = expert_in)
+
+nal_q11_no_weight<- full_join(codes_department, nal_q11_no_weight)
+nal_q11_no_weight$cat<- factor(nal_q11_no_weight$cat, levels = level_11)
+colmap(departamentos, data = nal_q11_no_weight, data_id = "id_depto", var = "cat")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q11_no_weight$cat))-1), na.value = "#eeeeee")
+# weighted
+nal_q11_weight<- inner_join(question_11, experience_of_each_expert)
+nal_q11_weight<- nal_q11_weight %>%
+  group_by(expert_in) %>%
+  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
+  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  group_by(average_weighted) %>%
+  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =11)) %>%
+  rename(EKE.expert.in=expert_in)
+
+nal_q11_weight<- full_join(codes_department, nal_q11_weight)
+nal_q11_weight$cat_weighted<- factor(nal_q11_weight$cat_weighted, levels = level_11)
+colmap(departamentos, data = nal_q11_weight, data_id = "id_depto", var = "cat_weighted")+
+  scale_fill_manual(values = palette_soil(length(unique(nal_q11_weight$cat))-1), na.value = "#eeeeee")
+```
+
 
 ## Question 13: `r unique(individual_surveys$question_in_english)[13]`
 

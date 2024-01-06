@@ -1,7 +1,7 @@
 Analisis of individual Questions EKE Colombia - Banano and Plantain 2023
 ================
 Jacobo Robledo
-2024-01-04
+2024-01-05
 
 ## Libraries, Functions, and Global Variables
 
@@ -227,16 +227,7 @@ categories.
 To assign colors to a dataset `df` with crops ‘Banana’ and ‘Plantain’
 and their respective levels and colors:
 
-``` r
-#libraries----
-  library(treemap)
-```
-
     ## Warning: package 'treemap' was built under R version 4.3.2
-
-``` r
-  library(tidyverse)
-```
 
     ## ── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
     ## ✔ dplyr     1.1.3     ✔ readr     2.1.4
@@ -248,12 +239,6 @@ and their respective levels and colors:
     ## ✖ dplyr::filter() masks stats::filter()
     ## ✖ dplyr::lag()    masks stats::lag()
     ## ℹ Use the conflicted package (<http://conflicted.r-lib.org/>) to force all conflicts to become errors
-
-``` r
-  library(RColorBrewer)
-  library("colmaps")
-```
-
     ## The legacy packages maptools, rgdal, and rgeos, underpinning the sp package,
     ## which was just loaded, were retired in October 2023.
     ## Please refer to R-spatial evolution reports for details, especially
@@ -261,22 +246,9 @@ and their respective levels and colors:
     ## It may be desirable to make the sf package available;
     ## package maintainers should consider adding sf to Suggests:.
 
-``` r
-  library("homicidios")
-  library(voronoiTreemap)
-```
-
     ## Warning: package 'voronoiTreemap' was built under R version 4.3.2
 
-``` r
-  library(webshot)
-```
-
     ## Warning: package 'webshot' was built under R version 4.3.2
-
-``` r
-  library(webshot2)
-```
 
     ## Warning: package 'webshot2' was built under R version 4.3.2
 
@@ -289,12 +261,7 @@ and their respective levels and colors:
     ## The following objects are masked from 'package:webshot':
     ## 
     ##     appshot, resize, rmdshot, shrink, webshot
-
-``` r
-  library(purrr)
-  library(rlang)
-```
-
+    ## 
     ## 
     ## Attaching package: 'rlang'
     ## 
@@ -303,190 +270,7 @@ and their respective levels and colors:
     ##     %@%, flatten, flatten_chr, flatten_dbl, flatten_int, flatten_lgl,
     ##     flatten_raw, invoke, splice
 
-``` r
-#Global variables
-  #set the color palette for bananas and plantains
-  palette_banana <- colorRampPalette(c("#FFDA00","#FFF2CC" ))
-  palette_plantain <- colorRampPalette(c("#28B463","#BEF4BE"))
-  palette_soil<- colorRampPalette(c( "#654321","#d8c298"))
-  #data set: individual questions:
-  #read individual surveys from GitHub
-  num_cols <- length(read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", nrows = 1, header = TRUE))
-  # Create a colClasses vector with "character" for each column
-  col_classes <- rep("character", num_cols)
-  individual_surveys<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Individual_surveys_Banana_and_Plantain_Colombia_Clean_surveys_2023-12-28.csv", colClasses = col_classes)
-  #reformat columns
-  individual_surveys$question_number<- as.integer(individual_surveys$question_number)
-  #Getting the experience of each expert by department by crop
-  experience_of_each_expert<- individual_surveys %>%
-    filter(question_number==1) %>%
-    select(crop, expert_ID, expert_in, numeric_answer) %>%
-    mutate(numeric_answer= as.numeric(numeric_answer))
-  colnames(experience_of_each_expert)[which(colnames(experience_of_each_expert)=="numeric_answer")]<- "weights"
-  #correct the missing answer which is "Antioquia"
-  experience_of_each_expert$expert_in[which(is.na(experience_of_each_expert$expert_in))]<- "Antioquia"
-    
-#function tree_map_3 
-  tree_map_3<- function(data,group, subgroup_1, subgroup_2, color_column, title){
-    #Calculate the frequencies
-    frequency_personalized_question<- data %>%
-      group_by(!!rlang::sym(group), !!rlang::sym(subgroup_1), !!rlang::sym(subgroup_2), !!rlang::sym(color_column)) %>%
-      summarise(frequency=n())
-    #Plot the tree map 
-    figure<- treemap(frequency_personalized_question,
-            index=c(group,subgroup_1, subgroup_2), 
-            vSize="frequency",
-            vColor=color_column,
-            type="color",
-            fontsize.labels=c(0,7,4),                # size of labels. Give the size per level of aggregation: size for group, size for subgroup, sub-subgroups...
-            fontcolor.labels=c("transparent","#654321", "#A58F65"),    # Color of labels
-            fontface.labels=c(2,1,1),                  # Font of labels: 1,2,3,4 for normal, bold, italic, bold-italic...
-            bg.labels=c("transparent"),              # Background color of labels
-            align.labels=list(
-              c("center", "top"), 
-              c("right", "bottom"), 
-              c("left", "top")
-            ),                                   # Where to place labels in the rectangle?
-            overlap.labels=0.5,                      # number between 0 and 1 that determines the tolerance of the overlap between labels. 0 means that labels of lower levels are not printed if higher level labels overlap, 1  means that labels are always printed. In-between values, for instance the default value .5, means that lower level labels are printed if other labels do not overlap with more than .5  times their area size.
-            inflate.labels=T,                        # If true, labels are bigger when rectangle is bigger.
-            border.col=c("white","#654321","#A58F65"),             # Color of borders of groups, of subgroups, of subsubgroups ....
-            border.lwds=c(3,2, 0.5),                         # Width of colors
-            title=title,                      # Customize your title
-            #fontsize.title=12                       # Size of the title
-    )
-    return(figure)
-  }
-
-#function Col_map_by_depto
-  Col_map_by_depto<- function(data, data_id, var, low, high, na.values, legend_lab){
-    
-    figure<- colmap(departamentos, data = data, data_id = data_id, var = var)+
-      scale_fill_continuous(low = low , high = high, na.value = na.values)
-    labs(fill= legend_lab)
-    return(figure)
-  }
-  
-#function category_by_mean_by_question
-category_by_mean_by_question<- function(question, mean, language=c("en","es")){
-  mean<-round(mean, 0)
-  data<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_DATA_Categories_that_can_be_chosen_in_every_question_of_the_individual_survey_English_and_Spanish.csv")
-  if (language=="en") {
-    category<- filter(data, number==question & number_to_category==mean)$trans_answer
-  }else{
-    if (language=="es") {
-      category<- filter(data, number==question & number_to_category==mean)$Category
-    }
-    cat("ERROR: Language not found")
-  }
-  return(category)
-}
-
-#Function count_elements_by_group
-count_elements_by_group <- function(data, value_column, group_columns) {
-  # Split the comma-separated values and convert to long format
-  data_long <- data %>%
-    separate_rows(!!sym(value_column), sep = ",\\s*") %>%
-    group_by(across(all_of(group_columns))) %>%
-    count(!!sym(value_column))
-  return(data_long)
-}
-  
-#function bar_plot_banana_plantain
-bar_plot_banana_plantain <- function(data_set, x_lab, y_lab, title, x, y, alpha, background_color, bar_color, proportional_limit, facet = NULL) {
-  # Calculate new y-axis upper limit, 20% above the max value
-  ymax_limit <- max(data_set[[y]], na.rm = TRUE) * proportional_limit
-  
-  # Convert strings to symbols
-  x_sym <- rlang::sym(x)
-  y_sym <- rlang::sym(y)
-  background_color_sym <- rlang::sym(background_color)
-  bar_color_sym <- rlang::sym(bar_color)
-  
-  # Start the plot
-  p <- ggplot(data_set, aes(x = !!x_sym, y = !!y_sym)) +
-    geom_rect(aes(fill = !!background_color_sym), xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf, alpha = alpha) +
-    geom_text(aes(label = !!y_sym), vjust = -0.5, color = "#654321") +
-    geom_bar(aes(fill = !!bar_color_sym), color = "#654321",stat = 'identity', position = position_dodge()) +
-    scale_fill_identity() +
-    labs(x = x_lab, y = y_lab, title = title) +
-    theme(
-      text = element_text(color = "#654321"),
-      axis.title = element_text(color = "#654321"),
-      axis.text = element_text(color = "#654321"),
-      axis.line = element_line(color = "#654321"),
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      panel.border = element_rect(color = "#654321", fill = NA),
-      strip.text = element_text(color = "#654321"),
-      strip.background = element_rect(fill = "#A58F65", colour = NA),
-      legend.position = "none"
-    ) +
-    ylim(0, ymax_limit)
-  
-  # Conditionally add facet grid if facet is provided
-  if (!is.null(facet) && facet != "") {
-    facet_sym <- rlang::sym(facet)
-    facet_formula <- as.formula(paste(". ~", facet))
-    p <- p + facet_grid(facet_formula)
-  }
-  
-  # Return the plot
-  return(p)
-}
-
-#function assign_group_color 
-assign_group_color <- function(data, answer_col, levels_by_crop, colors_by_crop) {
-  # Ensure that answer_col is a string representing the column name
-  # levels_by_crop is a named list of vectors containing the knowledge levels for each crop
-  # colors_by_crop is a named list of vectors containing the colors corresponding to each knowledge level for each crop
-  
-  answer_col_sym <- rlang::sym(answer_col)  # Convert the string to a symbol
-  
-  data <- data %>%
-    mutate(group_color = purrr::map2_chr(crop, !!answer_col_sym, function(crop_name, answer) {
-      # Find the index of the answer within the levels for the given crop
-      level_index <- match(answer, levels_by_crop[[crop_name]])
-      # Use the index to get the corresponding color
-      if (!is.na(level_index)) {
-        colors_by_crop[[crop_name]][level_index]
-      } else {
-        NA_character_  # If there's no match, return NA
-      }
-    }))
-  
-  return(data)
-}
-```
-
 ## Question 1: How many years of experience do you have in each department?
-
-``` r
-#selecting only question 1----
-  question_1<- filter(individual_surveys, question_number==1)
-  #organizing the order of the levels
-  question_1$answer_in_english<- factor(question_1$answer_in_english,levels = c("1 to 2", "3 to 5","5 to 9","10 to 15","More than 15"))
-  #finding the number of levels per crop (banana and plantain)
-  levels_per_crop_Q1<- tapply(question_1$answer_in_english, question_1$crop, function(x){length(unique(x))})
-  #generating a ramp palette according to the number of levels per crop
-  colors_banana_question1<- palette_banana(levels_per_crop_Q1["Banana"])
-  colors_plantain_question1<- palette_plantain(levels_per_crop_Q1["Plantain"])
-  #Assigning the colors by crop and answer
-  question_1<- question_1 %>%
-    mutate(group_color= case_when(
-      crop=="Banana" & answer_in_english == "1 to 2" ~ colors_banana_question1[5],
-      crop=="Banana" & answer_in_english == "3 to 5" ~ colors_banana_question1[4],
-      crop=="Banana" & answer_in_english == "5 to 9" ~ colors_banana_question1[3],
-      crop=="Banana" & answer_in_english == "10 to 15" ~ colors_banana_question1[2],
-      crop=="Banana" & answer_in_english == "More than 15" ~ colors_banana_question1[1],
-      crop=="Plantain" & answer_in_english == "1 to 2" ~ colors_plantain_question1[5],
-      crop=="Plantain" & answer_in_english == "3 to 5" ~ colors_plantain_question1[4],
-      crop=="Plantain" & answer_in_english == "5 to 9" ~ colors_plantain_question1[3],
-      crop=="Plantain" & answer_in_english == "10 to 15" ~ colors_plantain_question1[2],
-      crop=="Plantain" & answer_in_english == "More than 15" ~ colors_plantain_question1[1],
-    ))
-#tree map
-tree_map_3(data = question_1, "crop", "expert_in", "answer_in_english", "group_color", title="Experience of Experts by Department")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'answer_in_english'.
     ## You can override using the `.groups` argument.
@@ -720,27 +504,9 @@ tree_map_3(data = question_1, "crop", "expert_in", "answer_in_english", "group_c
     ## $draw
     ## [1] TRUE
 
-``` r
-#summarise to have the number of experts by departments
-data<- question_1 %>%
-  group_by(expert_in, id_depto) %>%
-  summarise(Number_of_Experts= n())
-```
-
     ## `summarise()` has grouped output by 'expert_in'. You can override using the
     ## `.groups` argument.
-
-``` r
-codes_department<- unique(data.frame(EKE.expert.in=homicidios$depto, id_depto=homicidios$id_depto))
-data<- full_join(codes_department, data)
-```
-
     ## Joining with `by = join_by(id_depto)`
-
-``` r
-#Map of Colombia
-Col_map_by_depto(data = data, data_id = "id_depto", var = "Number_of_Experts", low = "#A58F65", high = "#654321", na.values = "#eeeeee", legend_lab = "Number \n of experts")
-```
 
     ## Warning: `fortify(<SpatialPolygonsDataFrame>)` was deprecated in ggplot2 3.4.4.
     ## ℹ Please migrate to sf.
@@ -754,22 +520,6 @@ Col_map_by_depto(data = data, data_id = "id_depto", var = "Number_of_Experts", l
     ## Adding another scale for fill, which will replace the existing scale.
 
 ![](README_files/figure-gfm/question_1-2.png)<!-- -->
-
-``` r
-#Total number of experts:
-total_experts_Q1<- length(unique(question_1$expert_ID))
-mode_Q1<- sort(table(question_1$answer_in_english), decreasing = T)
-question_1$numeric_answer<- as.numeric(question_1$numeric_answer)
-mean_q1<- mean(question_1$numeric_answer)
-mean_q1<- category_by_mean_by_question(1, mean_q1, language = "en")
-mean_q1_by_crops<- question_1 %>%
-  group_by(crop) %>%
-  summarise(mean_cat= mean(numeric_answer),
-            surveys_by_crop= length(unique(expert_ID)),
-            mode= names(sort(table(answer_in_english), decreasing = T))[1])
-mean_q1_by_crops$cat_english<- tapply(mean_q1_by_crops$mean_cat, mean_q1_by_crops$crop, function(x){
-  category_by_mean_by_question(1, mean = x, language = "en")}) 
-```
 
 #### Descriptive statistics:
 
@@ -788,84 +538,9 @@ Descriptive statistics by crop=
 
 ## Question 2: Which category or categories best describe your experience? Please check all that apply.
 
-``` r
-question_2<- filter(individual_surveys,question_number==2)
-question_2_frequencies <- count_elements_by_group(question_2, "answer_in_english", c("crop"))
-question_2_frequencies$answer_in_english<- as.factor(question_2_frequencies$answer_in_english)
-#finding the number of levels per crop (banana and plantain)
-levels_per_crop_Q2<- tapply(question_2_frequencies$answer_in_english, question_2_frequencies$crop, function(x){length(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question2<- palette_banana(levels_per_crop_Q2["Banana"])
-colors_plantain_question2<- palette_plantain(levels_per_crop_Q2["Plantain"])
-#Assignig a color per factor by crop
-question_2_frequencies <- question_2_frequencies %>%
-  mutate(group_color = case_when(
-    crop == "Banana" ~ colors_banana_question2[match(answer_in_english, c("Agricultural Extension", 
-                                                                          "Agricultural Operations Management/Crop Consultants", 
-                                                                          "Agronomy", "Economics", 
-                                                                          "Entomology", "Horticulture", 
-                                                                          "IPM (Integrated Pest Management)", 
-                                                                          "Others", "Plant Pathology", 
-                                                                          "Producer", "Research", 
-                                                                          "Seed Systems", "Social Sciences"))],
-    crop == "Plantain" ~ colors_plantain_question2[match(answer_in_english, c("Agricultural Extension", 
-                                                                              "Agricultural Operations Management/Crop Consultants", 
-                                                                              "Agronomy", "Economics", 
-                                                                              "Entomology", "Horticulture", 
-                                                                              "IPM (Integrated Pest Management)", 
-                                                                              "Others", "Plant Pathology", 
-                                                                              "Producer", "Research", 
-                                                                              "Seed Systems", "Social Sciences"))]
-  ))
-#Creating avreviations for the the plot 
-question_2_frequencies <- question_2_frequencies %>%
-  mutate(cat_abbreviations = case_when(
-    answer_in_english == "Agricultural Extension" ~ "AE",
-    answer_in_english == "Agricultural Operations Management/Crop Consultants" ~ "AOM/CC",
-    answer_in_english == "Agronomy" ~ "Agro",
-    answer_in_english == "Economics" ~ "Econ",
-    answer_in_english == "Entomology" ~ "Ento",
-    answer_in_english == "Horticulture" ~ "Hort",
-    answer_in_english == "IPM (Integrated Pest Management)" ~ "IPM",
-    answer_in_english == "Others" ~ "Oth",
-    answer_in_english == "Plant Pathology" ~ "PlPath",
-    answer_in_english == "Producer" ~ "Prod",
-    answer_in_english == "Research" ~ "Res",
-    answer_in_english == "Seed Systems" ~ "SS",
-    answer_in_english == "Social Sciences" ~ "SocSci",
-    TRUE ~ NA_character_  # Default case if none of the above conditions are met
-  ))
-#formating the data set to make the visualization, voronoiTreemap was quite picky...  
-colnames(question_2_frequencies)<- c('h2', "h3", "weight","color", "codes")
-question_2_frequencies$h1<- "Total"
-question_2_frequencies <- question_2_frequencies %>%
-  select(h1, h2, h3, color, weight, codes)
-question_2_frequencies$weight<- (question_2_frequencies$weight/sum(question_2_frequencies$weight))*100
-question_2_frequencies$h1<- as.factor(question_2_frequencies$h1)
-question_2_frequencies$h2<- as.factor(question_2_frequencies$h2)
-question_2_frequencies<- data.frame(h1= question_2_frequencies$h1,
-                                    h2= question_2_frequencies$h2,
-                                    h3= question_2_frequencies$h3,
-                                    color= question_2_frequencies$color,
-                                    weight= question_2_frequencies$weight,
-                                    codes= question_2_frequencies$codes)
-gdp_json <- vt_export_json(vt_input_from_df(question_2_frequencies))
-vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3)
-```
-
     ## PhantomJS not found. You can install it with webshot::install_phantomjs(). If it is installed, please make sure the phantomjs executable can be found via the PATH variable.
 
-![](README_files/figure-gfm/question_2-1.png)<!-- -->
-
-``` r
-vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3)
-```
-
-![](README_files/figure-gfm/question_2-2.png)<!-- -->
-
-``` r
-kable(question_2_frequencies)
-```
+![](README_files/figure-gfm/question_2-1.png)<!-- -->![](README_files/figure-gfm/question_2-2.png)<!-- -->
 
 | h1    | h2       | h3                                                  | color    |    weight | codes  |
 |:------|:---------|:----------------------------------------------------|:---------|----------:|:-------|
@@ -898,259 +573,18 @@ kable(question_2_frequencies)
 
 ## Question 3: Do you work in a public or private institution/company?
 
-``` r
-#selecting only question 3----
-  question_3<- filter(individual_surveys, question_number==3)
-#Counts by crop
-  question_3_frequencies <- count_elements_by_group(question_3, "answer_in_english", c("crop"))
-  #calculate the percentages by crop and question 
-  question_3_frequencies <- question_3_frequencies %>%
-  group_by(crop) %>%
-  mutate(total = sum(n),          # Calculate total for each crop group
-         percentage = (n / total) * 100) %>%
-  ungroup()
-  #Plot
-  #Add colors to each 
-  question_3_frequencies<- question_3_frequencies %>%
-  mutate(background_color= case_when(crop=="Banana" ~ "#FFF2CC",
-                     crop=="Plantain" ~ "#BEF4BE"))
-  #bars colors
-question_3_frequencies<- question_3_frequencies %>%
-  mutate(bar_color= case_when(crop=="Banana" & answer_in_english=="Public" ~ "#FFDA00",
-                              crop=="Banana" & answer_in_english=="Private" ~ "#FFEDA3",
-                              crop=="Plantain" & answer_in_english=="Public" ~ "#28B463",
-                              crop=="Plantain" & answer_in_english=="Private" ~ "#82DA99"))
-question_3_frequencies$percentage<- round(question_3_frequencies$percentage,0)
-#custom function
-question_3_plot<- bar_plot_banana_plantain(
-  data_set = question_3_frequencies,
-  x_lab = "Sector Affiliation of Experts",
-  y_lab = "Percent (%)",
-  title = "Expert Affiliation by Crop",
-  x = "answer_in_english",
-  y = "percentage",
-  facet = "crop",
-  alpha = 0.3,
-  background_color = "background_color",
-  bar_color = "bar_color",
-  proportional_limit= 1.05
-)
-question_3_plot
-```
-
-![](README_files/figure-gfm/queestion_3-1.png)<!-- -->
-
-``` r
-#Counts national
-  question_3_frequencies_nal <- count_elements_by_group(question_3, "answer_in_english", c("answer_in_english"))
-  #calculate the percentages by crop and question 
-  question_3_frequencies_nal <- question_3_frequencies_nal %>%
-     ungroup() %>%
-    mutate(total = sum(n),          # Calculate total for each crop group
-         percentage = (n / total) * 100) 
-  #Plot
-  #Add colors to each 
-  question_3_frequencies_nal<- question_3_frequencies_nal %>%
-  mutate(background_color= case_when(answer_in_english=="Public" ~ "transparent",
-                     answer_in_english=="Private" ~ "transparent"))
-  #Add color to the bars
- question_3_frequencies_nal<-  question_3_frequencies_nal %>%
-  mutate(bar_color= case_when(answer_in_english=="Public"~ "#654321",
-                              answer_in_english=="Private"~ "#d8c298"))
-question_3_frequencies_nal$percentage<- round(question_3_frequencies_nal$percentage,0)
-  #custom plot 
-question_3_plot_nal<- bar_plot_banana_plantain(
-  data_set = question_3_frequencies_nal,
-  x_lab = "Sector Affiliation of Experts",
-  y_lab = "Percent (%)",
-  title = "Expert Affiliation",
-  x = "answer_in_english",
-  y = "percentage",
-  alpha = 1,
-  background_color = "background_color",
-  bar_color = "bar_color",
-  proportional_limit= 1.05
-)
-question_3_plot_nal
-```
-
-![](README_files/figure-gfm/queestion_3-2.png)<!-- -->
+![](README_files/figure-gfm/queestion_3-1.png)<!-- -->![](README_files/figure-gfm/queestion_3-2.png)<!-- -->
 
 ## Question 4: What is your level of education?
-
-``` r
-#selecting only question 4----
-  question_4<- filter(individual_surveys, question_number==4)
-#Counts by crop
-  question_4_frequencies <- count_elements_by_group(question_4, "answer_in_english", c("crop"))
-  #calculate the percentages by crop and question 
-  question_4_frequencies <- question_4_frequencies %>%
-  group_by(crop) %>%
-  mutate(total = sum(n),          # Calculate total for each crop group
-         percentage = (n / total) * 100) %>%
-  ungroup()
-  question_4_frequencies$answer_in_english <- factor(
-  question_4_frequencies$answer_in_english, 
-  levels = c("No Formal Education", "Secondary Education", "Bachelor's Degree", "Master's Degree", "Doctorate"),
-  labels = c("No Ed.", "Sec.", "Bac.", "Ms.C", "Ph.D")
-)
-  #Plot
-  #Add colors to each backgorund 
-  question_4_frequencies<- question_4_frequencies %>%
-  mutate(background_color= case_when(crop=="Banana" ~ "#FFF2CC",
-                     crop=="Plantain" ~ "#BEF4BE"))
-  #Colors of the bars
-  # Identify the levels by crop
-  levels_Q_4_banana<- question_4_frequencies$answer_in_english[which( question_4_frequencies$crop=="Banana")]
-  levels_Q_4_plantain<- question_4_frequencies$answer_in_english[which( question_4_frequencies$crop=="Plantain")]
-  #set the color. The +1 is to make a different color that background wich will be the last element in the vector
-  q_4_colors_banana<- palette_banana(length(levels_Q_4_banana)+1)
-  q_4_colors_plantain<- palette_plantain(length(levels_Q_4_plantain)+1)
-  names(q_4_colors_banana)<- levels_Q_4_banana
-  names(q_4_colors_plantain)<- levels_Q_4_plantain
-    # Modify the data_set to include the bar_color
-question_4_frequencies <- question_4_frequencies %>%
-  mutate(bar_color = case_when(
-    crop == "Banana" ~ q_4_colors_banana[answer_in_english],
-    crop == "Plantain" ~ q_4_colors_plantain[answer_in_english]
-  ))
-question_4_frequencies$percentage<- round(question_4_frequencies$percentage, 0)
-dput(unique(question_4_frequencies$answer_in_english))
-```
 
     ## structure(c(3L, 5L, 4L, 1L, 2L), levels = c("No Ed.", "Sec.", 
     ## "Bac.", "Ms.C", "Ph.D"), class = "factor")
 
-``` r
-#custom function
-question_4_plot<- bar_plot_banana_plantain(
-  data_set = question_4_frequencies,
-  x_lab = "Education Level of the Experts",
-  y_lab = "Percent (%)",
-  title = "Eucation Level of the Experts by Crop",
-  x = "answer_in_english",
-  y = "percentage",
-  facet = "crop",
-  alpha = 0.3,
-  background_color = "background_color",
-  bar_color = "bar_color",
-  proportional_limit= 1.05
-)
-question_4_plot
-```
-
-![](README_files/figure-gfm/question_4-1.png)<!-- -->
-
-``` r
-#Counts national
-  question_4_frequencies_nal <- count_elements_by_group(question_4, "answer_in_english", c("answer_in_english"))
-  #calculate the percentages by crop and question 
-  question_4_frequencies_nal <- question_4_frequencies_nal %>%
-     ungroup() %>%
-    mutate(total = sum(n),          # Calculate total for each crop group
-         percentage = (n / total) * 100) 
-  #Plot
-  #Add colors to each background
-   question_4_frequencies_nal$answer_in_english <- factor(
-  question_4_frequencies_nal$answer_in_english, 
-  levels = c("No Formal Education", "Secondary Education", "Bachelor's Degree", "Master's Degree", "Doctorate"),
-  labels = c("No Ed.", "Sec.", "Bac.", "Ms.C", "Ph.D")
-)
-  question_4_frequencies_nal$background_color<-"transparent"
-   q_4_colors_soil_nal<- palette_soil(length(levels(question_4_frequencies_nal$answer_in_english)))
-    names(q_4_colors_soil_nal)<- levels(question_4_frequencies_nal)
- # Modify the data_set to include the bar_color
-question_4_frequencies_nal <- question_4_frequencies_nal %>%
-  mutate(bar_color = q_4_colors_soil_nal[answer_in_english])
-question_4_frequencies_nal$percentage<- round(question_4_frequencies_nal$percentage, 0)
-  #custom plot 
-question_4_plot_nal<- bar_plot_banana_plantain(
-  data_set = question_4_frequencies_nal,
-  x_lab = "Education Level of the Experts",
-  y_lab = "Percent (%)",
-  title = "Education Level of the Experts",
-  x = "answer_in_english",
-  y = "percentage",
-  alpha = 1,
-  background_color = "background_color",
-  bar_color = "bar_color",
-  proportional_limit= 1.05
-)
-question_4_plot_nal
-```
-
-![](README_files/figure-gfm/question_4-2.png)<!-- -->
+![](README_files/figure-gfm/question_4-1.png)<!-- -->![](README_files/figure-gfm/question_4-2.png)<!-- -->
 
 ## Question 5: What are the most prevalent pests and diseases of bananas in the regions where you have experience? Please check all that apply.
 
-``` r
-question_5<- filter(individual_surveys,question_number==5)
-question_5_frequencies <- count_elements_by_group(question_5, "answer_in_english", c("crop"))
-question_5_frequencies$answer_in_english<- as.factor(question_5_frequencies$answer_in_english)
-#finding the number of levels per crop (banana and plantain)
-levels_per_crop_Q5<- tapply(question_5_frequencies$answer_in_english, question_5_frequencies$crop, function(x){length(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question5<- palette_banana(levels_per_crop_Q5["Banana"])
-colors_plantain_question5<- palette_plantain(levels_per_crop_Q5["Plantain"])
-#Assignig a color per factor by crop
-question_5_frequencies <- question_5_frequencies %>%
-  mutate(group_color = case_when(
-    crop == "Banana" ~ colors_banana_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
-"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
-"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
-"Whiteflies", "Yellow Sigatoka"))],
-    crop == "Plantain" ~ colors_plantain_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
-"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
-"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
-"Whiteflies", "Yellow Sigatoka"))]
-  ))
-#Make the abbreviations
-question_5_frequencies <- question_5_frequencies %>%
-  mutate(cat_abbreviations = case_when(
-    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
-    answer_in_english == "Black Sigatoka" ~ "BS",
-    answer_in_english == "Black Weevil" ~ "BW",
-    answer_in_english == "Elephantiasis" ~ "ELE",
-    answer_in_english == "Fusarium" ~ "FUS",
-    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
-    answer_in_english == "Nematodes" ~ "NEM",
-    answer_in_english == "Red Spider Mite" ~ "RSM",
-    answer_in_english == "Scale Insect" ~ "SI",
-    answer_in_english == "Scarab Beetle" ~ "SB",
-    answer_in_english == "Whiteflies" ~ "WF",
-    answer_in_english == "Yellow Sigatoka" ~ "YS",
-    TRUE ~ NA_character_  # Default case if none of the above conditions are met
-  ))
-
-#formating the data set to make the visualization, voronoiTreemap was quite picky...  
-colnames(question_5_frequencies)<- c('h2', "h3", "weight","color", "codes")
-question_5_frequencies$h1<- "Total"
-question_5_frequencies <- question_5_frequencies %>%
-  select(h1, h2, h3, color, weight, codes)
-question_5_frequencies$weight<- (question_5_frequencies$weight/sum(question_5_frequencies$weight))*100
-question_5_frequencies$h1<- as.factor(question_5_frequencies$h1)
-question_5_frequencies$h2<- as.factor(question_5_frequencies$h2)
-question_5_frequencies<- data.frame(h1= question_5_frequencies$h1,
-                                    h2= question_5_frequencies$h2,
-                                    h3= question_5_frequencies$h3,
-                                    color= question_5_frequencies$color,
-                                    weight= question_5_frequencies$weight,
-                                    codes= question_5_frequencies$codes)
-gdp_json <- vt_export_json(vt_input_from_df(question_5_frequencies))
-vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3)
-```
-
-![](README_files/figure-gfm/question_5-1.png)<!-- -->
-
-``` r
-vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3)
-```
-
-![](README_files/figure-gfm/question_5-2.png)<!-- -->
-
-``` r
-kable(question_5_frequencies)
-```
+![](README_files/figure-gfm/question_5-1.png)<!-- -->![](README_files/figure-gfm/question_5-2.png)<!-- -->
 
 | h1    | h2       | h3                    | color    |     weight | codes |
 |:------|:---------|:----------------------|:---------|-----------:|:------|
@@ -1179,14 +613,6 @@ kable(question_5_frequencies)
 | Total | Plantain | Whiteflies            | \#B0EEB5 |  1.7505470 | WF    |
 | Total | Plantain | Yellow Sigatoka       | \#BEF4BE |  5.2516411 | YS    |
 
-``` r
-#select top 5
-question_5_frequencies <- question_5_frequencies %>%
-  group_by(h2) %>%
-  slice_max(order_by = weight, n = 5) 
-kable(question_5_frequencies, label = "TOP 5 pest and Diseases by Crop (banana and plantain")
-```
-
 | h1    | h2       | h3                  | color    |    weight | codes |
 |:------|:---------|:--------------------|:---------|----------:|:------|
 | Total | Banana   | Black Sigatoka      | \#FFDC12 |  8.533917 | BS    |
@@ -1200,59 +626,6 @@ kable(question_5_frequencies, label = "TOP 5 pest and Diseases by Crop (banana a
 | Total | Plantain | Nematodes           | \#79D694 |  7.658643 | NEM   |
 | Total | Plantain | Elephantiasis       | \#50C57B |  5.251641 | ELE   |
 | Total | Plantain | Yellow Sigatoka     | \#BEF4BE |  5.251641 | YS    |
-
-``` r
-#Frequencies by department
-question_5_frequencies_by_depto <- count_elements_by_group(question_5, "answer_in_english", c("crop", "expert_in"))
-#colors by disease
-question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>%
-  mutate(group_color = case_when(
-    crop == "Banana" ~ colors_banana_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
-"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
-"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
-"Whiteflies", "Yellow Sigatoka"))],
-    crop == "Plantain" ~ colors_plantain_question5[match(answer_in_english, c("Banana Mosaic Disease", "Black Sigatoka", 
-"Black Weevil", "Elephantiasis", "Fusarium", "Moko or Madurabiche", 
-"Nematodes", "Red Spider Mite", "Scale Insect", "Scarab Beetle", 
-"Whiteflies", "Yellow Sigatoka"))]
-  ))
-#Make the abbreviations
-question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>%
-  mutate(cat_abbreviations = case_when(
-    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
-    answer_in_english == "Black Sigatoka" ~ "BS",
-    answer_in_english == "Black Weevil" ~ "BW",
-    answer_in_english == "Elephantiasis" ~ "ELE",
-    answer_in_english == "Fusarium" ~ "FUS",
-    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
-    answer_in_english == "Nematodes" ~ "NEM",
-    answer_in_english == "Red Spider Mite" ~ "RSM",
-    answer_in_english == "Scale Insect" ~ "SI",
-    answer_in_english == "Scarab Beetle" ~ "SB",
-    answer_in_english == "Whiteflies" ~ "WF",
-    answer_in_english == "Yellow Sigatoka" ~ "YS",
-    TRUE ~ NA_character_  # Default case if none of the above conditions are met
-  ))
-#tree map
-question_5_frequencies_by_depto<- select(question_5_frequencies_by_depto,!answer_in_english)
-question_5_frequencies_by_depto<- question_5_frequencies_by_depto %>%
-  group_by(crop,expert_in) %>%
-  mutate(total= sum(n),
-         mean= round((n/total)*100,0))
-question_5_frequencies_by_depto<- select(question_5_frequencies_by_depto,!n & !total)
-#put it in long format
-question_5_frequencies_by_depto <- question_5_frequencies_by_depto %>% 
-  uncount(weights = mean, .id = "id")
-#only select top 5 for the tree map
-  #for banana
-  question_5_frequencies_by_depto_banana<- filter(question_5_frequencies_by_depto, cat_abbreviations %in% question_5_frequencies$codes[which(question_5_frequencies$h2=="Banana")], crop=="Banana")
-  #for plantain
-  question_5_frequencies_by_depto_plantain<- filter(question_5_frequencies_by_depto, cat_abbreviations %in% question_5_frequencies$codes[which(question_5_frequencies$h2=="Plantain")], crop=="Plantain")
-#merge both data set
-question_5_frequencies_by_depto<- rbind(question_5_frequencies_by_depto_banana, question_5_frequencies_by_depto_plantain)
-#tree map only plantain
-tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Top 5 Most Limiting Pests and Diseases in Plantains by Department")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
     ## You can override using the `.groups` argument.
@@ -1498,11 +871,6 @@ tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Plantain"), "cr
     ## $draw
     ## [1] TRUE
 
-``` r
-#tree map only banana
-tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="Top 5 Most Limiting Pests and Diseases in Bananas by Department")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
     ## You can override using the `.groups` argument.
 
@@ -1643,74 +1011,9 @@ tree_map_3(data = filter(question_5_frequencies_by_depto, crop=="Banana"), "crop
     ## $draw
     ## [1] TRUE
 
-``` r
-#Additional top 5 diseases and pest in Colombia
-q5_top_5Colobia<- count_elements_by_group(question_5, "answer_in_english", c("answer_in_english"))
-q5_top_5Colobia$mean<-round((q5_top_5Colobia$n/sum(q5_top_5Colobia$n)*100),0)
-q5_top_5Colobia$background_color<- "white"
-q5_top_5Colobia$color<- palette_soil(length(unique(q5_top_5Colobia$answer_in_english)))
-#Make abbreviations 
-q5_top_5Colobia <- q5_top_5Colobia %>%
-  mutate(cat_abbreviations = case_when(
-    answer_in_english == "Banana Mosaic Disease" ~ "BMD",
-    answer_in_english == "Black Sigatoka" ~ "BS",
-    answer_in_english == "Black Weevil" ~ "BW",
-    answer_in_english == "Elephantiasis" ~ "ELE",
-    answer_in_english == "Fusarium" ~ "FUS",
-    answer_in_english == "Moko or Madurabiche" ~ "MOKO",
-    answer_in_english == "Nematodes" ~ "NEM",
-    answer_in_english == "Red Spider Mite" ~ "RSM",
-    answer_in_english == "Scale Insect" ~ "SI",
-    answer_in_english == "Scarab Beetle" ~ "SB",
-    answer_in_english == "Whiteflies" ~ "WF",
-    answer_in_english == "Yellow Sigatoka" ~ "YS",
-    TRUE ~ NA_character_  # Default case if none of the above conditions are met
-  ))
-#sort the results by mean
-q5_top_5Colobia <- q5_top_5Colobia %>%
-  arrange(desc(mean))
-#Finding the order of the levels
-q5_top_5Colobia$cat_abbreviations<- factor(q5_top_5Colobia$cat_abbreviations, levels = q5_top_5Colobia$cat_abbreviations)
-#plot most important pest and diseases
-bar_plot_banana_plantain(data_set = q5_top_5Colobia,x_lab = "Pest and Diseases", y_lab ="Proportion of Experts (%)", title = "
-Important Pests and Diseases in Musaceae Identified by Experts" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
-```
-
 ![](README_files/figure-gfm/question_5-5.png)<!-- -->
 
 ## Question 6: What level of knowledge do producers have about the phytosanitary status of the banana planting material they use?
-
-``` r
-#selecting only question 6----
-  question_6<- filter(individual_surveys, question_number==6)
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_6 <- question_6 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "Very Low Knowledge,Low Knowledge,Moderate Knowledge" ~ "Low Knowledge",
-    answer_in_english == "Very Low Knowledge,Low Knowledge" ~ "Low Knowledge",
-    answer_in_english == "Moderate Knowledge,High Knowledge" ~ "Moderate Knowledge",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_6 <- question_6 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "2,3,4" ~ "3",
-    numeric_answer == "2,3" ~ "2.5",
-    numeric_answer == "4,5" ~ "4.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-  #organizing the order of the levels
-  question_6$answer_in_english<- factor(question_6$answer_in_english,levels = 
-c("No Knowledge", "Very Low Knowledge", "Low Knowledge", "Moderate Knowledge", "High Knowledge", "Very High Knowledge"))
- #average by department (weighted and no weighted)
-    #not weighted 
-    avg_dept_no_weight<- question_6 %>%
-      group_by(crop, expert_in) %>%
-      mutate(numeric_answer=as.numeric(numeric_answer))%>%
-      mutate(average= mean(numeric_answer)) %>%
-      group_by(average)%>%
-      mutate(ave_cat= category_by_mean_by_question(6, mean =average, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -1724,21 +1027,7 @@ c("No Knowledge", "Very Low Knowledge", "Low Knowledge", "Moderate Knowledge", "
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
 
-``` r
-    #weighted 
-    add_weights_question6<- inner_join(question_6, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-    avg_dept_weight<- add_weights_question6 %>%
-      group_by(crop, expert_in) %>%
-      mutate(numeric_answer=as.numeric(numeric_answer))%>%
-      mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-      group_by(average_weighted)%>%
-      mutate(ave_cat_weighted= category_by_mean_by_question(6, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -1751,51 +1040,6 @@ c("No Knowledge", "Very Low Knowledge", "Low Knowledge", "Moderate Knowledge", "
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
-
-``` r
-    #finding the levels per crop (banana and plantain) no weighted
-  levels_per_crop_Q6_no_weighted<- tapply(avg_dept_no_weight$ave_cat, avg_dept_no_weight$crop, function(x){(unique(x))})
-  #generating a ramp palette according to the number of levels per crop
-  colors_banana_question6_no_weighted<- palette_banana(length(levels_per_crop_Q6_no_weighted$Banana))
-  colors_plantain_question6_no_weighted<- palette_plantain(length(levels_per_crop_Q6_no_weighted$Plantain))
-  #Assigning the colors by crop and answer
-    # Define the knowledge levels for each crop
-    levels_by_crop_no_weighted <- list(
-      Banana = levels_per_crop_Q6_no_weighted$Banana,
-      Plantain = levels_per_crop_Q6_no_weighted$Plantain
-    )
-    # Define the colors for each crop
-    colors_by_crop_no_weighted <- list(
-      Banana = colors_banana_question6_no_weighted, # Replace with actual color vector for Banana
-      Plantain = colors_plantain_question6_no_weighted # Replace with actual color vector for Plantain
-      # Add more crops and their color vectors here if needed
-    )
-    # Now call the function
-    avg_dept_no_weight <- assign_group_color(data = avg_dept_no_weight, levels_by_crop = levels_by_crop_no_weighted, colors_by_crop = colors_by_crop_no_weighted,answer_col =  "ave_cat")
-    
-    #finding the levels per crop (banana and plantain) weighted
-  levels_per_crop_Q6_weighted<- tapply(avg_dept_weight$ave_cat_weighted, avg_dept_weight$crop, function(x){(unique(x))})
-  #generating a ramp palette according to the number of levels per crop
-  colors_banana_question6_weighted<- palette_banana(length(levels_per_crop_Q6_weighted$Banana))
-  colors_plantain_question6_weighted<- palette_plantain(length(levels_per_crop_Q6_weighted$Plantain))
-  #Assigning the colors by crop and answer
-    # Define the knowledge levels for each crop
-    levels_by_crop_weighted <- list(
-      Banana = levels_per_crop_Q6_weighted$Banana,
-      Plantain = levels_per_crop_Q6_weighted$Plantain
-    )
-    # Define the colors for each crop
-    colors_by_crop_weighted <- list(
-      Banana = colors_banana_question6_weighted, # Replace with actual color vector for Banana
-      Plantain = colors_plantain_question6_weighted # Replace with actual color vector for Plantain
-      # Add more crops and their color vectors here if needed
-    )
-    # Now call the function
-    avg_dept_weight <- assign_group_color(data = avg_dept_weight, levels_by_crop = levels_by_crop_weighted, colors_by_crop = colors_by_crop_weighted,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -1955,10 +1199,6 @@ tree_map_3(data = avg_dept_no_weight, "crop", "expert_in", "ave_cat", "group_col
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -2117,17 +1357,6 @@ tree_map_3(data = avg_dept_weight, "crop", "expert_in", "ave_cat_weighted", "gro
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-  #non weighted
-  nal_q6_no_weight<- question_6 %>%
-  group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>% 
-  group_by(average) %>%
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =6)) %>%
-  rename(EKE.expert.in=expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -2137,39 +1366,13 @@ tree_map_3(data = avg_dept_weight, "crop", "expert_in", "ave_cat_weighted", "gro
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-  nal_q6_no_weight<- full_join(codes_department, nal_q6_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-  nal_q6_no_weight$cat<- factor(nal_q6_no_weight$cat, levels = c("Very Low Knowledge","Low Knowledge", "Moderate Knowledge", "High Knowledge", "Very High Knowledge", NA))
-  colmap(departamentos, data = nal_q6_no_weight, data_id = "id_depto", var = "cat")+
-    scale_fill_manual(values = palette_soil(length(unique(nal_q6_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_6-3.png)<!-- -->
 
-``` r
-# weighted
-  nal_q6_weight<- inner_join(question_6, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-  nal_q6_weight<- nal_q6_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =6)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -2180,55 +1383,13 @@ tree_map_3(data = avg_dept_weight, "crop", "expert_in", "ave_cat_weighted", "gro
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-  nal_q6_weight<- full_join(codes_department, nal_q6_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-  nal_q6_weight$cat_weighted<- factor(nal_q6_weight$cat_weighted, levels = c("Very Low Knowledge","Low Knowledge", "Moderate Knowledge", "High Knowledge", "Very High Knowledge", NA))
-  colmap(departamentos, data = nal_q6_weight, data_id = "id_depto", var = "cat_weighted")+
-    scale_fill_manual(values = palette_soil(length(unique(nal_q6_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_6-4.png)<!-- -->
 
 ## Question 7: What is the likelihood of each region reporting an outbreak of a pest or disease in banana plantations?
-
-``` r
-#selecting only question 7----
-question_7<- filter(individual_surveys, question_number==7)
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_7 <- question_7 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "Somewhat Likely,Likely" ~ "Likely",
-    answer_in_english == "Extremely Unlikely,Unlikely" ~ "Very Unlikely",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_7 <- question_7 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "1,3" ~ "2",
-    numeric_answer == "6,7" ~ "6.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-question_7$answer_in_english<- factor(question_7$answer_in_english,levels = c("Extremely Unlikely", "Very Unlikely", "Somewhat Unlikely", 
-                                                                              "Unlikely", "Neutral", "Somewhat Likely", "Likely", 
-                                                                              "Very Likely", "Extremely Likely"))
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_7<- question_7 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(7, mean =average, language = "en"))
-```
 
     ## Warning: There were 12 warnings in `mutate()`.
     ## The first warning was:
@@ -2242,21 +1403,7 @@ avg_dept_no_weight_7<- question_7 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 11 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_7<- inner_join(question_7, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_7<- add_weights_question_7 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(7, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 9 warnings in `mutate()`.
     ## The first warning was:
@@ -2269,51 +1416,6 @@ avg_dept_weight_7<- add_weights_question_7 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q7_no_weighted<- tapply(avg_dept_no_weight_7$ave_cat, avg_dept_no_weight_7$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question7_no_weighted<- palette_banana(length(levels_per_crop_Q7_no_weighted$Banana))
-colors_plantain_question7_no_weighted<- palette_plantain(length(levels_per_crop_Q7_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_7 <- list(
-  Banana = levels_per_crop_Q7_no_weighted$Banana,
-  Plantain = levels_per_crop_Q7_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_7 <- list(
-  Banana = colors_banana_question7_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question7_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_7 <- assign_group_color(data = avg_dept_no_weight_7, levels_by_crop = levels_by_crop_no_weighted_7, colors_by_crop = colors_by_crop_no_weighted_7,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q7_weighted<- tapply(avg_dept_weight_7$ave_cat_weighted, avg_dept_weight_7$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question7_weighted<- palette_banana(length(levels_per_crop_Q7_weighted$Banana))
-colors_plantain_question7_weighted<- palette_plantain(length(levels_per_crop_Q7_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_7 <- list(
-  Banana = levels_per_crop_Q7_weighted$Banana,
-  Plantain = levels_per_crop_Q7_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_7 <- list(
-  Banana = colors_banana_question7_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question7_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_7 <- assign_group_color(data = avg_dept_weight_7, levels_by_crop = levels_by_crop_weighted_7, colors_by_crop = colors_by_crop_weighted_7,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_7, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -2497,10 +1599,6 @@ tree_map_3(data = avg_dept_no_weight_7, "crop", "expert_in", "ave_cat", "group_c
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_7, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -2659,16 +1757,6 @@ tree_map_3(data = avg_dept_weight_7, "crop", "expert_in", "ave_cat_weighted", "g
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q7_no_weight<- question_7 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =7))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -2678,41 +1766,13 @@ nal_q7_no_weight<- question_7 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q7_no_weight<- full_join(codes_department, nal_q7_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q7_no_weight$cat<- factor(nal_q7_no_weight$cat, levels = c("Extremely Unlikely", "Very Unlikely", "Somewhat Unlikely", 
-                                                                        "Unlikely", "Neutral", "Somewhat Likely", "Likely", 
-                                                                        "Very Likely", "Extremely Likely"))
-colmap(departamentos, data = nal_q7_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q7_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_7-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q7_weight<- inner_join(question_7, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q7_weight<- nal_q7_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =7)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -2723,53 +1783,13 @@ nal_q7_weight<- nal_q7_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q7_weight<- full_join(codes_department, nal_q7_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q7_weight$cat_weighted<- factor(nal_q7_weight$cat_weighted, levels = c("Extremely Unlikely", "Very Unlikely", "Somewhat Unlikely", 
-                                                                           "Unlikely", "Neutral", "Somewhat Likely", "Likely", 
-                                                                           "Very Likely", "Extremely Likely"))
-colmap(departamentos, data = nal_q7_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q7_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_7-4.png)<!-- -->
 
 ## Question 8: What is the perceived effectiveness of the policies implemented by the government to ensure phytosanitary safety in banana production systems?
-
-``` r
-#selecting only question 8----
-question_8<- filter(individual_surveys, question_number==8)
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_8 <- question_8 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "Slightly Effective,Moderately Effective" ~ "Moderately Effective",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_8 <- question_8 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "2,3" ~ "2.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-question_8$answer_in_english<- factor(question_8$answer_in_english,levels = c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective", "Extremely Effective"))
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_8<- question_8 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(8, mean =average, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -2783,21 +1803,7 @@ avg_dept_no_weight_8<- question_8 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_8<- inner_join(question_8, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_8<- add_weights_question_8 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(8, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 9 warnings in `mutate()`.
     ## The first warning was:
@@ -2810,51 +1816,6 @@ avg_dept_weight_8<- add_weights_question_8 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q8_no_weighted<- tapply(avg_dept_no_weight_8$ave_cat, avg_dept_no_weight_8$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question8_no_weighted<- palette_banana(length(levels_per_crop_Q8_no_weighted$Banana))
-colors_plantain_question8_no_weighted<- palette_plantain(length(levels_per_crop_Q8_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_8 <- list(
-  Banana = levels_per_crop_Q8_no_weighted$Banana,
-  Plantain = levels_per_crop_Q8_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_8 <- list(
-  Banana = colors_banana_question8_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question8_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_8 <- assign_group_color(data = avg_dept_no_weight_8, levels_by_crop = levels_by_crop_no_weighted_8, colors_by_crop = colors_by_crop_no_weighted_8,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q8_weighted<- tapply(avg_dept_weight_8$ave_cat_weighted, avg_dept_weight_8$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question8_weighted<- palette_banana(length(levels_per_crop_Q8_weighted$Banana))
-colors_plantain_question8_weighted<- palette_plantain(length(levels_per_crop_Q8_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_8 <- list(
-  Banana = levels_per_crop_Q8_weighted$Banana,
-  Plantain = levels_per_crop_Q8_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_8 <- list(
-  Banana = colors_banana_question8_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question8_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_8 <- assign_group_color(data = avg_dept_weight_8, levels_by_crop = levels_by_crop_weighted_8, colors_by_crop = colors_by_crop_weighted_8,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_8, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -3034,10 +1995,6 @@ tree_map_3(data = avg_dept_no_weight_8, "crop", "expert_in", "ave_cat", "group_c
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_8, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -3192,47 +2149,13 @@ tree_map_3(data = avg_dept_weight_8, "crop", "expert_in", "ave_cat_weighted", "g
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q8_no_weight<- question_8 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =8))%>%
-  rename(EKE.expert.in = expert_in)
-  
-nal_q8_no_weight<- full_join(codes_department, nal_q8_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q8_no_weight$cat<- factor(nal_q8_no_weight$cat, levels = c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective", "Extremely Effective"))
-colmap(departamentos, data = nal_q8_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q8_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_8-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q8_weight<- inner_join(question_8, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q8_weight<- nal_q8_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =8)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -3243,52 +2166,13 @@ nal_q8_weight<- nal_q8_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q8_weight<- full_join(codes_department, nal_q8_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q8_weight$cat_weighted<- factor(nal_q8_weight$cat_weighted, levels = c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective", "Extremely Effective"))
-colmap(departamentos, data = nal_q8_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q8_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_8-4.png)<!-- -->
 
 ## Question 9: What is the level of training of producers on phytosanitary issues associated with banana production?
-
-``` r
-#selecting only question 9----
-question_9<- filter(individual_surveys, question_number==9)
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_9 <- question_9 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "Adequate,Good" ~ "Good",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_9 <- question_9 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "4,5" ~ "4.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-question_9$answer_in_english<- factor(question_9$answer_in_english,levels = c("No Training or Information Available", "Poor", "Fair", "Adequate", "Good", "Excellent", "Unsure"))
-question_9<- filter(question_9, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_9<- question_9 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(9, mean =average, language = "en"))
-```
 
     ## Warning: There were 9 warnings in `mutate()`.
     ## The first warning was:
@@ -3302,21 +2186,7 @@ avg_dept_no_weight_9<- question_9 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_9<- inner_join(question_9, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_9<- add_weights_question_9 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(9, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 10 warnings in `mutate()`.
     ## The first warning was:
@@ -3329,51 +2199,6 @@ avg_dept_weight_9<- add_weights_question_9 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 9 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q9_no_weighted<- tapply(avg_dept_no_weight_9$ave_cat, avg_dept_no_weight_9$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question9_no_weighted<- palette_banana(length(levels_per_crop_Q9_no_weighted$Banana))
-colors_plantain_question9_no_weighted<- palette_plantain(length(levels_per_crop_Q9_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_9 <- list(
-  Banana = levels_per_crop_Q9_no_weighted$Banana,
-  Plantain = levels_per_crop_Q9_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_9 <- list(
-  Banana = colors_banana_question9_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question9_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_9 <- assign_group_color(data = avg_dept_no_weight_9, levels_by_crop = levels_by_crop_no_weighted_9, colors_by_crop = colors_by_crop_no_weighted_9,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q9_weighted<- tapply(avg_dept_weight_9$ave_cat_weighted, avg_dept_weight_9$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question9_weighted<- palette_banana(length(levels_per_crop_Q9_weighted$Banana))
-colors_plantain_question9_weighted<- palette_plantain(length(levels_per_crop_Q9_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_9 <- list(
-  Banana = levels_per_crop_Q9_weighted$Banana,
-  Plantain = levels_per_crop_Q9_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_9 <- list(
-  Banana = colors_banana_question9_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question9_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_9 <- assign_group_color(data = avg_dept_weight_9, levels_by_crop = levels_by_crop_weighted_9, colors_by_crop = colors_by_crop_weighted_9,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_9, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -3598,10 +2423,6 @@ tree_map_3(data = avg_dept_no_weight_9, "crop", "expert_in", "ave_cat", "group_c
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_9, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -3819,16 +2640,6 @@ tree_map_3(data = avg_dept_weight_9, "crop", "expert_in", "ave_cat_weighted", "g
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q9_no_weight<- question_9 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =9))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
@@ -3840,39 +2651,13 @@ nal_q9_no_weight<- question_9 %>% group_by(expert_in) %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q9_no_weight<- full_join(codes_department, nal_q9_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q9_no_weight$cat<- factor(nal_q9_no_weight$cat, levels = c("No Training or Information Available", "Poor", "Fair", "Adequate", "Good", "Excellent", "Unsure"))
-colmap(departamentos, data = nal_q9_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q9_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_9-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q9_weight<- inner_join(question_9, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q9_weight<- nal_q9_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =9)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -3883,40 +2668,985 @@ nal_q9_weight<- nal_q9_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q9_weight<- full_join(codes_department, nal_q9_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q9_weight$cat_weighted<- factor(nal_q9_weight$cat_weighted, levels = c("No Training or Information Available", "Poor", "Fair", "Adequate", "Good", "Excellent", "Unsure"))
-colmap(departamentos, data = nal_q9_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q9_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_9-4.png)<!-- -->
 
-## Question 13: How frequent is the use of new planting material to renew the production system?
+## Question 10: What are the sources where banana planting materials are acquired, and in what percentage? Ensure that the contents of each row add up to 100%.
 
-``` r
-#selecting only question 13----
-question_13<- filter(individual_surveys, question_number==13)
-#organizing the order of the levels
-question_13$answer_in_english<- factor(question_13$answer_in_english,levels = c("Every 1 or 2 cycles", "Every 3 to 4 cycles", "Every 5 to 6 cycles",  "Every 7 or more cycles", "Not Sure"))
-question_13<- filter(question_13, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_13<- question_13 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(13, mean =average, language = "en"))
-```
+    ## `summarise()` has grouped output by 'expert_ID'. You can override using the
+    ## `.groups` argument.
+
+![](README_files/figure-gfm/question_10-1.png)<!-- -->![](README_files/figure-gfm/question_10-2.png)<!-- -->
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+![](README_files/figure-gfm/question_10-3.png)<!-- -->![](README_files/figure-gfm/question_10-4.png)<!-- -->
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_10-5.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in cat_abbreviations vSize  vColor stdErr
+    ## 1  Plantain          Antioquia              CBNC    70 #28B463     70
+    ## 2  Plantain          Antioquia            CTCPNP    30 #59C981     30
+    ## 3  Plantain          Antioquia              <NA>   100 #28B463    100
+    ## 4  Plantain             Arauca            CSPCSF     5 #38BB6D      5
+    ## 5  Plantain             Arauca               LCC    12 #6AD08B     12
+    ## 6  Plantain             Arauca               LMI    82 #7BD795     82
+    ## 7  Plantain             Arauca              <NA>    99 #38BB6D     99
+    ## 8  Plantain          Atlántico               LMI   100 #7BD795    100
+    ## 9  Plantain          Atlántico              <NA>   100 #7BD795    100
+    ## 10 Plantain            Bolívar               LMI   100 #7BD795    100
+    ## 11 Plantain            Bolívar              <NA>   100 #7BD795    100
+    ## 12 Plantain             Caldas              CBNC     4 #28B463      4
+    ## 13 Plantain             Caldas            CSPCSF    34 #38BB6D     34
+    ## 14 Plantain             Caldas               LCC     4 #6AD08B      4
+    ## 15 Plantain             Caldas               LMI    40 #7BD795     40
+    ## 16 Plantain             Caldas              <NA>   100 #28B463    100
+    ## 17 Plantain             Caldas            PMSGRI     4 #9CE5A9      4
+    ## 18 Plantain             Caldas             PMSNC    14 #ADECB3     14
+    ## 19 Plantain           Casanare            CSPCSF     5 #38BB6D      5
+    ## 20 Plantain           Casanare               LCC     8 #6AD08B      8
+    ## 21 Plantain           Casanare               LMI    88 #7BD795     88
+    ## 22 Plantain           Casanare              <NA>   101 #38BB6D    101
+    ## 23 Plantain              Chocó               LMI    80 #7BD795     80
+    ## 24 Plantain              Chocó              <NA>   100 #7BD795    100
+    ## 25 Plantain              Chocó            PMSGRI    20 #9CE5A9     20
+    ## 26 Plantain            Córdoba               LMI   100 #7BD795    100
+    ## 27 Plantain            Córdoba              <NA>   100 #7BD795    100
+    ## 28 Plantain         La Guajira            CSPCSF    40 #38BB6D     40
+    ## 29 Plantain         La Guajira               LMI    20 #7BD795     20
+    ## 30 Plantain         La Guajira              <NA>   100 #38BB6D    100
+    ## 31 Plantain         La Guajira             PMSNC    40 #ADECB3     40
+    ## 32 Plantain          Magdalena            CSPCSF    40 #38BB6D     40
+    ## 33 Plantain          Magdalena               LMI    40 #7BD795     40
+    ## 34 Plantain          Magdalena              <NA>   100 #38BB6D    100
+    ## 35 Plantain          Magdalena             PMSNC    20 #ADECB3     20
+    ## 36 Plantain               Meta              CBNC     8 #28B463      8
+    ## 37 Plantain               Meta            CSPCSF    10 #38BB6D     10
+    ## 38 Plantain               Meta            CTCPNP     1 #59C981      1
+    ## 39 Plantain               Meta               LCC     6 #6AD08B      6
+    ## 40 Plantain               Meta               LMI    62 #7BD795     62
+    ## 41 Plantain               Meta              <NA>    99 #28B463     99
+    ## 42 Plantain               Meta            PMSGRI     3 #9CE5A9      3
+    ## 43 Plantain               Meta             PMSNC     9 #ADECB3      9
+    ## 44 Plantain               <NA>              <NA>  1698 #7BD795   1698
+    ## 45 Plantain Norte De Santander               LMI   100 #7BD795    100
+    ## 46 Plantain Norte De Santander              <NA>   100 #7BD795    100
+    ## 47 Plantain            Quindío              CBNC     7 #28B463      7
+    ## 48 Plantain            Quindío            CSPCSF    33 #38BB6D     33
+    ## 49 Plantain            Quindío               LCC     7 #6AD08B      7
+    ## 50 Plantain            Quindío               LMI    30 #7BD795     30
+    ## 51 Plantain            Quindío              <NA>   100 #28B463    100
+    ## 52 Plantain            Quindío            PMSGRI     3 #9CE5A9      3
+    ## 53 Plantain            Quindío             PMSNC    20 #ADECB3     20
+    ## 54 Plantain          Risaralda              CBNC     5 #28B463      5
+    ## 55 Plantain          Risaralda            CSPCSF    28 #38BB6D     28
+    ## 56 Plantain          Risaralda               LCC     8 #6AD08B      8
+    ## 57 Plantain          Risaralda               LMI    33 #7BD795     33
+    ## 58 Plantain          Risaralda              <NA>    99 #28B463     99
+    ## 59 Plantain          Risaralda            PMSGRI     5 #9CE5A9      5
+    ## 60 Plantain          Risaralda             PMSNC    20 #ADECB3     20
+    ## 61 Plantain          Santander               LMI   100 #7BD795    100
+    ## 62 Plantain          Santander              <NA>   100 #7BD795    100
+    ## 63 Plantain              Sucre               LMI   100 #7BD795    100
+    ## 64 Plantain              Sucre              <NA>   100 #7BD795    100
+    ## 65 Plantain             Tolima               LMI   100 #7BD795    100
+    ## 66 Plantain             Tolima              <NA>   100 #7BD795    100
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.0000000 0.43189369 0.17726737 0.23255814 #28B463
+    ## 2           NA     3 0.0000000 0.33222591 0.17726737 0.09966777 #59C981
+    ## 3           NA     2 0.0000000 0.33222591 0.17726737 0.33222591 #28B463
+    ## 4           NA     3 0.8195893 0.21708097 0.04612002 0.06384734 #38BB6D
+    ## 5           NA     3 0.8195893 0.28092832 0.04612002 0.15323363 #6AD08B
+    ## 6           NA     3 0.5971281 0.21708097 0.22246127 0.21708097 #7BD795
+    ## 7           NA     2 0.5971281 0.21708097 0.26858129 0.21708097 #38BB6D
+    ## 8           NA     3 0.0000000 0.00000000 0.17726737 0.33222591 #7BD795
+    ## 9           NA     2 0.0000000 0.00000000 0.17726737 0.33222591 #7BD795
+    ## 10          NA     3 0.1772674 0.66666667 0.17667845 0.33333333 #7BD795
+    ## 11          NA     2 0.1772674 0.66666667 0.17667845 0.33333333 #7BD795
+    ## 12          NA     3 0.2724019 0.37666667 0.05436260 0.04333333 #28B463
+    ## 13          NA     3 0.2727692 0.42000000 0.08117658 0.24666667 #38BB6D
+    ## 14          NA     3 0.2724019 0.33333333 0.05436260 0.04333333 #6AD08B
+    ## 15          NA     3 0.1772674 0.42000000 0.09550186 0.24666667 #7BD795
+    ## 16          NA     2 0.1772674 0.33333333 0.17667845 0.33333333 #28B463
+    ## 17          NA     3 0.3267645 0.33333333 0.02718130 0.08666667 #9CE5A9
+    ## 18          NA     3 0.1772674 0.33333333 0.09513455 0.08666667 #ADECB3
+    ## 19          NA     3 0.1090876 0.66445183 0.06817976 0.04318937 #38BB6D
+    ## 20          NA     3 0.0000000 0.66445183 0.10908761 0.04318937 #6AD08B
+    ## 21          NA     3 0.0000000 0.70764120 0.17726737 0.29235880 #7BD795
+    ## 22          NA     2 0.0000000 0.66445183 0.17726737 0.33554817 #38BB6D
+    ## 23          NA     3 0.1772674 0.06666667 0.17667845 0.26666667 #7BD795
+    ## 24          NA     2 0.1772674 0.00000000 0.17667845 0.33333333 #7BD795
+    ## 25          NA     3 0.1772674 0.00000000 0.17667845 0.06666667 #9CE5A9
+    ## 26          NA     3 0.3539458 0.72652689 0.21535139 0.27347311 #7BD795
+    ## 27          NA     2 0.3539458 0.72652689 0.21535139 0.27347311 #7BD795
+    ## 28          NA     3 0.5692972 0.86326345 0.17228112 0.13673655 #38BB6D
+    ## 29          NA     3 0.7415783 0.72652689 0.04307028 0.27347311 #7BD795
+    ## 30          NA     2 0.5692972 0.72652689 0.21535139 0.27347311 #38BB6D
+    ## 31          NA     3 0.5692972 0.72652689 0.17228112 0.13673655 #ADECB3
+    ## 32          NA     3 0.7846486 0.86326345 0.17228112 0.13673655 #38BB6D
+    ## 33          NA     3 0.7846486 0.72652689 0.17228112 0.13673655 #7BD795
+    ## 34          NA     2 0.7846486 0.72652689 0.21535139 0.27347311 #38BB6D
+    ## 35          NA     3 0.9569297 0.72652689 0.04307028 0.27347311 #ADECB3
+    ## 36          NA     3 0.7653305 0.00000000 0.04461283 0.10560696 #28B463
+    ## 37          NA     3 0.7653305 0.10560696 0.05283098 0.11147401 #38BB6D
+    ## 38          NA     3 0.8517678 0.00000000 0.01394151 0.04224278 #59C981
+    ## 39          NA     3 0.8099433 0.04224278 0.05576604 0.06336418 #6AD08B
+    ## 40          NA     3 0.5971281 0.00000000 0.16820242 0.21708097 #7BD795
+    ## 41          NA     2 0.5971281 0.00000000 0.26858129 0.21708097 #28B463
+    ## 42          NA     3 0.8099433 0.00000000 0.04182453 0.04224278 #9CE5A9
+    ## 43          NA     3 0.8181615 0.10560696 0.04754788 0.11147401 #ADECB3
+    ## 44          NA     1 0.0000000 0.00000000 1.00000000 1.00000000 #7BD795
+    ## 45          NA     3 0.3539458 0.48435126 0.24318225 0.24217563 #7BD795
+    ## 46          NA     2 0.3539458 0.48435126 0.24318225 0.24217563 #7BD795
+    ## 47          NA     3 0.5071506 0.29781057 0.07409906 0.05563494 #28B463
+    ## 48          NA     3 0.3539458 0.35749736 0.15320482 0.12685390 #38BB6D
+    ## 49          NA     3 0.5071506 0.24217563 0.07409906 0.05563494 #6AD08B
+    ## 50          NA     3 0.3539458 0.24217563 0.15320482 0.11532173 #7BD795
+    ## 51          NA     2 0.3539458 0.24217563 0.24318225 0.24217563 #28B463
+    ## 52          NA     3 0.5812497 0.24217563 0.01587837 0.11126988 #9CE5A9
+    ## 53          NA     3 0.5071506 0.35344551 0.08997743 0.13090575 #ADECB3
+    ## 54          NA     3 0.9646604 0.08332401 0.03533964 0.08332401 #28B463
+    ## 55          NA     3 0.8657094 0.16664802 0.13429064 0.12279328 #38BB6D
+    ## 56          NA     3 0.8657094 0.00000000 0.09895100 0.04761372 #6AD08B
+    ## 57          NA     3 0.8657094 0.28944130 0.13429064 0.14472065 #7BD795
+    ## 58          NA     2 0.8657094 0.00000000 0.13429064 0.43416195 #28B463
+    ## 59          NA     3 0.9646604 0.00000000 0.03533964 0.08332401 #9CE5A9
+    ## 60          NA     3 0.8657094 0.04761372 0.09895100 0.11903430 #ADECB3
+    ## 61          NA     3 0.3539458 0.00000000 0.24318225 0.24217563 #7BD795
+    ## 62          NA     2 0.3539458 0.00000000 0.24318225 0.24217563 #7BD795
+    ## 63          NA     3 0.5971281 0.43416195 0.20143596 0.29236495 #7BD795
+    ## 64          NA     2 0.5971281 0.43416195 0.20143596 0.29236495 #7BD795
+    ## 65          NA     3 0.7985640 0.43416195 0.20143596 0.29236495 #7BD795
+    ## 66          NA     2 0.7985640 0.43416195 0.20143596 0.29236495 #7BD795
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_10-6.png)<!-- -->
+
+    ## $tm
+    ##      crop  expert_in cat_abbreviations vSize  vColor stdErr vColorValue level
+    ## 1  Banana  Antioquia              CBNC    17 #FFDA00     17          NA     3
+    ## 2  Banana  Antioquia            CSPCSF    26 #FFDC16     26          NA     3
+    ## 3  Banana  Antioquia            CTCPIP     4 #FFDF2D      4          NA     3
+    ## 4  Banana  Antioquia            CTCPNP    32 #FFE244     32          NA     3
+    ## 5  Banana  Antioquia               LCC     2 #FFE45A      2          NA     3
+    ## 6  Banana  Antioquia               LMI    10 #FFE771     10          NA     3
+    ## 7  Banana  Antioquia              <NA>   100 #FFDA00    100          NA     2
+    ## 8  Banana  Antioquia            PMSGRI     2 #FFEC9E      2          NA     3
+    ## 9  Banana  Antioquia             PMSNC     6 #FFEFB5      6          NA     3
+    ## 10 Banana  Antioquia             WSNGS     1 #FFF2CC      1          NA     3
+    ## 11 Banana      Cesar            CSPCSF     5 #FFDC16      5          NA     3
+    ## 12 Banana      Cesar            CTCPNP    95 #FFE244     95          NA     3
+    ## 13 Banana      Cesar              <NA>   100 #FFDC16    100          NA     2
+    ## 14 Banana      Chocó            CTCPNP    10 #FFE244     10          NA     3
+    ## 15 Banana      Chocó               LMI    30 #FFE771     30          NA     3
+    ## 16 Banana      Chocó              <NA>   100 #FFE244    100          NA     2
+    ## 17 Banana      Chocó            PMSGRI    10 #FFEC9E     10          NA     3
+    ## 18 Banana      Chocó             PMSNC    50 #FFEFB5     50          NA     3
+    ## 19 Banana    Córdoba              <NA>   100 #FFEA88    100          NA     2
+    ## 20 Banana    Córdoba                NS   100 #FFEA88    100          NA     3
+    ## 21 Banana La Guajira              CBNC    22 #FFDA00     22          NA     3
+    ## 22 Banana La Guajira            CSPCSF    15 #FFDC16     15          NA     3
+    ## 23 Banana La Guajira            CTCPIP    13 #FFDF2D     13          NA     3
+    ## 24 Banana La Guajira            CTCPNP    34 #FFE244     34          NA     3
+    ## 25 Banana La Guajira               LCC     3 #FFE45A      3          NA     3
+    ## 26 Banana La Guajira               LMI     8 #FFE771      8          NA     3
+    ## 27 Banana La Guajira              <NA>    99 #FFDA00     99          NA     2
+    ## 28 Banana La Guajira            PMSGRI     1 #FFEC9E      1          NA     3
+    ## 29 Banana La Guajira             PMSNC     3 #FFEFB5      3          NA     3
+    ## 30 Banana  Magdalena              CBNC    22 #FFDA00     22          NA     3
+    ## 31 Banana  Magdalena            CSPCSF    24 #FFDC16     24          NA     3
+    ## 32 Banana  Magdalena            CTCPIP     9 #FFDF2D      9          NA     3
+    ## 33 Banana  Magdalena            CTCPNP    35 #FFE244     35          NA     3
+    ## 34 Banana  Magdalena               LCC     1 #FFE45A      1          NA     3
+    ## 35 Banana  Magdalena               LMI     4 #FFE771      4          NA     3
+    ## 36 Banana  Magdalena              <NA>    99 #FFDA00     99          NA     2
+    ## 37 Banana  Magdalena            PMSGRI     2 #FFEC9E      2          NA     3
+    ## 38 Banana  Magdalena             PMSNC     2 #FFEFB5      2          NA     3
+    ## 39 Banana       <NA>              <NA>   598 #FFE244    598          NA     1
+    ##           x0         y0          w          h   color
+    ## 1  0.0000000 0.50000000 0.13537187 0.21000000 #FFDA00
+    ## 2  0.1845231 0.71000000 0.14992504 0.29000000 #FFDC16
+    ## 3  0.2627807 0.61666667 0.07166746 0.09333333 #FFDF2D
+    ## 4  0.0000000 0.71000000 0.18452312 0.29000000 #FFE244
+    ## 5  0.2627807 0.52333333 0.03583373 0.09333333 #FFE45A
+    ## 6  0.1353719 0.57875000 0.12740882 0.13125000 #FFE771
+    ## 7  0.0000000 0.50000000 0.33444816 0.50000000 #FFDA00
+    ## 8  0.2986144 0.52333333 0.03583373 0.09333333 #FFEC9E
+    ## 9  0.1353719 0.50000000 0.12740882 0.07875000 #FFEFB5
+    ## 10 0.2627807 0.50000000 0.07166746 0.02333333 #FFF2CC
+    ## 11 0.0000000 0.00000000 0.33444816 0.02500000 #FFDC16
+    ## 12 0.0000000 0.02500000 0.33444816 0.47500000 #FFE244
+    ## 13 0.0000000 0.00000000 0.33444816 0.50000000 #FFDC16
+    ## 14 0.3344482 0.49748744 0.16638796 0.10050251 #FFE244
+    ## 15 0.5424331 0.59798995 0.12479097 0.40201005 #FFE771
+    ## 16 0.3344482 0.49748744 0.33277592 0.50251256 #FFE244
+    ## 17 0.5008361 0.49748744 0.16638796 0.10050251 #FFEC9E
+    ## 18 0.3344482 0.59798995 0.20798495 0.40201005 #FFEFB5
+    ## 19 0.6672241 0.49748744 0.33277592 0.50251256 #FFEA88
+    ## 20 0.6672241 0.49748744 0.33277592 0.50251256 #FFEA88
+    ## 21 0.5364907 0.21608040 0.13073340 0.28140704 #FFDA00
+    ## 22 0.3344482 0.00000000 0.11608462 0.21608040 #FFDC16
+    ## 23 0.4505328 0.00000000 0.10060667 0.21608040 #FFDF2D
+    ## 24 0.3344482 0.21608040 0.20204252 0.28140704 #FFE244
+    ## 25 0.6355646 0.05762144 0.03165944 0.15845896 #FFE45A
+    ## 26 0.5511395 0.05762144 0.08442518 0.15845896 #FFE771
+    ## 27 0.3344482 0.00000000 0.33277592 0.49748744 #FFDA00
+    ## 28 0.6382029 0.00000000 0.02902116 0.05762144 #FFEC9E
+    ## 29 0.5511395 0.00000000 0.08706347 0.05762144 #FFEFB5
+    ## 30 0.6672241 0.00000000 0.18302676 0.20100503 #FFDA00
+    ## 31 0.8646335 0.20100503 0.13536648 0.29648241 #FFDC16
+    ## 32 0.8502508 0.06184770 0.10815217 0.13915733 #FFDF2D
+    ## 33 0.6672241 0.20100503 0.19740944 0.29648241 #FFE244
+    ## 34 0.9584030 0.00000000 0.04159699 0.04020101 #FFE45A
+    ## 35 0.8502508 0.00000000 0.10815217 0.06184770 #FFE771
+    ## 36 0.6672241 0.00000000 0.33277592 0.49748744 #FFDA00
+    ## 37 0.9584030 0.12060302 0.04159699 0.08040201 #FFEC9E
+    ## 38 0.9584030 0.04020101 0.04159699 0.08040201 #FFEFB5
+    ## 39 0.0000000 0.00000000 1.00000000 1.00000000 #FFE244
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_10-7.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in cat_abbreviations vSize  vColor stdErr
+    ## 1  Plantain          Antioquia              CBNC    55 #28B463     55
+    ## 2  Plantain          Antioquia            CTCPNP    45 #59C981     45
+    ## 3  Plantain          Antioquia              <NA>   100 #28B463    100
+    ## 4  Plantain             Arauca            CSPCSF     4 #38BB6D      4
+    ## 5  Plantain             Arauca               LCC    14 #6AD08B     14
+    ## 6  Plantain             Arauca               LMI    82 #7BD795     82
+    ## 7  Plantain             Arauca              <NA>   100 #38BB6D    100
+    ## 8  Plantain          Atlántico               LMI   100 #7BD795    100
+    ## 9  Plantain          Atlántico              <NA>   100 #7BD795    100
+    ## 10 Plantain            Bolívar               LMI   100 #7BD795    100
+    ## 11 Plantain            Bolívar              <NA>   100 #7BD795    100
+    ## 12 Plantain             Caldas              CBNC     5 #28B463      5
+    ## 13 Plantain             Caldas            CSPCSF    34 #38BB6D     34
+    ## 14 Plantain             Caldas               LCC     5 #6AD08B      5
+    ## 15 Plantain             Caldas               LMI    36 #7BD795     36
+    ## 16 Plantain             Caldas              <NA>   101 #28B463    101
+    ## 17 Plantain             Caldas            PMSGRI     4 #9CE5A9      4
+    ## 18 Plantain             Caldas             PMSNC    17 #ADECB3     17
+    ## 19 Plantain           Casanare            CSPCSF     4 #38BB6D      4
+    ## 20 Plantain           Casanare               LCC     8 #6AD08B      8
+    ## 21 Plantain           Casanare               LMI    88 #7BD795     88
+    ## 22 Plantain           Casanare              <NA>   100 #38BB6D    100
+    ## 23 Plantain              Chocó               LMI    80 #7BD795     80
+    ## 24 Plantain              Chocó              <NA>   100 #7BD795    100
+    ## 25 Plantain              Chocó            PMSGRI    20 #9CE5A9     20
+    ## 26 Plantain            Córdoba               LMI   100 #7BD795    100
+    ## 27 Plantain            Córdoba              <NA>   100 #7BD795    100
+    ## 28 Plantain         La Guajira            CSPCSF    40 #38BB6D     40
+    ## 29 Plantain         La Guajira               LMI    20 #7BD795     20
+    ## 30 Plantain         La Guajira              <NA>   100 #38BB6D    100
+    ## 31 Plantain         La Guajira             PMSNC    40 #ADECB3     40
+    ## 32 Plantain          Magdalena            CSPCSF    40 #38BB6D     40
+    ## 33 Plantain          Magdalena               LMI    40 #7BD795     40
+    ## 34 Plantain          Magdalena              <NA>   100 #38BB6D    100
+    ## 35 Plantain          Magdalena             PMSNC    20 #ADECB3     20
+    ## 36 Plantain               Meta              CBNC    10 #28B463     10
+    ## 37 Plantain               Meta            CSPCSF    11 #38BB6D     11
+    ## 38 Plantain               Meta            CTCPNP     1 #59C981      1
+    ## 39 Plantain               Meta               LCC     6 #6AD08B      6
+    ## 40 Plantain               Meta               LMI    60 #7BD795     60
+    ## 41 Plantain               Meta              <NA>    99 #28B463     99
+    ## 42 Plantain               Meta            PMSGRI     3 #9CE5A9      3
+    ## 43 Plantain               Meta             PMSNC     8 #ADECB3      8
+    ## 44 Plantain               <NA>              <NA>  1700 #7BD795   1700
+    ## 45 Plantain Norte De Santander               LMI   100 #7BD795    100
+    ## 46 Plantain Norte De Santander              <NA>   100 #7BD795    100
+    ## 47 Plantain            Quindío              CBNC     7 #28B463      7
+    ## 48 Plantain            Quindío            CSPCSF    32 #38BB6D     32
+    ## 49 Plantain            Quindío               LCC     7 #6AD08B      7
+    ## 50 Plantain            Quindío               LMI    30 #7BD795     30
+    ## 51 Plantain            Quindío              <NA>   101 #28B463    101
+    ## 52 Plantain            Quindío            PMSGRI     4 #9CE5A9      4
+    ## 53 Plantain            Quindío             PMSNC    21 #ADECB3     21
+    ## 54 Plantain          Risaralda              CBNC     7 #28B463      7
+    ## 55 Plantain          Risaralda            CSPCSF    26 #38BB6D     26
+    ## 56 Plantain          Risaralda               LCC     8 #6AD08B      8
+    ## 57 Plantain          Risaralda               LMI    33 #7BD795     33
+    ## 58 Plantain          Risaralda              <NA>    99 #28B463     99
+    ## 59 Plantain          Risaralda            PMSGRI     5 #9CE5A9      5
+    ## 60 Plantain          Risaralda             PMSNC    20 #ADECB3     20
+    ## 61 Plantain          Santander               LMI   100 #7BD795    100
+    ## 62 Plantain          Santander              <NA>   100 #7BD795    100
+    ## 63 Plantain              Sucre               LMI   100 #7BD795    100
+    ## 64 Plantain              Sucre              <NA>   100 #7BD795    100
+    ## 65 Plantain             Tolima               LMI   100 #7BD795    100
+    ## 66 Plantain             Tolima              <NA>   100 #7BD795    100
+    ##    vColorValue level         x0         y0          w          h   color
+    ## 1           NA     3 0.00000000 0.14900662 0.17764706 0.18211921 #28B463
+    ## 2           NA     3 0.00000000 0.00000000 0.17764706 0.14900662 #59C981
+    ## 3           NA     2 0.00000000 0.00000000 0.17764706 0.33112583 #28B463
+    ## 4           NA     3 0.31490196 0.66666667 0.03921569 0.06000000 #38BB6D
+    ## 5           NA     3 0.17764706 0.66666667 0.13725490 0.06000000 #6AD08B
+    ## 6           NA     3 0.17764706 0.72666667 0.17647059 0.27333333 #7BD795
+    ## 7           NA     2 0.17764706 0.66666667 0.17647059 0.33333333 #38BB6D
+    ## 8           NA     3 0.17764706 0.33333333 0.17647059 0.33333333 #7BD795
+    ## 9           NA     2 0.17764706 0.33333333 0.17647059 0.33333333 #7BD795
+    ## 10          NA     3 0.17764706 0.00000000 0.17647059 0.33333333 #7BD795
+    ## 11          NA     2 0.17764706 0.00000000 0.17647059 0.33333333 #7BD795
+    ## 12          NA     3 0.09741935 0.71688742 0.05730550 0.05132450 #28B463
+    ## 13          NA     3 0.09136134 0.76821192 0.08628571 0.23178808 #38BB6D
+    ## 14          NA     3 0.09741935 0.66556291 0.05730550 0.05132450 #6AD08B
+    ## 15          NA     3 0.00000000 0.76821192 0.09136134 0.23178808 #7BD795
+    ## 16          NA     2 0.00000000 0.66556291 0.17764706 0.33443709 #28B463
+    ## 17          NA     3 0.15472486 0.66556291 0.02292220 0.10264901 #9CE5A9
+    ## 18          NA     3 0.00000000 0.66556291 0.09741935 0.10264901 #ADECB3
+    ## 19          NA     3 0.54357647 0.72677596 0.02583529 0.09107468 #38BB6D
+    ## 20          NA     3 0.54357647 0.81785064 0.02583529 0.18214936 #6AD08B
+    ## 21          NA     3 0.35411765 0.72677596 0.18945882 0.27322404 #7BD795
+    ## 22          NA     2 0.35411765 0.72677596 0.21529412 0.27322404 #38BB6D
+    ## 23          NA     3 0.56941176 0.72677596 0.17223529 0.27322404 #7BD795
+    ## 24          NA     2 0.56941176 0.72677596 0.21529412 0.27322404 #7BD795
+    ## 25          NA     3 0.74164706 0.72677596 0.04305882 0.27322404 #9CE5A9
+    ## 26          NA     3 0.78470588 0.72677596 0.21529412 0.27322404 #7BD795
+    ## 27          NA     2 0.78470588 0.72677596 0.21529412 0.27322404 #7BD795
+    ## 28          NA     3 0.35411765 0.48451730 0.09712517 0.24225865 #38BB6D
+    ## 29          NA     3 0.45124281 0.48451730 0.14568775 0.08075288 #7BD795
+    ## 30          NA     2 0.35411765 0.48451730 0.24281291 0.24225865 #38BB6D
+    ## 31          NA     3 0.45124281 0.56527019 0.14568775 0.16150577 #ADECB3
+    ## 32          NA     3 0.35411765 0.24225865 0.09712517 0.24225865 #38BB6D
+    ## 33          NA     3 0.45124281 0.32301154 0.14568775 0.16150577 #7BD795
+    ## 34          NA     2 0.35411765 0.24225865 0.24281291 0.24225865 #38BB6D
+    ## 35          NA     3 0.45124281 0.24225865 0.14568775 0.08075288 #ADECB3
+    ## 36          NA     3 0.81560189 0.09985676 0.05049249 0.11649956 #28B463
+    ## 37          NA     3 0.76006015 0.09985676 0.05554174 0.11649956 #38BB6D
+    ## 38          NA     3 0.85136740 0.00000000 0.01472698 0.03994271 #59C981
+    ## 39          NA     3 0.80718647 0.03994271 0.05890791 0.05991406 #6AD08B
+    ## 40          NA     3 0.59693056 0.00000000 0.16312959 0.21635632 #7BD795
+    ## 41          NA     2 0.59693056 0.00000000 0.26916382 0.21635632 #28B463
+    ## 42          NA     3 0.80718647 0.00000000 0.04418093 0.03994271 #9CE5A9
+    ## 43          NA     3 0.76006015 0.00000000 0.04712633 0.09985676 #ADECB3
+    ## 44          NA     1 0.00000000 0.00000000 1.00000000 1.00000000 #7BD795
+    ## 45          NA     3 0.35411765 0.00000000 0.24281291 0.24225865 #7BD795
+    ## 46          NA     2 0.35411765 0.00000000 0.24281291 0.24225865 #7BD795
+    ## 47          NA     3 0.09565611 0.35982340 0.04099548 0.10044150 #28B463
+    ## 48          NA     3 0.00000000 0.46026490 0.09168880 0.20529801 #38BB6D
+    ## 49          NA     3 0.13665158 0.35982340 0.04099548 0.10044150 #6AD08B
+    ## 50          NA     3 0.09168880 0.46026490 0.08595825 0.20529801 #7BD795
+    ## 51          NA     2 0.00000000 0.33112583 0.17764706 0.33443709 #28B463
+    ## 52          NA     3 0.09565611 0.33112583 0.08199095 0.02869757 #9CE5A9
+    ## 53          NA     3 0.00000000 0.33112583 0.09565611 0.12913907 #ADECB3
+    ## 54          NA     3 0.95982831 0.07321516 0.04017169 0.10250123 #28B463
+    ## 55          NA     3 0.86609438 0.17571639 0.13390562 0.11421565 #38BB6D
+    ## 56          NA     3 0.86609438 0.00000000 0.09373393 0.05020468 #6AD08B
+    ## 57          NA     3 0.86609438 0.28993204 0.13390562 0.14496602 #7BD795
+    ## 58          NA     2 0.86609438 0.00000000 0.13390562 0.43489806 #28B463
+    ## 59          NA     3 0.95982831 0.00000000 0.04017169 0.07321516 #9CE5A9
+    ## 60          NA     3 0.86609438 0.05020468 0.09373393 0.12551171 #ADECB3
+    ## 61          NA     3 0.59693056 0.43489806 0.20153472 0.29187789 #7BD795
+    ## 62          NA     2 0.59693056 0.43489806 0.20153472 0.29187789 #7BD795
+    ## 63          NA     3 0.79846528 0.43489806 0.20153472 0.29187789 #7BD795
+    ## 64          NA     2 0.79846528 0.43489806 0.20153472 0.29187789 #7BD795
+    ## 65          NA     3 0.59693056 0.21635632 0.26916382 0.21854174 #7BD795
+    ## 66          NA     2 0.59693056 0.21635632 0.26916382 0.21854174 #7BD795
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'cat_abbreviations'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/question_10-8.png)<!-- -->
+
+    ## $tm
+    ##      crop  expert_in cat_abbreviations vSize  vColor stdErr vColorValue level
+    ## 1  Banana  Antioquia              CBNC    17 #FFDA00     17          NA     3
+    ## 2  Banana  Antioquia            CSPCSF    27 #FFDC16     27          NA     3
+    ## 3  Banana  Antioquia            CTCPIP     5 #FFDF2D      5          NA     3
+    ## 4  Banana  Antioquia            CTCPNP    29 #FFE244     29          NA     3
+    ## 5  Banana  Antioquia               LCC     1 #FFE45A      1          NA     3
+    ## 6  Banana  Antioquia               LMI    13 #FFE771     13          NA     3
+    ## 7  Banana  Antioquia              <NA>   100 #FFDA00    100          NA     2
+    ## 8  Banana  Antioquia            PMSGRI     2 #FFEC9E      2          NA     3
+    ## 9  Banana  Antioquia             PMSNC     5 #FFEFB5      5          NA     3
+    ## 10 Banana  Antioquia             WSNGS     1 #FFF2CC      1          NA     3
+    ## 11 Banana      Cesar            CSPCSF     5 #FFDC16      5          NA     3
+    ## 12 Banana      Cesar            CTCPNP    95 #FFE244     95          NA     3
+    ## 13 Banana      Cesar              <NA>   100 #FFDC16    100          NA     2
+    ## 14 Banana      Chocó            CTCPNP     8 #FFE244      8          NA     3
+    ## 15 Banana      Chocó               LMI    24 #FFE771     24          NA     3
+    ## 16 Banana      Chocó              <NA>   100 #FFE244    100          NA     2
+    ## 17 Banana      Chocó            PMSGRI     8 #FFEC9E      8          NA     3
+    ## 18 Banana      Chocó             PMSNC    60 #FFEFB5     60          NA     3
+    ## 19 Banana    Córdoba              <NA>   100 #FFEA88    100          NA     2
+    ## 20 Banana    Córdoba                NS   100 #FFEA88    100          NA     3
+    ## 21 Banana La Guajira              CBNC     9 #FFDA00      9          NA     3
+    ## 22 Banana La Guajira            CSPCSF    15 #FFDC16     15          NA     3
+    ## 23 Banana La Guajira            CTCPIP    15 #FFDF2D     15          NA     3
+    ## 24 Banana La Guajira            CTCPNP    41 #FFE244     41          NA     3
+    ## 25 Banana La Guajira               LCC     5 #FFE45A      5          NA     3
+    ## 26 Banana La Guajira               LMI    14 #FFE771     14          NA     3
+    ## 27 Banana La Guajira              <NA>   101 #FFDA00    101          NA     2
+    ## 28 Banana La Guajira            PMSGRI     1 #FFEC9E      1          NA     3
+    ## 29 Banana La Guajira             PMSNC     1 #FFEFB5      1          NA     3
+    ## 30 Banana  Magdalena              CBNC    17 #FFDA00     17          NA     3
+    ## 31 Banana  Magdalena            CSPCSF    27 #FFDC16     27          NA     3
+    ## 32 Banana  Magdalena            CTCPIP     6 #FFDF2D      6          NA     3
+    ## 33 Banana  Magdalena            CTCPNP    45 #FFE244     45          NA     3
+    ## 34 Banana  Magdalena               LMI     3 #FFE771      3          NA     3
+    ## 35 Banana  Magdalena              <NA>   101 #FFDA00    101          NA     2
+    ## 36 Banana  Magdalena            PMSGRI     2 #FFEC9E      2          NA     3
+    ## 37 Banana  Magdalena             PMSNC     1 #FFEFB5      1          NA     3
+    ## 38 Banana       <NA>              <NA>   602 #FFE244    602          NA     1
+    ##           x0         y0          w          h   color
+    ## 1  0.3355482 0.50000000 0.12836001 0.22000000 #FFDA00
+    ## 2  0.5075937 0.72000000 0.16018035 0.28000000 #FFDC16
+    ## 3  0.4639082 0.50000000 0.13591060 0.06111111 #FFDF2D
+    ## 4  0.3355482 0.72000000 0.17204556 0.28000000 #FFE244
+    ## 5  0.5998188 0.50000000 0.05096648 0.03259259 #FFE45A
+    ## 6  0.4639082 0.56111111 0.13591060 0.15888889 #FFE771
+    ## 7  0.3355482 0.50000000 0.33222591 0.50000000 #FFDA00
+    ## 8  0.5998188 0.53259259 0.05096648 0.06518519 #FFEC9E
+    ## 9  0.5998188 0.59777778 0.06795530 0.12222222 #FFEFB5
+    ## 10 0.6507853 0.50000000 0.01698883 0.09777778 #FFF2CC
+    ## 11 0.6677741 0.50000000 0.33222591 0.02500000 #FFDC16
+    ## 12 0.6677741 0.52500000 0.33222591 0.47500000 #FFE244
+    ## 13 0.6677741 0.50000000 0.33222591 0.50000000 #FFDC16
+    ## 14 0.3355482 0.00000000 0.16611296 0.08000000 #FFE244
+    ## 15 0.5728524 0.08000000 0.09492169 0.42000000 #FFE771
+    ## 16 0.3355482 0.00000000 0.33222591 0.50000000 #FFE244
+    ## 17 0.5016611 0.00000000 0.16611296 0.08000000 #FFEC9E
+    ## 18 0.3355482 0.08000000 0.23730422 0.42000000 #FFEFB5
+    ## 19 0.6677741 0.00000000 0.33222591 0.50000000 #FFEA88
+    ## 20 0.6677741 0.00000000 0.33222591 0.50000000 #FFEA88
+    ## 21 0.1565891 0.50000000 0.10066445 0.14851485 #FFDA00
+    ## 22 0.1937673 0.82425743 0.14178092 0.17574257 #FFDC16
+    ## 23 0.1937673 0.64851485 0.14178092 0.17574257 #FFDF2D
+    ## 24 0.0000000 0.64851485 0.19376725 0.35148515 #FFE244
+    ## 25 0.2572536 0.54243281 0.07829457 0.10608204 #FFE45A
+    ## 26 0.0000000 0.50000000 0.15658915 0.14851485 #FFE771
+    ## 27 0.0000000 0.50000000 0.33554817 0.50000000 #FFDA00
+    ## 28 0.2572536 0.50000000 0.03914729 0.04243281 #FFEC9E
+    ## 29 0.2964009 0.50000000 0.03914729 0.04243281 #FFEFB5
+    ## 30 0.0000000 0.00000000 0.19670065 0.14356436 #FFDA00
+    ## 31 0.2097176 0.14356436 0.12583056 0.35643564 #FFDC16
+    ## 32 0.1967007 0.00000000 0.06942376 0.14356436 #FFDF2D
+    ## 33 0.0000000 0.14356436 0.20971761 0.35643564 #FFE244
+    ## 34 0.2661244 0.07178218 0.06942376 0.07178218 #FFE771
+    ## 35 0.0000000 0.00000000 0.33554817 0.50000000 #FFDA00
+    ## 36 0.2661244 0.00000000 0.04628251 0.07178218 #FFEC9E
+    ## 37 0.3124069 0.00000000 0.02314125 0.07178218 #FFEFB5
+    ## 38 0.0000000 0.00000000 1.00000000 1.00000000 #FFE244
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+![](README_files/figure-gfm/question_10-9.png)<!-- -->![](README_files/figure-gfm/question_10-10.png)<!-- -->
+
+## Question 11: What is the proportion of formal and informal trade of banana planting material?
+
+    ## Warning: There were 8 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat = category_by_mean_by_question(11, mean = average,
+    ##   language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+    ## Warning: There were 10 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `ave_cat_weighted = category_by_mean_by_question(11, mean =
+    ##   average_weighted, language = "en")`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 9 remaining warnings.
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
+    ## override using the `.groups` argument.
+
+![](README_files/figure-gfm/questoin_11-1.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat vSize  vColor stdErr vColorValue level
+    ## 1    Banana          Antioquia  6 to 4    11 #FFDA00     11          NA     3
+    ## 2    Banana          Antioquia    <NA>    11 #FFDA00     11          NA     2
+    ## 3    Banana             Caldas  1 to 9     1 #FFF2CC      1          NA     3
+    ## 4    Banana             Caldas    <NA>     1 #FFF2CC      1          NA     2
+    ## 5    Banana           Casanare  8 to 2     1 #FFDE28      1          NA     3
+    ## 6    Banana           Casanare    <NA>     1 #FFDE28      1          NA     2
+    ## 7    Banana              Cesar  9 to 1     2 #FFE351      2          NA     3
+    ## 8    Banana              Cesar    <NA>     2 #FFE351      2          NA     2
+    ## 9    Banana              Chocó  2 to 8     2 #FFEDA3      2          NA     3
+    ## 10   Banana              Chocó    <NA>     2 #FFEDA3      2          NA     2
+    ## 11   Banana            Córdoba  1 to 9     1 #FFF2CC      1          NA     3
+    ## 12   Banana            Córdoba    <NA>     1 #FFF2CC      1          NA     2
+    ## 13   Banana              Huila  1 to 9     1 #FFF2CC      1          NA     3
+    ## 14   Banana              Huila    <NA>     1 #FFF2CC      1          NA     2
+    ## 15   Banana         La Guajira  6 to 4    10 #FFDA00     10          NA     3
+    ## 16   Banana         La Guajira    <NA>    10 #FFDA00     10          NA     2
+    ## 17   Banana          Magdalena  7 to 3    10 #FFE87A     10          NA     3
+    ## 18   Banana          Magdalena    <NA>    10 #FFE87A     10          NA     2
+    ## 19   Banana               <NA>    <NA>    41 #FFF2CC     41          NA     1
+    ## 20   Banana            Quindío  1 to 9     1 #FFF2CC      1          NA     3
+    ## 21   Banana            Quindío    <NA>     1 #FFF2CC      1          NA     2
+    ## 22   Banana          Risaralda  1 to 9     1 #FFF2CC      1          NA     3
+    ## 23   Banana          Risaralda    <NA>     1 #FFF2CC      1          NA     2
+    ## 24 Plantain          Antioquia  9 to 1     2 #28B463      2          NA     3
+    ## 25 Plantain          Antioquia    <NA>     2 #28B463      2          NA     2
+    ## 26 Plantain             Arauca  1 to 9     2 #64CD87      2          NA     3
+    ## 27 Plantain             Arauca    <NA>     2 #64CD87      2          NA     2
+    ## 28 Plantain          Atlántico  1 to 9     2 #64CD87      2          NA     3
+    ## 29 Plantain          Atlántico    <NA>     2 #64CD87      2          NA     2
+    ## 30 Plantain            Bolívar 0 to 10     1 #BEF4BE      1          NA     3
+    ## 31 Plantain            Bolívar    <NA>     1 #BEF4BE      1          NA     2
+    ## 32 Plantain             Caldas  4 to 6     6 #A0E7AB      6          NA     3
+    ## 33 Plantain             Caldas    <NA>     6 #A0E7AB      6          NA     2
+    ## 34 Plantain           Casanare  2 to 8     3 #46C075      3          NA     3
+    ## 35 Plantain           Casanare    <NA>     3 #46C075      3          NA     2
+    ## 36 Plantain              Chocó  2 to 8     1 #46C075      1          NA     3
+    ## 37 Plantain              Chocó    <NA>     1 #46C075      1          NA     2
+    ## 38 Plantain            Córdoba 0 to 10     1 #BEF4BE      1          NA     3
+    ## 39 Plantain            Córdoba    <NA>     1 #BEF4BE      1          NA     2
+    ## 40 Plantain              Huila  1 to 9     1 #64CD87      1          NA     3
+    ## 41 Plantain              Huila    <NA>     1 #64CD87      1          NA     2
+    ## 42 Plantain         La Guajira  2 to 8     4 #46C075      4          NA     3
+    ## 43 Plantain         La Guajira    <NA>     4 #46C075      4          NA     2
+    ## 44 Plantain          Magdalena  1 to 9     3 #64CD87      3          NA     3
+    ## 45 Plantain          Magdalena    <NA>     3 #64CD87      3          NA     2
+    ## 46 Plantain               Meta  1 to 9    10 #64CD87     10          NA     3
+    ## 47 Plantain               Meta    <NA>    10 #64CD87     10          NA     2
+    ## 48 Plantain               <NA>    <NA>    53 #64CD87     53          NA     1
+    ## 49 Plantain Norte De Santander  1 to 9     1 #64CD87      1          NA     3
+    ## 50 Plantain Norte De Santander    <NA>     1 #64CD87      1          NA     2
+    ## 51 Plantain            Quindío  2 to 8     4 #46C075      4          NA     3
+    ## 52 Plantain            Quindío    <NA>     4 #46C075      4          NA     2
+    ## 53 Plantain          Risaralda  3 to 7     9 #82DA99      9          NA     3
+    ## 54 Plantain          Risaralda    <NA>     9 #82DA99      9          NA     2
+    ## 55 Plantain          Santander 0 to 10     1 #BEF4BE      1          NA     3
+    ## 56 Plantain          Santander    <NA>     1 #BEF4BE      1          NA     2
+    ## 57 Plantain              Sucre 0 to 10     1 #BEF4BE      1          NA     3
+    ## 58 Plantain              Sucre    <NA>     1 #BEF4BE      1          NA     2
+    ## 59 Plantain             Tolima 0 to 10     1 #BEF4BE      1          NA     3
+    ## 60 Plantain             Tolima    <NA>     1 #BEF4BE      1          NA     2
+    ##           x0         y0          w          h   color
+    ## 1  0.5638298 0.48780488 0.22847011 0.51219512 #FFDA00
+    ## 2  0.5638298 0.48780488 0.22847011 0.51219512 #FFDA00
+    ## 3  0.9418440 0.30487805 0.05815603 0.18292683 #FFF2CC
+    ## 4  0.9418440 0.30487805 0.05815603 0.18292683 #FFF2CC
+    ## 5  0.8255319 0.18292683 0.08723404 0.12195122 #FFDE28
+    ## 6  0.8255319 0.18292683 0.08723404 0.12195122 #FFDE28
+    ## 7  0.5638298 0.00000000 0.26170213 0.08130081 #FFE351
+    ## 8  0.5638298 0.00000000 0.26170213 0.08130081 #FFE351
+    ## 9  0.8255319 0.30487805 0.11631206 0.18292683 #FFEDA3
+    ## 10 0.8255319 0.30487805 0.11631206 0.18292683 #FFEDA3
+    ## 11 0.9127660 0.18292683 0.08723404 0.12195122 #FFF2CC
+    ## 12 0.9127660 0.18292683 0.08723404 0.12195122 #FFF2CC
+    ## 13 0.8255319 0.09146341 0.11631206 0.09146341 #FFF2CC
+    ## 14 0.8255319 0.09146341 0.11631206 0.09146341 #FFF2CC
+    ## 15 0.7922999 0.48780488 0.20770010 0.51219512 #FFDA00
+    ## 16 0.7922999 0.48780488 0.20770010 0.51219512 #FFDA00
+    ## 17 0.5638298 0.08130081 0.26170213 0.40650407 #FFE87A
+    ## 18 0.5638298 0.08130081 0.26170213 0.40650407 #FFE87A
+    ## 19 0.5638298 0.00000000 0.43617021 1.00000000 #FFF2CC
+    ## 20 0.8255319 0.00000000 0.11631206 0.09146341 #FFF2CC
+    ## 21 0.8255319 0.00000000 0.11631206 0.09146341 #FFF2CC
+    ## 22 0.9418440 0.00000000 0.05815603 0.18292683 #FFF2CC
+    ## 23 0.9418440 0.00000000 0.05815603 0.18292683 #FFF2CC
+    ## 24 0.2321652 0.29937107 0.14214196 0.14968553 #28B463
+    ## 25 0.2321652 0.29937107 0.14214196 0.14968553 #28B463
+    ## 26 0.2321652 0.14968553 0.14214196 0.14968553 #64CD87
+    ## 27 0.2321652 0.14968553 0.14214196 0.14968553 #64CD87
+    ## 28 0.2321652 0.00000000 0.14214196 0.14968553 #64CD87
+    ## 29 0.2321652 0.00000000 0.14214196 0.14968553 #64CD87
+    ## 30 0.3743072 0.33679245 0.09476131 0.11226415 #BEF4BE
+    ## 31 0.3743072 0.33679245 0.09476131 0.11226415 #BEF4BE
+    ## 32 0.0000000 0.36657682 0.23216521 0.27493261 #A0E7AB
+    ## 33 0.0000000 0.36657682 0.23216521 0.27493261 #A0E7AB
+    ## 34 0.2321652 0.44905660 0.16583229 0.19245283 #46C075
+    ## 35 0.2321652 0.44905660 0.16583229 0.19245283 #46C075
+    ## 36 0.4690685 0.33679245 0.09476131 0.11226415 #46C075
+    ## 37 0.4690685 0.33679245 0.09476131 0.11226415 #46C075
+    ## 38 0.3743072 0.22452830 0.09476131 0.11226415 #BEF4BE
+    ## 39 0.3743072 0.22452830 0.09476131 0.11226415 #BEF4BE
+    ## 40 0.4690685 0.22452830 0.09476131 0.11226415 #64CD87
+    ## 41 0.4690685 0.22452830 0.09476131 0.11226415 #64CD87
+    ## 42 0.0000000 0.18328841 0.23216521 0.18328841 #46C075
+    ## 43 0.0000000 0.18328841 0.23216521 0.18328841 #46C075
+    ## 44 0.3979975 0.44905660 0.16583229 0.19245283 #64CD87
+    ## 45 0.3979975 0.44905660 0.16583229 0.19245283 #64CD87
+    ## 46 0.0000000 0.64150943 0.29675252 0.35849057 #64CD87
+    ## 47 0.0000000 0.64150943 0.29675252 0.35849057 #64CD87
+    ## 48 0.0000000 0.00000000 0.56382979 1.00000000 #64CD87
+    ## 49 0.3743072 0.11226415 0.09476131 0.11226415 #64CD87
+    ## 50 0.3743072 0.11226415 0.09476131 0.11226415 #64CD87
+    ## 51 0.0000000 0.00000000 0.23216521 0.18328841 #46C075
+    ## 52 0.0000000 0.00000000 0.23216521 0.18328841 #46C075
+    ## 53 0.2967525 0.64150943 0.26707727 0.35849057 #82DA99
+    ## 54 0.2967525 0.64150943 0.26707727 0.35849057 #82DA99
+    ## 55 0.3743072 0.00000000 0.09476131 0.11226415 #BEF4BE
+    ## 56 0.3743072 0.00000000 0.09476131 0.11226415 #BEF4BE
+    ## 57 0.4690685 0.11226415 0.09476131 0.11226415 #BEF4BE
+    ## 58 0.4690685 0.11226415 0.09476131 0.11226415 #BEF4BE
+    ## 59 0.4690685 0.00000000 0.09476131 0.11226415 #BEF4BE
+    ## 60 0.4690685 0.00000000 0.09476131 0.11226415 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+    ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
+    ## You can override using the `.groups` argument.
+
+![](README_files/figure-gfm/questoin_11-2.png)<!-- -->
+
+    ## $tm
+    ##        crop          expert_in ave_cat_weighted vSize  vColor stdErr
+    ## 1    Banana          Antioquia           5 to 5    11 #FFE566     11
+    ## 2    Banana          Antioquia             <NA>    11 #FFE566     11
+    ## 3    Banana             Caldas           1 to 9     1 #FFF2CC      1
+    ## 4    Banana             Caldas             <NA>     1 #FFF2CC      1
+    ## 5    Banana              Cesar           9 to 1     1 #FFE033      1
+    ## 6    Banana              Cesar             <NA>     1 #FFE033      1
+    ## 7    Banana              Chocó           2 to 8     2 #FFEB99      2
+    ## 8    Banana              Chocó             <NA>     2 #FFEB99      2
+    ## 9    Banana            Córdoba           1 to 9     1 #FFF2CC      1
+    ## 10   Banana            Córdoba             <NA>     1 #FFF2CC      1
+    ## 11   Banana              Huila           1 to 9     1 #FFF2CC      1
+    ## 12   Banana              Huila             <NA>     1 #FFF2CC      1
+    ## 13   Banana         La Guajira           7 to 3     8 #FFDA00      8
+    ## 14   Banana         La Guajira             <NA>     8 #FFDA00      8
+    ## 15   Banana          Magdalena           7 to 3    10 #FFDA00     10
+    ## 16   Banana          Magdalena             <NA>    10 #FFDA00     10
+    ## 17   Banana               <NA>             <NA>    37 #FFF2CC     37
+    ## 18   Banana            Quindío           1 to 9     1 #FFF2CC      1
+    ## 19   Banana            Quindío             <NA>     1 #FFF2CC      1
+    ## 20   Banana          Risaralda           1 to 9     1 #FFF2CC      1
+    ## 21   Banana          Risaralda             <NA>     1 #FFF2CC      1
+    ## 22 Plantain          Antioquia           8 to 2     2 #28B463      2
+    ## 23 Plantain          Antioquia             <NA>     2 #28B463      2
+    ## 24 Plantain             Arauca           1 to 9     2 #98E4A7      2
+    ## 25 Plantain             Arauca             <NA>     2 #98E4A7      2
+    ## 26 Plantain          Atlántico          0 to 10     1 #BEF4BE      1
+    ## 27 Plantain          Atlántico             <NA>     1 #BEF4BE      1
+    ## 28 Plantain            Bolívar          0 to 10     1 #BEF4BE      1
+    ## 29 Plantain            Bolívar             <NA>     1 #BEF4BE      1
+    ## 30 Plantain             Caldas           4 to 6     6 #73D490      6
+    ## 31 Plantain             Caldas             <NA>     6 #73D490      6
+    ## 32 Plantain           Casanare           1 to 9     3 #98E4A7      3
+    ## 33 Plantain           Casanare             <NA>     3 #98E4A7      3
+    ## 34 Plantain              Chocó           2 to 8     1 #4DC479      1
+    ## 35 Plantain              Chocó             <NA>     1 #4DC479      1
+    ## 36 Plantain            Córdoba          0 to 10     1 #BEF4BE      1
+    ## 37 Plantain            Córdoba             <NA>     1 #BEF4BE      1
+    ## 38 Plantain              Huila           1 to 9     1 #98E4A7      1
+    ## 39 Plantain              Huila             <NA>     1 #98E4A7      1
+    ## 40 Plantain         La Guajira           2 to 8     4 #4DC479      4
+    ## 41 Plantain         La Guajira             <NA>     4 #4DC479      4
+    ## 42 Plantain          Magdalena           1 to 9     3 #98E4A7      3
+    ## 43 Plantain          Magdalena             <NA>     3 #98E4A7      3
+    ## 44 Plantain               Meta           2 to 8    10 #4DC479     10
+    ## 45 Plantain               Meta             <NA>    10 #4DC479     10
+    ## 46 Plantain               <NA>             <NA>    52 #BEF4BE     52
+    ## 47 Plantain Norte De Santander           1 to 9     1 #98E4A7      1
+    ## 48 Plantain Norte De Santander             <NA>     1 #98E4A7      1
+    ## 49 Plantain            Quindío           2 to 8     4 #4DC479      4
+    ## 50 Plantain            Quindío             <NA>     4 #4DC479      4
+    ## 51 Plantain          Risaralda           2 to 8     9 #4DC479      9
+    ## 52 Plantain          Risaralda             <NA>     9 #4DC479      9
+    ## 53 Plantain          Santander          0 to 10     1 #BEF4BE      1
+    ## 54 Plantain          Santander             <NA>     1 #BEF4BE      1
+    ## 55 Plantain              Sucre          0 to 10     1 #BEF4BE      1
+    ## 56 Plantain              Sucre             <NA>     1 #BEF4BE      1
+    ## 57 Plantain             Tolima          0 to 10     1 #BEF4BE      1
+    ## 58 Plantain             Tolima             <NA>     1 #BEF4BE      1
+    ##    vColorValue level        x0         y0          w          h   color
+    ## 1           NA     3 0.5842697 0.43243243 0.21776351 0.56756757 #FFE566
+    ## 2           NA     2 0.5842697 0.43243243 0.21776351 0.56756757 #FFE566
+    ## 3           NA     3 0.8441011 0.28828829 0.07794944 0.14414414 #FFF2CC
+    ## 4           NA     2 0.8441011 0.28828829 0.07794944 0.14414414 #FFF2CC
+    ## 5           NA     3 0.9220506 0.28828829 0.07794944 0.14414414 #FFE033
+    ## 6           NA     2 0.9220506 0.28828829 0.07794944 0.14414414 #FFE033
+    ## 7           NA     3 0.5842697 0.00000000 0.25983146 0.08648649 #FFEB99
+    ## 8           NA     2 0.5842697 0.00000000 0.25983146 0.08648649 #FFEB99
+    ## 9           NA     3 0.8441011 0.14414414 0.07794944 0.14414414 #FFF2CC
+    ## 10          NA     2 0.8441011 0.14414414 0.07794944 0.14414414 #FFF2CC
+    ## 11          NA     3 0.9220506 0.14414414 0.07794944 0.14414414 #FFF2CC
+    ## 12          NA     2 0.9220506 0.14414414 0.07794944 0.14414414 #FFF2CC
+    ## 13          NA     3 0.5842697 0.08648649 0.25983146 0.34594595 #FFDA00
+    ## 14          NA     2 0.5842697 0.08648649 0.25983146 0.34594595 #FFDA00
+    ## 15          NA     3 0.8020332 0.43243243 0.19796683 0.56756757 #FFDA00
+    ## 16          NA     2 0.8020332 0.43243243 0.19796683 0.56756757 #FFDA00
+    ## 17          NA     1 0.5842697 0.00000000 0.41573034 1.00000000 #FFF2CC
+    ## 18          NA     3 0.8441011 0.00000000 0.07794944 0.14414414 #FFF2CC
+    ## 19          NA     2 0.8441011 0.00000000 0.07794944 0.14414414 #FFF2CC
+    ## 20          NA     3 0.9220506 0.00000000 0.07794944 0.14414414 #FFF2CC
+    ## 21          NA     2 0.9220506 0.00000000 0.07794944 0.14414414 #FFF2CC
+    ## 22          NA     3 0.2478720 0.26052632 0.12938372 0.17368421 #28B463
+    ## 23          NA     2 0.2478720 0.26052632 0.12938372 0.17368421 #28B463
+    ## 24          NA     3 0.2478720 0.08684211 0.12938372 0.17368421 #98E4A7
+    ## 25          NA     2 0.2478720 0.08684211 0.12938372 0.17368421 #98E4A7
+    ## 26          NA     3 0.2478720 0.00000000 0.12938372 0.08684211 #BEF4BE
+    ## 27          NA     2 0.2478720 0.00000000 0.12938372 0.08684211 #BEF4BE
+    ## 28          NA     3 0.3772557 0.32565789 0.10350698 0.10855263 #BEF4BE
+    ## 29          NA     2 0.3772557 0.32565789 0.10350698 0.10855263 #BEF4BE
+    ## 30          NA     3 0.0000000 0.36263736 0.24787198 0.27197802 #73D490
+    ## 31          NA     2 0.0000000 0.36263736 0.24787198 0.27197802 #73D490
+    ## 32          NA     3 0.2478720 0.43421053 0.16819884 0.20040486 #98E4A7
+    ## 33          NA     2 0.2478720 0.43421053 0.16819884 0.20040486 #98E4A7
+    ## 34          NA     3 0.4807627 0.32565789 0.10350698 0.10855263 #4DC479
+    ## 35          NA     2 0.4807627 0.32565789 0.10350698 0.10855263 #4DC479
+    ## 36          NA     3 0.3772557 0.21710526 0.10350698 0.10855263 #BEF4BE
+    ## 37          NA     2 0.3772557 0.21710526 0.10350698 0.10855263 #BEF4BE
+    ## 38          NA     3 0.4807627 0.21710526 0.10350698 0.10855263 #98E4A7
+    ## 39          NA     2 0.4807627 0.21710526 0.10350698 0.10855263 #98E4A7
+    ## 40          NA     3 0.0000000 0.00000000 0.12393599 0.36263736 #4DC479
+    ## 41          NA     2 0.0000000 0.00000000 0.12393599 0.36263736 #4DC479
+    ## 42          NA     3 0.4160708 0.43421053 0.16819884 0.20040486 #98E4A7
+    ## 43          NA     2 0.4160708 0.43421053 0.16819884 0.20040486 #98E4A7
+    ## 44          NA     3 0.0000000 0.63461538 0.30751035 0.36538462 #4DC479
+    ## 45          NA     2 0.0000000 0.63461538 0.30751035 0.36538462 #4DC479
+    ## 46          NA     1 0.0000000 0.00000000 0.58426966 1.00000000 #BEF4BE
+    ## 47          NA     3 0.3772557 0.10855263 0.10350698 0.10855263 #98E4A7
+    ## 48          NA     2 0.3772557 0.10855263 0.10350698 0.10855263 #98E4A7
+    ## 49          NA     3 0.1239360 0.00000000 0.12393599 0.36263736 #4DC479
+    ## 50          NA     2 0.1239360 0.00000000 0.12393599 0.36263736 #4DC479
+    ## 51          NA     3 0.3075103 0.63461538 0.27675931 0.36538462 #4DC479
+    ## 52          NA     2 0.3075103 0.63461538 0.27675931 0.36538462 #4DC479
+    ## 53          NA     3 0.3772557 0.00000000 0.10350698 0.10855263 #BEF4BE
+    ## 54          NA     2 0.3772557 0.00000000 0.10350698 0.10855263 #BEF4BE
+    ## 55          NA     3 0.4807627 0.10855263 0.10350698 0.10855263 #BEF4BE
+    ## 56          NA     2 0.4807627 0.10855263 0.10350698 0.10855263 #BEF4BE
+    ## 57          NA     3 0.4807627 0.00000000 0.10350698 0.10855263 #BEF4BE
+    ## 58          NA     2 0.4807627 0.00000000 0.10350698 0.10855263 #BEF4BE
+    ## 
+    ## $type
+    ## [1] "color"
+    ## 
+    ## $vSize
+    ## [1] "frequency"
+    ## 
+    ## $vColor
+    ## [1] "group_color"
+    ## 
+    ## $stdErr
+    ## [1] "frequency"
+    ## 
+    ## $algorithm
+    ## [1] "pivotSize"
+    ## 
+    ## $vpCoorX
+    ## [1] 0.02812148 0.97187852
+    ## 
+    ## $vpCoorY
+    ## [1] 0.01968504 0.91031496
+    ## 
+    ## $aspRatio
+    ## [1] 1.483512
+    ## 
+    ## $range
+    ## [1] NA NA
+    ## 
+    ## $mapping
+    ## [1] NA NA NA
+    ## 
+    ## $draw
+    ## [1] TRUE
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
+
+![](README_files/figure-gfm/questoin_11-3.png)<!-- -->
+
+    ## Joining with `by = join_by(crop, expert_ID, expert_in)`
+
+    ## Warning: There were 2 warnings in `mutate()`.
+    ## The first warning was:
+    ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
+    ## ℹ In group 0: .
+    ## Caused by warning:
+    ## ! There was 1 warning in `filter()`.
+    ## ℹ In argument: `number == question & number_to_category == mean`.
+    ## Caused by warning in `number_to_category == mean`:
+    ## ! longer object length is not a multiple of shorter object length
+    ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
+
+    ## Joining with `by = join_by(EKE.expert.in)`
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
+
+![](README_files/figure-gfm/questoin_11-4.png)<!-- -->
+
+## Question 13: How frequent is the use of new planting material to renew the production system?
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -3930,21 +3660,7 @@ avg_dept_no_weight_13<- question_13 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_13<- inner_join(question_13, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_13<- add_weights_question_13 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(13, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -3957,51 +3673,6 @@ avg_dept_weight_13<- add_weights_question_13 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q13_no_weighted<- tapply(avg_dept_no_weight_13$ave_cat, avg_dept_no_weight_13$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question13_no_weighted<- palette_banana(length(levels_per_crop_Q13_no_weighted$Banana))
-colors_plantain_question13_no_weighted<- palette_plantain(length(levels_per_crop_Q13_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_13 <- list(
-  Banana = levels_per_crop_Q13_no_weighted$Banana,
-  Plantain = levels_per_crop_Q13_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_13 <- list(
-  Banana = colors_banana_question13_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question13_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_13 <- assign_group_color(data = avg_dept_no_weight_13, levels_by_crop = levels_by_crop_no_weighted_13, colors_by_crop = colors_by_crop_no_weighted_13,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q13_weighted<- tapply(avg_dept_weight_13$ave_cat_weighted, avg_dept_weight_13$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question13_weighted<- palette_banana(length(levels_per_crop_Q13_weighted$Banana))
-colors_plantain_question13_weighted<- palette_plantain(length(levels_per_crop_Q13_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_13 <- list(
-  Banana = levels_per_crop_Q13_weighted$Banana,
-  Plantain = levels_per_crop_Q13_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_13 <- list(
-  Banana = colors_banana_question13_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question13_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_13 <- assign_group_color(data = avg_dept_weight_13, levels_by_crop = levels_by_crop_weighted_13, colors_by_crop = colors_by_crop_weighted_13,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_13, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -4157,10 +3828,6 @@ tree_map_3(data = avg_dept_no_weight_13, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_13, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -4315,16 +3982,6 @@ tree_map_3(data = avg_dept_weight_13, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q13_no_weight<- question_13 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =13))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -4334,39 +3991,13 @@ nal_q13_no_weight<- question_13 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q13_no_weight<- full_join(codes_department, nal_q13_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q13_no_weight$cat<- factor(nal_q13_no_weight$cat, levels = c("Every 1 or 2 cycles", "Every 3 to 4 cycles", "Every 5 to 6 cycles",  "Every 7 or more cycles", "Not Sure"))
-colmap(departamentos, data = nal_q13_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q13_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/questoin_13-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q13_weight<- inner_join(question_13, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q13_weight<- nal_q13_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =13)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -4377,43 +4008,13 @@ nal_q13_weight<- nal_q13_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q13_weight<- full_join(codes_department, nal_q13_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q13_weight$cat_weighted<- factor(nal_q13_weight$cat_weighted, levels = c("Every 1 or 2 cycles", "Every 3 to 4 cycles", "Every 5 to 6 cycles",  "Every 7 or more cycles", "Not Sure"))
-colmap(departamentos, data = nal_q13_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q13_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/questoin_13-4.png)<!-- -->
 
 ## Question 16: What percentage of chemical control practices (insecticides, fungicides, etc.) are implemented correctly in banana production systems in the places where you are an expert?
-
-``` r
-#selecting only question 16----
-question_16<- filter(individual_surveys, question_number==16)
-#unique(question_16$numeric_answer)
-#dput(unique(question_16$answer_in_english))
-#organizing the order of the levels
-level_16<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
-question_16$answer_in_english<- factor(question_16$answer_in_english,levels = level_16)
-question_16<- filter(question_16, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_16<- question_16 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(16, mean =average, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -4427,21 +4028,7 @@ avg_dept_no_weight_16<- question_16 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_16<- inner_join(question_16, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_16<- add_weights_question_16 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(16, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -4454,51 +4041,6 @@ avg_dept_weight_16<- add_weights_question_16 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q16_no_weighted<- tapply(avg_dept_no_weight_16$ave_cat, avg_dept_no_weight_16$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question16_no_weighted<- palette_banana(length(levels_per_crop_Q16_no_weighted$Banana))
-colors_plantain_question16_no_weighted<- palette_plantain(length(levels_per_crop_Q16_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_16 <- list(
-  Banana = levels_per_crop_Q16_no_weighted$Banana,
-  Plantain = levels_per_crop_Q16_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_16 <- list(
-  Banana = colors_banana_question16_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question16_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_16 <- assign_group_color(data = avg_dept_no_weight_16, levels_by_crop = levels_by_crop_no_weighted_16, colors_by_crop = colors_by_crop_no_weighted_16,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q16_weighted<- tapply(avg_dept_weight_16$ave_cat_weighted, avg_dept_weight_16$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question16_weighted<- palette_banana(length(levels_per_crop_Q16_weighted$Banana))
-colors_plantain_question16_weighted<- palette_plantain(length(levels_per_crop_Q16_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_16 <- list(
-  Banana = levels_per_crop_Q16_weighted$Banana,
-  Plantain = levels_per_crop_Q16_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_16 <- list(
-  Banana = colors_banana_question16_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question16_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_16 <- assign_group_color(data = avg_dept_weight_16, levels_by_crop = levels_by_crop_weighted_16, colors_by_crop = colors_by_crop_weighted_16,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_16, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -4654,10 +4196,6 @@ tree_map_3(data = avg_dept_no_weight_16, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_16, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -4812,16 +4350,6 @@ tree_map_3(data = avg_dept_weight_16, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q16_no_weight<- question_16 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =16))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -4831,39 +4359,13 @@ nal_q16_no_weight<- question_16 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q16_no_weight<- full_join(codes_department, nal_q16_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q16_no_weight$cat<- factor(nal_q16_no_weight$cat, levels = level_16)
-colmap(departamentos, data = nal_q16_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q16_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/questoin_16-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q16_weight<- inner_join(question_16, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q16_weight<- nal_q16_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =16)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -4874,55 +4376,13 @@ nal_q16_weight<- nal_q16_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q16_weight<- full_join(codes_department, nal_q16_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q16_weight$cat_weighted<- factor(nal_q16_weight$cat_weighted, levels = level_16)
-colmap(departamentos, data = nal_q16_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q16_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/questoin_16-4.png)<!-- -->
 
 ## Question 17: What percentage of biological control practices (beneficial insects, microbial controls) are implemented correctly in banana production systems where you have experience?
-
-``` r
-#selecting only question 17----
-question_17<- filter(individual_surveys, question_number==17)
-#unique(question_17$numeric_answer)
-#dput(unique(question_17$answer_in_english))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_17 <- question_17 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "71%-80%,81%-90%" ~ "81%-90%",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_17 <- question_17 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "9,10" ~ "10.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-level_17<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
-question_17$answer_in_english<- factor(question_17$answer_in_english,levels = level_17)
-question_17<- filter(question_17, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_17<- question_17 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(17, mean =average, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -4936,21 +4396,7 @@ avg_dept_no_weight_17<- question_17 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_17<- inner_join(question_17, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_17<- add_weights_question_17 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(17, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -4963,51 +4409,6 @@ avg_dept_weight_17<- add_weights_question_17 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q17_no_weighted<- tapply(avg_dept_no_weight_17$ave_cat, avg_dept_no_weight_17$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question17_no_weighted<- palette_banana(length(levels_per_crop_Q17_no_weighted$Banana))
-colors_plantain_question17_no_weighted<- palette_plantain(length(levels_per_crop_Q17_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_17 <- list(
-  Banana = levels_per_crop_Q17_no_weighted$Banana,
-  Plantain = levels_per_crop_Q17_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_17 <- list(
-  Banana = colors_banana_question17_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question17_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_17 <- assign_group_color(data = avg_dept_no_weight_17, levels_by_crop = levels_by_crop_no_weighted_17, colors_by_crop = colors_by_crop_no_weighted_17,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q17_weighted<- tapply(avg_dept_weight_17$ave_cat_weighted, avg_dept_weight_17$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question17_weighted<- palette_banana(length(levels_per_crop_Q17_weighted$Banana))
-colors_plantain_question17_weighted<- palette_plantain(length(levels_per_crop_Q17_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_17 <- list(
-  Banana = levels_per_crop_Q17_weighted$Banana,
-  Plantain = levels_per_crop_Q17_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_17 <- list(
-  Banana = colors_banana_question17_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question17_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_17 <- assign_group_color(data = avg_dept_weight_17, levels_by_crop = levels_by_crop_weighted_17, colors_by_crop = colors_by_crop_weighted_17,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_17, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -5163,10 +4564,6 @@ tree_map_3(data = avg_dept_no_weight_17, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_17, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -5321,16 +4718,6 @@ tree_map_3(data = avg_dept_weight_17, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q17_no_weight<- question_17 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =17))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
@@ -5342,39 +4729,13 @@ nal_q17_no_weight<- question_17 %>% group_by(expert_in) %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q17_no_weight<- full_join(codes_department, nal_q17_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q17_no_weight$cat<- factor(nal_q17_no_weight$cat, levels = level_17)
-colmap(departamentos, data = nal_q17_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q17_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_17-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q17_weight<- inner_join(question_17, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q17_weight<- nal_q17_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =17)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -5385,43 +4746,13 @@ nal_q17_weight<- nal_q17_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q17_weight<- full_join(codes_department, nal_q17_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q17_weight$cat_weighted<- factor(nal_q17_weight$cat_weighted, levels = level_17)
-colmap(departamentos, data = nal_q17_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q17_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_17-4.png)<!-- -->
 
 ## Question 18: What percentage of cultural control practices (crop rotation, sanitation) are implemented correctly in banana production systems in the areas where you are an expert?
-
-``` r
-#selecting only question 18----
-question_18<- filter(individual_surveys, question_number==18)
-#unique(question_18$numeric_answer)
-#dput(unique(question_18$answer_in_english))
-#organizing the order of the levels
-level_18<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
-question_18$answer_in_english<- factor(question_18$answer_in_english,levels = level_18)
-question_18<- filter(question_18, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_18<- question_18 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(18, mean =average, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -5435,21 +4766,7 @@ avg_dept_no_weight_18<- question_18 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_18<- inner_join(question_18, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_18<- add_weights_question_18 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(18, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -5462,51 +4779,6 @@ avg_dept_weight_18<- add_weights_question_18 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q18_no_weighted<- tapply(avg_dept_no_weight_18$ave_cat, avg_dept_no_weight_18$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question18_no_weighted<- palette_banana(length(levels_per_crop_Q18_no_weighted$Banana))
-colors_plantain_question18_no_weighted<- palette_plantain(length(levels_per_crop_Q18_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_18 <- list(
-  Banana = levels_per_crop_Q18_no_weighted$Banana,
-  Plantain = levels_per_crop_Q18_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_18 <- list(
-  Banana = colors_banana_question18_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question18_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_18 <- assign_group_color(data = avg_dept_no_weight_18, levels_by_crop = levels_by_crop_no_weighted_18, colors_by_crop = colors_by_crop_no_weighted_18,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q18_weighted<- tapply(avg_dept_weight_18$ave_cat_weighted, avg_dept_weight_18$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question18_weighted<- palette_banana(length(levels_per_crop_Q18_weighted$Banana))
-colors_plantain_question18_weighted<- palette_plantain(length(levels_per_crop_Q18_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_18 <- list(
-  Banana = levels_per_crop_Q18_weighted$Banana,
-  Plantain = levels_per_crop_Q18_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_18 <- list(
-  Banana = colors_banana_question18_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question18_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_18 <- assign_group_color(data = avg_dept_weight_18, levels_by_crop = levels_by_crop_weighted_18, colors_by_crop = colors_by_crop_weighted_18,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_18, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -5662,10 +4934,6 @@ tree_map_3(data = avg_dept_no_weight_18, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_18, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -5820,16 +5088,6 @@ tree_map_3(data = avg_dept_weight_18, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q18_no_weight<- question_18 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =18))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -5839,39 +5097,13 @@ nal_q18_no_weight<- question_18 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q18_no_weight<- full_join(codes_department, nal_q18_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q18_no_weight$cat<- factor(nal_q18_no_weight$cat, levels = level_18)
-colmap(departamentos, data = nal_q18_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q18_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_18-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q18_weight<- inner_join(question_18, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q18_weight<- nal_q18_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =18)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -5882,43 +5114,13 @@ nal_q18_weight<- nal_q18_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q18_weight<- full_join(codes_department, nal_q18_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q18_weight$cat_weighted<- factor(nal_q18_weight$cat_weighted, levels = level_18)
-colmap(departamentos, data = nal_q18_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q18_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_18-4.png)<!-- -->
 
 ## Question 19: What percentage of physical control practices (traps, barriers) are implemented correctly in banana production systems in the areas where you are an expert?
-
-``` r
-#selecting only question 19----
-question_19<- filter(individual_surveys, question_number==19)
-#unique(question_19$numeric_answer)
-#dput(unique(question_19$answer_in_english))
-#organizing the order of the levels
-level_19<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
-question_19$answer_in_english<- factor(question_19$answer_in_english,levels = level_19)
-question_19<- filter(question_19, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_19<- question_19 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(19, mean =average, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -5932,21 +5134,7 @@ avg_dept_no_weight_19<- question_19 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_19<- inner_join(question_19, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_19<- add_weights_question_19 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(19, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -5959,51 +5147,6 @@ avg_dept_weight_19<- add_weights_question_19 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q19_no_weighted<- tapply(avg_dept_no_weight_19$ave_cat, avg_dept_no_weight_19$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question19_no_weighted<- palette_banana(length(levels_per_crop_Q19_no_weighted$Banana))
-colors_plantain_question19_no_weighted<- palette_plantain(length(levels_per_crop_Q19_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_19 <- list(
-  Banana = levels_per_crop_Q19_no_weighted$Banana,
-  Plantain = levels_per_crop_Q19_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_19 <- list(
-  Banana = colors_banana_question19_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question19_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_19 <- assign_group_color(data = avg_dept_no_weight_19, levels_by_crop = levels_by_crop_no_weighted_19, colors_by_crop = colors_by_crop_no_weighted_19,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q19_weighted<- tapply(avg_dept_weight_19$ave_cat_weighted, avg_dept_weight_19$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question19_weighted<- palette_banana(length(levels_per_crop_Q19_weighted$Banana))
-colors_plantain_question19_weighted<- palette_plantain(length(levels_per_crop_Q19_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_19 <- list(
-  Banana = levels_per_crop_Q19_weighted$Banana,
-  Plantain = levels_per_crop_Q19_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_19 <- list(
-  Banana = colors_banana_question19_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question19_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_19 <- assign_group_color(data = avg_dept_weight_19, levels_by_crop = levels_by_crop_weighted_19, colors_by_crop = colors_by_crop_weighted_19,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_19, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -6159,10 +5302,6 @@ tree_map_3(data = avg_dept_no_weight_19, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_19, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -6317,16 +5456,6 @@ tree_map_3(data = avg_dept_weight_19, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q19_no_weight<- question_19 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =19))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -6336,39 +5465,13 @@ nal_q19_no_weight<- question_19 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q19_no_weight<- full_join(codes_department, nal_q19_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q19_no_weight$cat<- factor(nal_q19_no_weight$cat, levels = level_19)
-colmap(departamentos, data = nal_q19_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q19_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_19-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q19_weight<- inner_join(question_19, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q19_weight<- nal_q19_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =19)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -6379,43 +5482,13 @@ nal_q19_weight<- nal_q19_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q19_weight<- full_join(codes_department, nal_q19_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q19_weight$cat_weighted<- factor(nal_q19_weight$cat_weighted, levels = level_19)
-colmap(departamentos, data = nal_q19_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q19_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_19-4.png)<!-- -->
 
 ## Question 20: What percentage of biosecurity management practices (quarantine, disinfection) are implemented correctly in banana production systems in the areas where you are an expert?
-
-``` r
-#selecting only question 20----
-question_20<- filter(individual_surveys, question_number==20)
-#unique(question_20$numeric_answer)
-#dput(unique(question_20$answer_in_english))
-#organizing the order of the levels
-level_20<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
-question_20$answer_in_english<- factor(question_20$answer_in_english,levels = level_20)
-question_20<- filter(question_20, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_20<- question_20 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(20, mean =average, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -6429,21 +5502,7 @@ avg_dept_no_weight_20<- question_20 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_20<- inner_join(question_20, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_20<- add_weights_question_20 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(20, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -6456,51 +5515,6 @@ avg_dept_weight_20<- add_weights_question_20 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q20_no_weighted<- tapply(avg_dept_no_weight_20$ave_cat, avg_dept_no_weight_20$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question20_no_weighted<- palette_banana(length(levels_per_crop_Q20_no_weighted$Banana))
-colors_plantain_question20_no_weighted<- palette_plantain(length(levels_per_crop_Q20_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_20 <- list(
-  Banana = levels_per_crop_Q20_no_weighted$Banana,
-  Plantain = levels_per_crop_Q20_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_20 <- list(
-  Banana = colors_banana_question20_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question20_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_20 <- assign_group_color(data = avg_dept_no_weight_20, levels_by_crop = levels_by_crop_no_weighted_20, colors_by_crop = colors_by_crop_no_weighted_20,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q20_weighted<- tapply(avg_dept_weight_20$ave_cat_weighted, avg_dept_weight_20$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question20_weighted<- palette_banana(length(levels_per_crop_Q20_weighted$Banana))
-colors_plantain_question20_weighted<- palette_plantain(length(levels_per_crop_Q20_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_20 <- list(
-  Banana = levels_per_crop_Q20_weighted$Banana,
-  Plantain = levels_per_crop_Q20_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_20 <- list(
-  Banana = colors_banana_question20_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question20_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_20 <- assign_group_color(data = avg_dept_weight_20, levels_by_crop = levels_by_crop_weighted_20, colors_by_crop = colors_by_crop_weighted_20,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_20, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -6656,10 +5670,6 @@ tree_map_3(data = avg_dept_no_weight_20, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_20, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -6814,101 +5824,20 @@ tree_map_3(data = avg_dept_weight_20, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q20_no_weight<- question_20 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =20))%>%
-  rename(EKE.expert.in = expert_in)
-
-nal_q20_no_weight<- full_join(codes_department, nal_q20_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q20_no_weight$cat<- factor(nal_q20_no_weight$cat, levels = level_20)
-colmap(departamentos, data = nal_q20_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q20_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_20-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q20_weight<- inner_join(question_20, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q20_weight<- nal_q20_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =20)) %>%
-  rename(EKE.expert.in=expert_in)
-
-nal_q20_weight<- full_join(codes_department, nal_q20_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q20_weight$cat_weighted<- factor(nal_q20_weight$cat_weighted, levels = level_20)
-colmap(departamentos, data = nal_q20_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q20_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_20-4.png)<!-- -->
 
 ## Question 21: What is the average frequency of monitoring for pests and diseases in banana production systems in the areas where you have experience?
-
-``` r
-#selecting only question 21----
-question_21<- filter(individual_surveys, question_number==21)
-#unique(question_21$numeric_answer)
-#dput(unique(question_21$answer_in_english))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_21 <- question_21 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "Daily,Weekly,Biweekly,Monthly,Quarterly,As Needed" ~ "As Needed",
-    answer_in_english == "Bimonthly,Quarterly" ~ "Quarterly",
-    answer_in_english == "Biweekly,Monthly" ~ "Monthly",
-    answer_in_english == "Weekly,Biweekly" ~ "Biweekly",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_21 <- question_21 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "1,2,3,4,6,9" ~ "9",
-    numeric_answer == "5,6" ~ "5.5",
-    numeric_answer == "3,4" ~ "3.5",
-    numeric_answer == "2,3" ~ "2.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-level_21<- c("Daily", "Weekly", "Biweekly", "Monthly", "Bimonthly", "Quarterly", "Semiannually", "Annually", "As Needed", "Unsupervised", "Not Sure")
-question_21$answer_in_english<- factor(question_21$answer_in_english,levels = level_21)
-question_21<- filter(question_21, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_21<- question_21 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(21, mean =average, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -6922,21 +5851,7 @@ avg_dept_no_weight_21<- question_21 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_21<- inner_join(question_21, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_21<- add_weights_question_21 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(21, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -6949,51 +5864,6 @@ avg_dept_weight_21<- add_weights_question_21 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q21_no_weighted<- tapply(avg_dept_no_weight_21$ave_cat, avg_dept_no_weight_21$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question21_no_weighted<- palette_banana(length(levels_per_crop_Q21_no_weighted$Banana))
-colors_plantain_question21_no_weighted<- palette_plantain(length(levels_per_crop_Q21_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_21 <- list(
-  Banana = levels_per_crop_Q21_no_weighted$Banana,
-  Plantain = levels_per_crop_Q21_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_21 <- list(
-  Banana = colors_banana_question21_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question21_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_21 <- assign_group_color(data = avg_dept_no_weight_21, levels_by_crop = levels_by_crop_no_weighted_21, colors_by_crop = colors_by_crop_no_weighted_21,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q21_weighted<- tapply(avg_dept_weight_21$ave_cat_weighted, avg_dept_weight_21$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question21_weighted<- palette_banana(length(levels_per_crop_Q21_weighted$Banana))
-colors_plantain_question21_weighted<- palette_plantain(length(levels_per_crop_Q21_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_21 <- list(
-  Banana = levels_per_crop_Q21_weighted$Banana,
-  Plantain = levels_per_crop_Q21_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_21 <- list(
-  Banana = colors_banana_question21_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question21_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_21 <- assign_group_color(data = avg_dept_weight_21, levels_by_crop = levels_by_crop_weighted_21, colors_by_crop = colors_by_crop_weighted_21,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_21, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -7141,10 +6011,6 @@ tree_map_3(data = avg_dept_no_weight_21, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_21, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -7291,16 +6157,6 @@ tree_map_3(data = avg_dept_weight_21, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q21_no_weight<- question_21 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =21))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
@@ -7312,39 +6168,13 @@ nal_q21_no_weight<- question_21 %>% group_by(expert_in) %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q21_no_weight<- full_join(codes_department, nal_q21_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q21_no_weight$cat<- factor(nal_q21_no_weight$cat, levels = level_21)
-colmap(departamentos, data = nal_q21_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q21_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_21-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q21_weight<- inner_join(question_21, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q21_weight<- nal_q21_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =21)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
@@ -7357,44 +6187,13 @@ nal_q21_weight<- nal_q21_weight %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q21_weight<- full_join(codes_department, nal_q21_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q21_weight$cat_weighted<- factor(nal_q21_weight$cat_weighted, levels = level_21)
-colmap(departamentos, data = nal_q21_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q21_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_21-4.png)<!-- -->
 
 ## Question 22: What is the efficacy perceived by producers of chemical control (pesticides, fungicides) in the prevention or management of banana diseases in the areas where you have experience?
-
-``` r
-#selecting only question 22----
-question_22<- filter(individual_surveys, question_number==22)
-#unique(question_22$numeric_answer)
-#dput(unique(question_22$answer_in_english))
-
-#organizing the order of the levels
-level_22<- c("Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
-question_22$answer_in_english<- factor(question_22$answer_in_english,levels = level_22)
-question_22<- filter(question_22, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_22<- question_22 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(22, mean =average, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -7408,21 +6207,7 @@ avg_dept_no_weight_22<- question_22 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_22<- inner_join(question_22, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_22<- add_weights_question_22 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(22, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -7435,51 +6220,6 @@ avg_dept_weight_22<- add_weights_question_22 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q22_no_weighted<- tapply(avg_dept_no_weight_22$ave_cat, avg_dept_no_weight_22$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question22_no_weighted<- palette_banana(length(levels_per_crop_Q22_no_weighted$Banana))
-colors_plantain_question22_no_weighted<- palette_plantain(length(levels_per_crop_Q22_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_22 <- list(
-  Banana = levels_per_crop_Q22_no_weighted$Banana,
-  Plantain = levels_per_crop_Q22_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_22 <- list(
-  Banana = colors_banana_question22_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question22_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_22 <- assign_group_color(data = avg_dept_no_weight_22, levels_by_crop = levels_by_crop_no_weighted_22, colors_by_crop = colors_by_crop_no_weighted_22,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q22_weighted<- tapply(avg_dept_weight_22$ave_cat_weighted, avg_dept_weight_22$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question22_weighted<- palette_banana(length(levels_per_crop_Q22_weighted$Banana))
-colors_plantain_question22_weighted<- palette_plantain(length(levels_per_crop_Q22_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_22 <- list(
-  Banana = levels_per_crop_Q22_weighted$Banana,
-  Plantain = levels_per_crop_Q22_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_22 <- list(
-  Banana = colors_banana_question22_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question22_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_22 <- assign_group_color(data = avg_dept_weight_22, levels_by_crop = levels_by_crop_weighted_22, colors_by_crop = colors_by_crop_weighted_22,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_22, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -7635,10 +6375,6 @@ tree_map_3(data = avg_dept_no_weight_22, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_22, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -7793,16 +6529,6 @@ tree_map_3(data = avg_dept_weight_22, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q22_no_weight<- question_22 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =22))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -7812,39 +6538,13 @@ nal_q22_no_weight<- question_22 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q22_no_weight<- full_join(codes_department, nal_q22_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q22_no_weight$cat<- factor(nal_q22_no_weight$cat, levels = level_22)
-colmap(departamentos, data = nal_q22_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q22_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_22-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q22_weight<- inner_join(question_22, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q22_weight<- nal_q22_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =22)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
@@ -7857,55 +6557,13 @@ nal_q22_weight<- nal_q22_weight %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q22_weight<- full_join(codes_department, nal_q22_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q22_weight$cat_weighted<- factor(nal_q22_weight$cat_weighted, levels = level_22)
-colmap(departamentos, data = nal_q22_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q22_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_22-4.png)<!-- -->
 
 ## Question 23: What is the efficacy perceived by producers of biological control (beneficial insects, microbial controls) in the prevention or management of banana diseases in the areas where you are an expert?
-
-``` r
-#selecting only question 23----
-question_23<- filter(individual_surveys, question_number==23)
-#unique(question_23$numeric_answer)
-#dput(unique(question_23$answer_in_english))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_23 <- question_23 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "Extremely Effective,Unsure" ~ "Unsure",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_23 <- question_23 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "5,6" ~ "6",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-level_23<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
-question_23$answer_in_english<- factor(question_23$answer_in_english,levels = level_23)
-question_23<- filter(question_23, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_23<- question_23 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(23, mean =average, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -7919,21 +6577,7 @@ avg_dept_no_weight_23<- question_23 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_23<- inner_join(question_23, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_23<- add_weights_question_23 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(23, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -7946,51 +6590,6 @@ avg_dept_weight_23<- add_weights_question_23 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q23_no_weighted<- tapply(avg_dept_no_weight_23$ave_cat, avg_dept_no_weight_23$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question23_no_weighted<- palette_banana(length(levels_per_crop_Q23_no_weighted$Banana))
-colors_plantain_question23_no_weighted<- palette_plantain(length(levels_per_crop_Q23_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_23 <- list(
-  Banana = levels_per_crop_Q23_no_weighted$Banana,
-  Plantain = levels_per_crop_Q23_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_23 <- list(
-  Banana = colors_banana_question23_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question23_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_23 <- assign_group_color(data = avg_dept_no_weight_23, levels_by_crop = levels_by_crop_no_weighted_23, colors_by_crop = colors_by_crop_no_weighted_23,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q23_weighted<- tapply(avg_dept_weight_23$ave_cat_weighted, avg_dept_weight_23$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question23_weighted<- palette_banana(length(levels_per_crop_Q23_weighted$Banana))
-colors_plantain_question23_weighted<- palette_plantain(length(levels_per_crop_Q23_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_23 <- list(
-  Banana = levels_per_crop_Q23_weighted$Banana,
-  Plantain = levels_per_crop_Q23_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_23 <- list(
-  Banana = colors_banana_question23_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question23_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_23 <- assign_group_color(data = avg_dept_weight_23, levels_by_crop = levels_by_crop_weighted_23, colors_by_crop = colors_by_crop_weighted_23,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_23, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -8146,10 +6745,6 @@ tree_map_3(data = avg_dept_no_weight_23, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_23, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -8304,16 +6899,6 @@ tree_map_3(data = avg_dept_weight_23, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q23_no_weight<- question_23 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =23))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -8323,75 +6908,20 @@ nal_q23_no_weight<- question_23 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q23_no_weight<- full_join(codes_department, nal_q23_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q23_no_weight$cat<- factor(nal_q23_no_weight$cat, levels = level_23)
-colmap(departamentos, data = nal_q23_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q23_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_23-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q23_weight<- inner_join(question_23, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q23_weight<- nal_q23_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =23)) %>%
-  rename(EKE.expert.in=expert_in)
-
-nal_q23_weight<- full_join(codes_department, nal_q23_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q23_weight$cat_weighted<- factor(nal_q23_weight$cat_weighted, levels = level_23)
-colmap(departamentos, data = nal_q23_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q23_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_23-4.png)<!-- -->
 
 ## Question 24: What is the efficacy perceived by producers of cultural control (crop rotation, sanitation) in the prevention or management of banana diseases in the areas where you are an expert?
-
-``` r
-#selecting only question 24----
-question_24<- filter(individual_surveys, question_number==24)
-#unique(question_24$numeric_answer)
-#dput(unique(question_24$answer_in_english))
-#organizing the order of the levels
-level_24<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
-question_24$answer_in_english<- factor(question_24$answer_in_english,levels = level_24)
-question_24<- filter(question_24, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_24<- question_24 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(24, mean =average, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -8405,21 +6935,7 @@ avg_dept_no_weight_24<- question_24 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_24<- inner_join(question_24, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_24<- add_weights_question_24 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(24, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 9 warnings in `mutate()`.
     ## The first warning was:
@@ -8432,51 +6948,6 @@ avg_dept_weight_24<- add_weights_question_24 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q24_no_weighted<- tapply(avg_dept_no_weight_24$ave_cat, avg_dept_no_weight_24$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question24_no_weighted<- palette_banana(length(levels_per_crop_Q24_no_weighted$Banana))
-colors_plantain_question24_no_weighted<- palette_plantain(length(levels_per_crop_Q24_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_24 <- list(
-  Banana = levels_per_crop_Q24_no_weighted$Banana,
-  Plantain = levels_per_crop_Q24_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_24 <- list(
-  Banana = colors_banana_question24_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question24_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_24 <- assign_group_color(data = avg_dept_no_weight_24, levels_by_crop = levels_by_crop_no_weighted_24, colors_by_crop = colors_by_crop_no_weighted_24,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q24_weighted<- tapply(avg_dept_weight_24$ave_cat_weighted, avg_dept_weight_24$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question24_weighted<- palette_banana(length(levels_per_crop_Q24_weighted$Banana))
-colors_plantain_question24_weighted<- palette_plantain(length(levels_per_crop_Q24_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_24 <- list(
-  Banana = levels_per_crop_Q24_weighted$Banana,
-  Plantain = levels_per_crop_Q24_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_24 <- list(
-  Banana = colors_banana_question24_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question24_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_24 <- assign_group_color(data = avg_dept_weight_24, levels_by_crop = levels_by_crop_weighted_24, colors_by_crop = colors_by_crop_weighted_24,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_24, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -8632,10 +7103,6 @@ tree_map_3(data = avg_dept_no_weight_24, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_24, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -8790,16 +7257,6 @@ tree_map_3(data = avg_dept_weight_24, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q24_no_weight<- question_24 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =24))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -8809,39 +7266,13 @@ nal_q24_no_weight<- question_24 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q24_no_weight<- full_join(codes_department, nal_q24_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q24_no_weight$cat<- factor(nal_q24_no_weight$cat, levels = level_24)
-colmap(departamentos, data = nal_q24_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q24_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_24-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q24_weight<- inner_join(question_24, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q24_weight<- nal_q24_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =24)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -8852,43 +7283,13 @@ nal_q24_weight<- nal_q24_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q24_weight<- full_join(codes_department, nal_q24_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q24_weight$cat_weighted<- factor(nal_q24_weight$cat_weighted, levels = level_24)
-colmap(departamentos, data = nal_q24_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q24_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_24-4.png)<!-- -->
 
 ## Question 25: What is the efficacy perceived by producers of biosecurity measures (quarantine, disinfection) in the prevention or management of banana diseases in the areas where you are an expert?
-
-``` r
-#selecting only question 25----
-question_25<- filter(individual_surveys, question_number==25)
-#unique(question_25$numeric_answer)
-#dput(unique(question_25$answer_in_english))
-#organizing the order of the levels
-level_25<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
-question_25$answer_in_english<- factor(question_25$answer_in_english,levels = level_25)
-question_25<- filter(question_25, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_25<- question_25 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(25, mean =average, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -8902,21 +7303,7 @@ avg_dept_no_weight_25<- question_25 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_25<- inner_join(question_25, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_25<- add_weights_question_25 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(25, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -8929,51 +7316,6 @@ avg_dept_weight_25<- add_weights_question_25 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q25_no_weighted<- tapply(avg_dept_no_weight_25$ave_cat, avg_dept_no_weight_25$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question25_no_weighted<- palette_banana(length(levels_per_crop_Q25_no_weighted$Banana))
-colors_plantain_question25_no_weighted<- palette_plantain(length(levels_per_crop_Q25_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_25 <- list(
-  Banana = levels_per_crop_Q25_no_weighted$Banana,
-  Plantain = levels_per_crop_Q25_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_25 <- list(
-  Banana = colors_banana_question25_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question25_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_25 <- assign_group_color(data = avg_dept_no_weight_25, levels_by_crop = levels_by_crop_no_weighted_25, colors_by_crop = colors_by_crop_no_weighted_25,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q25_weighted<- tapply(avg_dept_weight_25$ave_cat_weighted, avg_dept_weight_25$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question25_weighted<- palette_banana(length(levels_per_crop_Q25_weighted$Banana))
-colors_plantain_question25_weighted<- palette_plantain(length(levels_per_crop_Q25_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_25 <- list(
-  Banana = levels_per_crop_Q25_weighted$Banana,
-  Plantain = levels_per_crop_Q25_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_25 <- list(
-  Banana = colors_banana_question25_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question25_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_25 <- assign_group_color(data = avg_dept_weight_25, levels_by_crop = levels_by_crop_weighted_25, colors_by_crop = colors_by_crop_weighted_25,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_25, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -9129,10 +7471,6 @@ tree_map_3(data = avg_dept_no_weight_25, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_25, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -9287,16 +7625,6 @@ tree_map_3(data = avg_dept_weight_25, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q25_no_weight<- question_25 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =25))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -9306,39 +7634,13 @@ nal_q25_no_weight<- question_25 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q25_no_weight<- full_join(codes_department, nal_q25_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q25_no_weight$cat<- factor(nal_q25_no_weight$cat, levels = level_25)
-colmap(departamentos, data = nal_q25_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q25_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_25-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q25_weight<- inner_join(question_25, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q25_weight<- nal_q25_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =25)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -9349,43 +7651,13 @@ nal_q25_weight<- nal_q25_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q25_weight<- full_join(codes_department, nal_q25_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q25_weight$cat_weighted<- factor(nal_q25_weight$cat_weighted, levels = level_25)
-colmap(departamentos, data = nal_q25_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q25_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_25-4.png)<!-- -->
 
 ## Question 26: What is the efficacy perceived by producers about surveillance and reporting in the prevention or management of banana diseases in the areas where you are an expert?
-
-``` r
-#selecting only question 26----
-question_26<- filter(individual_surveys, question_number==26)
-#unique(question_26$numeric_answer)
-#dput(unique(question_26$answer_in_english))
-#organizing the order of the levels
-level_26<- c("Not Effective", "Slightly Effective", "Moderately Effective", "Very Effective","Extremely Effective", "Unsure")
-question_26$answer_in_english<- factor(question_26$answer_in_english,levels = level_26)
-question_26<- filter(question_26, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_26<- question_26 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(26, mean =average, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -9399,21 +7671,7 @@ avg_dept_no_weight_26<- question_26 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_26<- inner_join(question_26, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_26<- add_weights_question_26 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(26, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -9426,51 +7684,6 @@ avg_dept_weight_26<- add_weights_question_26 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q26_no_weighted<- tapply(avg_dept_no_weight_26$ave_cat, avg_dept_no_weight_26$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question26_no_weighted<- palette_banana(length(levels_per_crop_Q26_no_weighted$Banana))
-colors_plantain_question26_no_weighted<- palette_plantain(length(levels_per_crop_Q26_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_26 <- list(
-  Banana = levels_per_crop_Q26_no_weighted$Banana,
-  Plantain = levels_per_crop_Q26_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_26 <- list(
-  Banana = colors_banana_question26_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question26_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_26 <- assign_group_color(data = avg_dept_no_weight_26, levels_by_crop = levels_by_crop_no_weighted_26, colors_by_crop = colors_by_crop_no_weighted_26,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q26_weighted<- tapply(avg_dept_weight_26$ave_cat_weighted, avg_dept_weight_26$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question26_weighted<- palette_banana(length(levels_per_crop_Q26_weighted$Banana))
-colors_plantain_question26_weighted<- palette_plantain(length(levels_per_crop_Q26_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_26 <- list(
-  Banana = levels_per_crop_Q26_weighted$Banana,
-  Plantain = levels_per_crop_Q26_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_26 <- list(
-  Banana = colors_banana_question26_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question26_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_26 <- assign_group_color(data = avg_dept_weight_26, levels_by_crop = levels_by_crop_weighted_26, colors_by_crop = colors_by_crop_weighted_26,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_26, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -9626,10 +7839,6 @@ tree_map_3(data = avg_dept_no_weight_26, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_26, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -9784,16 +7993,6 @@ tree_map_3(data = avg_dept_weight_26, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q26_no_weight<- question_26 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =26))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
@@ -9805,39 +8004,13 @@ nal_q26_no_weight<- question_26 %>% group_by(expert_in) %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q26_no_weight<- full_join(codes_department, nal_q26_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q26_no_weight$cat<- factor(nal_q26_no_weight$cat, levels = level_26)
-colmap(departamentos, data = nal_q26_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q26_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_26-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q26_weight<- inner_join(question_26, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q26_weight<- nal_q26_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =26)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -9848,44 +8021,13 @@ nal_q26_weight<- nal_q26_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q26_weight<- full_join(codes_department, nal_q26_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q26_weight$cat_weighted<- factor(nal_q26_weight$cat_weighted, levels = level_26)
-colmap(departamentos, data = nal_q26_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q26_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_26-4.png)<!-- -->
 
 ## Question 28: How important do you believe the role of migrant or itinerant workers is in the spread of pests and diseases in banana plantations in your areas of specialization?
-
-``` r
-#selecting only question 28----
-question_28<- filter(individual_surveys, question_number==28)
-#unique(question_28$numeric_answer)
-#dput(unique(question_28$answer_in_english))
-
-#organizing the order of the levels
-level_28<- c("Not Significant", "Somewhat Significant", "Very Significant","Not Sure")
-question_28$answer_in_english<- factor(question_28$answer_in_english,levels = level_28)
-question_28<- filter(question_28, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_28<- question_28 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(28, mean =average, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -9899,21 +8041,7 @@ avg_dept_no_weight_28<- question_28 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_28<- inner_join(question_28, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_28<- add_weights_question_28 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(28, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -9926,51 +8054,6 @@ avg_dept_weight_28<- add_weights_question_28 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q28_no_weighted<- tapply(avg_dept_no_weight_28$ave_cat, avg_dept_no_weight_28$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question28_no_weighted<- palette_banana(length(levels_per_crop_Q28_no_weighted$Banana))
-colors_plantain_question28_no_weighted<- palette_plantain(length(levels_per_crop_Q28_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_28 <- list(
-  Banana = levels_per_crop_Q28_no_weighted$Banana,
-  Plantain = levels_per_crop_Q28_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_28 <- list(
-  Banana = colors_banana_question28_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question28_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_28 <- assign_group_color(data = avg_dept_no_weight_28, levels_by_crop = levels_by_crop_no_weighted_28, colors_by_crop = colors_by_crop_no_weighted_28,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q28_weighted<- tapply(avg_dept_weight_28$ave_cat_weighted, avg_dept_weight_28$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question28_weighted<- palette_banana(length(levels_per_crop_Q28_weighted$Banana))
-colors_plantain_question28_weighted<- palette_plantain(length(levels_per_crop_Q28_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_28 <- list(
-  Banana = levels_per_crop_Q28_weighted$Banana,
-  Plantain = levels_per_crop_Q28_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_28 <- list(
-  Banana = colors_banana_question28_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question28_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_28 <- assign_group_color(data = avg_dept_weight_28, levels_by_crop = levels_by_crop_weighted_28, colors_by_crop = colors_by_crop_weighted_28,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_28, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -10130,10 +8213,6 @@ tree_map_3(data = avg_dept_no_weight_28, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_28, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -10292,16 +8371,6 @@ tree_map_3(data = avg_dept_weight_28, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q28_no_weight<- question_28 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =28))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -10311,76 +8380,20 @@ nal_q28_no_weight<- question_28 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q28_no_weight<- full_join(codes_department, nal_q28_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q28_no_weight$cat<- factor(nal_q28_no_weight$cat, levels = level_28)
-colmap(departamentos, data = nal_q28_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q28_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_28-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q28_weight<- inner_join(question_28, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q28_weight<- nal_q28_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =28)) %>%
-  rename(EKE.expert.in=expert_in)
-
-nal_q28_weight<- full_join(codes_department, nal_q28_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q28_weight$cat_weighted<- factor(nal_q28_weight$cat_weighted, levels = level_28)
-colmap(departamentos, data = nal_q28_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q28_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_28-4.png)<!-- -->
 
 ## Question 29: To what extent are migrant or itinerant workers implementing biosecurity measures to reduce the possible spread of pests and diseases in the areas where you are an expert?
-
-``` r
-#selecting only question 29----
-question_29<- filter(individual_surveys, question_number==29)
-#unique(question_29$numeric_answer)
-#dput(unique(question_29$answer_in_english))
-
-#organizing the order of the levels
-level_29<- c("No Measures", "Some Measures", "Significant Measures","Not Sure")
-question_29$answer_in_english<- factor(question_29$answer_in_english,levels = level_29)
-question_29<- filter(question_29, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_29<- question_29 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(29, mean =average, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -10394,21 +8407,7 @@ avg_dept_no_weight_29<- question_29 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_29<- inner_join(question_29, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_29<- add_weights_question_29 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(29, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -10421,51 +8420,6 @@ avg_dept_weight_29<- add_weights_question_29 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q29_no_weighted<- tapply(avg_dept_no_weight_29$ave_cat, avg_dept_no_weight_29$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question29_no_weighted<- palette_banana(length(levels_per_crop_Q29_no_weighted$Banana))
-colors_plantain_question29_no_weighted<- palette_plantain(length(levels_per_crop_Q29_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_29 <- list(
-  Banana = levels_per_crop_Q29_no_weighted$Banana,
-  Plantain = levels_per_crop_Q29_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_29 <- list(
-  Banana = colors_banana_question29_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question29_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_29 <- assign_group_color(data = avg_dept_no_weight_29, levels_by_crop = levels_by_crop_no_weighted_29, colors_by_crop = colors_by_crop_no_weighted_29,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q29_weighted<- tapply(avg_dept_weight_29$ave_cat_weighted, avg_dept_weight_29$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question29_weighted<- palette_banana(length(levels_per_crop_Q29_weighted$Banana))
-colors_plantain_question29_weighted<- palette_plantain(length(levels_per_crop_Q29_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_29 <- list(
-  Banana = levels_per_crop_Q29_weighted$Banana,
-  Plantain = levels_per_crop_Q29_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_29 <- list(
-  Banana = colors_banana_question29_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question29_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_29 <- assign_group_color(data = avg_dept_weight_29, levels_by_crop = levels_by_crop_weighted_29, colors_by_crop = colors_by_crop_weighted_29,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_29, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -10621,10 +8575,6 @@ tree_map_3(data = avg_dept_no_weight_29, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_29, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -10779,84 +8729,20 @@ tree_map_3(data = avg_dept_weight_29, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q29_no_weight<- question_29 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =29))%>%
-  rename(EKE.expert.in = expert_in)
-
-nal_q29_no_weight<- full_join(codes_department, nal_q29_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q29_no_weight$cat<- factor(nal_q29_no_weight$cat, levels = level_29)
-colmap(departamentos, data = nal_q29_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q29_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_29-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q29_weight<- inner_join(question_29, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q29_weight<- nal_q29_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =29)) %>%
-  rename(EKE.expert.in=expert_in)
-
-nal_q29_weight<- full_join(codes_department, nal_q29_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q29_weight$cat_weighted<- factor(nal_q29_weight$cat_weighted, levels = level_29)
-colmap(departamentos, data = nal_q29_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q29_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_29-4.png)<!-- -->
 
 ## Question 30: What degree of restriction does each area successfully apply to the movement of personnel and visitors within and between plantations?
-
-``` r
-#selecting only question 30----
-question_30<- filter(individual_surveys, question_number==30)
-#unique(question_30$numeric_answer)
-#dput(unique(question_30$answer_in_english))
-
-#organizing the order of the levels
-level_30<- c("No Limitation", "Little Limitation",  "Moderate Limitation", "Extreme Limitation", "Unsure")
-question_30$answer_in_english<- factor(question_30$answer_in_english,levels = level_30)
-question_30<- filter(question_30, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_30<- question_30 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(30, mean =average, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -10870,21 +8756,7 @@ avg_dept_no_weight_30<- question_30 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_30<- inner_join(question_30, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_30<- add_weights_question_30 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(30, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 8 warnings in `mutate()`.
     ## The first warning was:
@@ -10897,51 +8769,6 @@ avg_dept_weight_30<- add_weights_question_30 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 7 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q30_no_weighted<- tapply(avg_dept_no_weight_30$ave_cat, avg_dept_no_weight_30$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question30_no_weighted<- palette_banana(length(levels_per_crop_Q30_no_weighted$Banana))
-colors_plantain_question30_no_weighted<- palette_plantain(length(levels_per_crop_Q30_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_30 <- list(
-  Banana = levels_per_crop_Q30_no_weighted$Banana,
-  Plantain = levels_per_crop_Q30_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_30 <- list(
-  Banana = colors_banana_question30_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question30_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_30 <- assign_group_color(data = avg_dept_no_weight_30, levels_by_crop = levels_by_crop_no_weighted_30, colors_by_crop = colors_by_crop_no_weighted_30,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q30_weighted<- tapply(avg_dept_weight_30$ave_cat_weighted, avg_dept_weight_30$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question30_weighted<- palette_banana(length(levels_per_crop_Q30_weighted$Banana))
-colors_plantain_question30_weighted<- palette_plantain(length(levels_per_crop_Q30_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_30 <- list(
-  Banana = levels_per_crop_Q30_weighted$Banana,
-  Plantain = levels_per_crop_Q30_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_30 <- list(
-  Banana = colors_banana_question30_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question30_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_30 <- assign_group_color(data = avg_dept_weight_30, levels_by_crop = levels_by_crop_weighted_30, colors_by_crop = colors_by_crop_weighted_30,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_30, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -11097,10 +8924,6 @@ tree_map_3(data = avg_dept_no_weight_30, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_30, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -11255,16 +9078,6 @@ tree_map_3(data = avg_dept_weight_30, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q30_no_weight<- question_30 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =30))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There were 2 warnings in `mutate()`.
     ## The first warning was:
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
@@ -11276,39 +9089,13 @@ nal_q30_no_weight<- question_30 %>% group_by(expert_in) %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 1 remaining warning.
 
-``` r
-nal_q30_no_weight<- full_join(codes_department, nal_q30_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q30_no_weight$cat<- factor(nal_q30_no_weight$cat, levels = level_30)
-colmap(departamentos, data = nal_q30_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q30_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_30-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q30_weight<- inner_join(question_30, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q30_weight<- nal_q30_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =30)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -11319,55 +9106,13 @@ nal_q30_weight<- nal_q30_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q30_weight<- full_join(codes_department, nal_q30_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q30_weight$cat_weighted<- factor(nal_q30_weight$cat_weighted, levels = level_30)
-colmap(departamentos, data = nal_q30_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q30_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_30-4.png)<!-- -->
 
 ## Question 31: What degree of limitation does each area successfully apply to the movement of vehicles and equipment within and between plantations?
-
-``` r
-#selecting only question 31----
-question_31<- filter(individual_surveys, question_number==31)
-#unique(question_31$numeric_answer)
-#dput(unique(question_31$answer_in_english))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_31 <- question_31 %>%
-  mutate(answer_in_english = case_when(
-    answer_in_english == "No Limitation,Little Limitation" ~ "Little Limitation",
-    TRUE ~ answer_in_english  # This keeps all other values as they are
-  ))
-#some experts selected more than one option in this question so an intermediate answer is chosen 
-question_31 <- question_31 %>%
-  mutate(numeric_answer = case_when(
-    numeric_answer == "1,2" ~ "1.5",
-    TRUE ~ numeric_answer  # This keeps all other values as they are
-  ))
-#organizing the order of the levels
-level_31<- c("No Limitation","Little Limitation", "Moderate Limitation", "Extreme Limitation")
-question_31$answer_in_english<- factor(question_31$answer_in_english,levels = level_31)
-#question_31<- filter(question_31, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_31<- question_31 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(31, mean =average, language = "en"))
-```
 
     ## Warning: There were 4 warnings in `mutate()`.
     ## The first warning was:
@@ -11381,21 +9126,7 @@ avg_dept_no_weight_31<- question_31 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 3 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_31<- inner_join(question_31, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_31<- add_weights_question_31 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(31, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -11408,51 +9139,6 @@ avg_dept_weight_31<- add_weights_question_31 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q31_no_weighted<- tapply(avg_dept_no_weight_31$ave_cat, avg_dept_no_weight_31$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question31_no_weighted<- palette_banana(length(levels_per_crop_Q31_no_weighted$Banana))
-colors_plantain_question31_no_weighted<- palette_plantain(length(levels_per_crop_Q31_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_31 <- list(
-  Banana = levels_per_crop_Q31_no_weighted$Banana,
-  Plantain = levels_per_crop_Q31_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_31 <- list(
-  Banana = colors_banana_question31_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question31_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_31 <- assign_group_color(data = avg_dept_no_weight_31, levels_by_crop = levels_by_crop_no_weighted_31, colors_by_crop = colors_by_crop_no_weighted_31,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q31_weighted<- tapply(avg_dept_weight_31$ave_cat_weighted, avg_dept_weight_31$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question31_weighted<- palette_banana(length(levels_per_crop_Q31_weighted$Banana))
-colors_plantain_question31_weighted<- palette_plantain(length(levels_per_crop_Q31_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_31 <- list(
-  Banana = levels_per_crop_Q31_weighted$Banana,
-  Plantain = levels_per_crop_Q31_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_31 <- list(
-  Banana = colors_banana_question31_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question31_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_31 <- assign_group_color(data = avg_dept_weight_31, levels_by_crop = levels_by_crop_weighted_31, colors_by_crop = colors_by_crop_weighted_31,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_31, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -11612,10 +9298,6 @@ tree_map_3(data = avg_dept_no_weight_31, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_31, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -11774,16 +9456,6 @@ tree_map_3(data = avg_dept_weight_31, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q31_no_weight<- question_31 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =31))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -11793,75 +9465,20 @@ nal_q31_no_weight<- question_31 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q31_no_weight<- full_join(codes_department, nal_q31_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q31_no_weight$cat<- factor(nal_q31_no_weight$cat, levels = level_31)
-colmap(departamentos, data = nal_q31_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q31_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_31-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q31_weight<- inner_join(question_31, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q31_weight<- nal_q31_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =31)) %>%
-  rename(EKE.expert.in=expert_in)
-
-nal_q31_weight<- full_join(codes_department, nal_q31_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q31_weight$cat_weighted<- factor(nal_q31_weight$cat_weighted, levels = level_31)
-colmap(departamentos, data = nal_q31_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q31_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_31-4.png)<!-- -->
 
 ## Question 36: What percentage of banana producers are engaged in the production of their own planting material?
-
-``` r
-#selecting only question 36----
-question_36<- filter(individual_surveys, question_number==36)
-#unique(question_36$numeric_answer)
-#dput(unique(question_36$answer_in_english))
-#organizing the order of the levels
-level_36<- c("0%", "1%-10%", "11%-20%", "21%-30%", "31%-40%", "41%-50%","51%-60%", "61%-70%", "71%-80%", "81%-90%", "91%-100%", "Not Sure")
-question_36$answer_in_english<- factor(question_36$answer_in_english,levels = level_36)
-question_36<- filter(question_36, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_36<- question_36 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(36, mean =average, language = "en"))
-```
 
     ## Warning: There were 4 warnings in `mutate()`.
     ## The first warning was:
@@ -11875,21 +9492,7 @@ avg_dept_no_weight_36<- question_36 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 3 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_36<- inner_join(question_36, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_36<- add_weights_question_36 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(36, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 6 warnings in `mutate()`.
     ## The first warning was:
@@ -11902,51 +9505,6 @@ avg_dept_weight_36<- add_weights_question_36 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 5 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q36_no_weighted<- tapply(avg_dept_no_weight_36$ave_cat, avg_dept_no_weight_36$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question36_no_weighted<- palette_banana(length(levels_per_crop_Q36_no_weighted$Banana))
-colors_plantain_question36_no_weighted<- palette_plantain(length(levels_per_crop_Q36_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_36 <- list(
-  Banana = levels_per_crop_Q36_no_weighted$Banana,
-  Plantain = levels_per_crop_Q36_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_36 <- list(
-  Banana = colors_banana_question36_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question36_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_36 <- assign_group_color(data = avg_dept_no_weight_36, levels_by_crop = levels_by_crop_no_weighted_36, colors_by_crop = colors_by_crop_no_weighted_36,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q36_weighted<- tapply(avg_dept_weight_36$ave_cat_weighted, avg_dept_weight_36$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question36_weighted<- palette_banana(length(levels_per_crop_Q36_weighted$Banana))
-colors_plantain_question36_weighted<- palette_plantain(length(levels_per_crop_Q36_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_36 <- list(
-  Banana = levels_per_crop_Q36_weighted$Banana,
-  Plantain = levels_per_crop_Q36_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_36 <- list(
-  Banana = colors_banana_question36_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question36_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_36 <- assign_group_color(data = avg_dept_weight_36, levels_by_crop = levels_by_crop_weighted_36, colors_by_crop = colors_by_crop_weighted_36,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_36, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -12102,10 +9660,6 @@ tree_map_3(data = avg_dept_no_weight_36, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_36, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -12260,16 +9814,6 @@ tree_map_3(data = avg_dept_weight_36, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q36_no_weight<- question_36 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =36))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -12279,39 +9823,13 @@ nal_q36_no_weight<- question_36 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q36_no_weight<- full_join(codes_department, nal_q36_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q36_no_weight$cat<- factor(nal_q36_no_weight$cat, levels = level_36)
-colmap(departamentos, data = nal_q36_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q36_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_36-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q36_weight<- inner_join(question_36, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q36_weight<- nal_q36_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =36)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -12322,43 +9840,13 @@ nal_q36_weight<- nal_q36_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q36_weight<- full_join(codes_department, nal_q36_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q36_weight$cat_weighted<- factor(nal_q36_weight$cat_weighted, levels = level_36)
-colmap(departamentos, data = nal_q36_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q36_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_36-4.png)<!-- -->
 
 ## Question 37: If cost were not a concern, what is the likelihood that these regions would implement biosecurity strategies to mitigate or prevent Foc R4T?
-
-``` r
-#selecting only question 37----
-question_37<- filter(individual_surveys, question_number==37)
-#unique(question_37$numeric_answer)
-#dput(unique(question_37$answer_in_english))
-#organizing the order of the levels
-level_37<- c("Extremely Unlikely", "Very Unlikely", "Unlikely", "Somewhat Unlikely", "Neutral", "Somewhat Likely", "Likely", "Very Likely", "Extremely Likely", "Unsure")
-question_37$answer_in_english<- factor(question_37$answer_in_english,levels = level_37)
-question_37<- filter(question_37, answer_in_english!="Unsure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_37<- question_37 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(37, mean =average, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -12372,21 +9860,7 @@ avg_dept_no_weight_37<- question_37 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_37<- inner_join(question_37, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_37<- add_weights_question_37 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(37, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -12399,51 +9873,6 @@ avg_dept_weight_37<- add_weights_question_37 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q37_no_weighted<- tapply(avg_dept_no_weight_37$ave_cat, avg_dept_no_weight_37$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question37_no_weighted<- palette_banana(length(levels_per_crop_Q37_no_weighted$Banana))
-colors_plantain_question37_no_weighted<- palette_plantain(length(levels_per_crop_Q37_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_37 <- list(
-  Banana = levels_per_crop_Q37_no_weighted$Banana,
-  Plantain = levels_per_crop_Q37_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_37 <- list(
-  Banana = colors_banana_question37_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question37_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_37 <- assign_group_color(data = avg_dept_no_weight_37, levels_by_crop = levels_by_crop_no_weighted_37, colors_by_crop = colors_by_crop_no_weighted_37,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q37_weighted<- tapply(avg_dept_weight_37$ave_cat_weighted, avg_dept_weight_37$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question37_weighted<- palette_banana(length(levels_per_crop_Q37_weighted$Banana))
-colors_plantain_question37_weighted<- palette_plantain(length(levels_per_crop_Q37_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_37 <- list(
-  Banana = levels_per_crop_Q37_weighted$Banana,
-  Plantain = levels_per_crop_Q37_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_37 <- list(
-  Banana = colors_banana_question37_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question37_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_37 <- assign_group_color(data = avg_dept_weight_37, levels_by_crop = levels_by_crop_weighted_37, colors_by_crop = colors_by_crop_weighted_37,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_37, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -12599,10 +10028,6 @@ tree_map_3(data = avg_dept_no_weight_37, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_37, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -12757,16 +10182,6 @@ tree_map_3(data = avg_dept_weight_37, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q37_no_weight<- question_37 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =37))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -12776,39 +10191,13 @@ nal_q37_no_weight<- question_37 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q37_no_weight<- full_join(codes_department, nal_q37_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q37_no_weight$cat<- factor(nal_q37_no_weight$cat, levels = level_37)
-colmap(departamentos, data = nal_q37_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q37_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_37-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q37_weight<- inner_join(question_37, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q37_weight<- nal_q37_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =37)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -12819,43 +10208,13 @@ nal_q37_weight<- nal_q37_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q37_weight<- full_join(codes_department, nal_q37_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q37_weight$cat_weighted<- factor(nal_q37_weight$cat_weighted, levels = level_37)
-colmap(departamentos, data = nal_q37_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q37_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_37-4.png)<!-- -->
 
 ## Question 39: What are the risks associated with the introduction or reintroduction of TR4 through any of Colombia’s borders?
-
-``` r
-#selecting only question 39----
-question_39<- filter(individual_surveys, question_number==39)
-#unique(question_39$numeric_answer)
-#dput(unique(question_39$answer_in_english))
-#organizing the order of the levels
-level_39<- c("Very Low Risk", "Low Risk", "Moderate Risk", "High Risk", "Not Sure")
-question_39$answer_in_english<- factor(question_39$answer_in_english,levels = level_39)
-question_39<- filter(question_39, answer_in_english!="Not Sure")
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_39<- question_39 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(39, mean =average, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -12869,21 +10228,7 @@ avg_dept_no_weight_39<- question_39 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_39<- inner_join(question_39, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_39<- add_weights_question_39 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(39, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 9 warnings in `mutate()`.
     ## The first warning was:
@@ -12896,51 +10241,6 @@ avg_dept_weight_39<- add_weights_question_39 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 8 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q39_no_weighted<- tapply(avg_dept_no_weight_39$ave_cat, avg_dept_no_weight_39$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question39_no_weighted<- palette_banana(length(levels_per_crop_Q39_no_weighted$Banana))
-colors_plantain_question39_no_weighted<- palette_plantain(length(levels_per_crop_Q39_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_39 <- list(
-  Banana = levels_per_crop_Q39_no_weighted$Banana,
-  Plantain = levels_per_crop_Q39_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_39 <- list(
-  Banana = colors_banana_question39_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question39_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_39 <- assign_group_color(data = avg_dept_no_weight_39, levels_by_crop = levels_by_crop_no_weighted_39, colors_by_crop = colors_by_crop_no_weighted_39,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q39_weighted<- tapply(avg_dept_weight_39$ave_cat_weighted, avg_dept_weight_39$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question39_weighted<- palette_banana(length(levels_per_crop_Q39_weighted$Banana))
-colors_plantain_question39_weighted<- palette_plantain(length(levels_per_crop_Q39_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_39 <- list(
-  Banana = levels_per_crop_Q39_weighted$Banana,
-  Plantain = levels_per_crop_Q39_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_39 <- list(
-  Banana = colors_banana_question39_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question39_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_39 <- assign_group_color(data = avg_dept_weight_39, levels_by_crop = levels_by_crop_weighted_39, colors_by_crop = colors_by_crop_weighted_39,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_39, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -13104,10 +10404,6 @@ tree_map_3(data = avg_dept_no_weight_39, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_39, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -13266,16 +10562,6 @@ tree_map_3(data = avg_dept_weight_39, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q39_no_weight<- question_39 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =39))%>%
-  rename(EKE.expert.in = expert_in)
-```
-
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat = category_by_mean_by_question(...)`.
     ## ℹ In group 0: .
@@ -13285,39 +10571,13 @@ nal_q39_no_weight<- question_39 %>% group_by(expert_in) %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q39_no_weight<- full_join(codes_department, nal_q39_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q39_no_weight$cat<- factor(nal_q39_no_weight$cat, levels = level_39)
-colmap(departamentos, data = nal_q39_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q39_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_39-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q39_weight<- inner_join(question_39, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q39_weight<- nal_q39_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =39)) %>%
-  rename(EKE.expert.in=expert_in)
-```
 
     ## Warning: There was 1 warning in `mutate()`.
     ## ℹ In argument: `cat_weighted = category_by_mean_by_question(...)`.
@@ -13328,42 +10588,13 @@ nal_q39_weight<- nal_q39_weight %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
 
-``` r
-nal_q39_weight<- full_join(codes_department, nal_q39_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q39_weight$cat_weighted<- factor(nal_q39_weight$cat_weighted, levels = level_39)
-colmap(departamentos, data = nal_q39_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q39_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/question_39-4.png)<!-- -->
 
 ## Question 40: Considering the economic, social, and environmental characteristics of each sub-region, how feasible would it be to contain future outbreaks of R4T in these areas?
-
-``` r
-#selecting only question 40----
-question_40<- filter(individual_surveys, question_number==40)
-#unique(question_40$numeric_answer)
-#dput(unique(question_40$answer_in_english))
-#organizing the order of the levels
-level_40<- c("Slightly Feasible", "Moderately Feasible", "Very Feasible", "Extremely Feasible")
-question_40$answer_in_english<- factor(question_40$answer_in_english,levels = level_40)
-#average by department (weighted and no weighted)
-#not weighted 
-avg_dept_no_weight_40<- question_40 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
-  group_by(average)%>%
-  mutate(ave_cat= category_by_mean_by_question(40, mean =average, language = "en"))
-```
 
     ## Warning: There were 5 warnings in `mutate()`.
     ## The first warning was:
@@ -13377,21 +10608,7 @@ avg_dept_no_weight_40<- question_40 %>%
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 4 remaining warnings.
 
-``` r
-#weighted 
-add_weights_question_40<- inner_join(question_40, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-avg_dept_weight_40<- add_weights_question_40 %>%
-  group_by(crop, expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted)%>%
-  mutate(ave_cat_weighted= category_by_mean_by_question(40, mean =average_weighted, language = "en"))
-```
 
     ## Warning: There were 7 warnings in `mutate()`.
     ## The first warning was:
@@ -13404,51 +10621,6 @@ avg_dept_weight_40<- add_weights_question_40 %>%
     ## Caused by warning in `number_to_category == mean`:
     ## ! longer object length is not a multiple of shorter object length
     ## ℹ Run `dplyr::last_dplyr_warnings()` to see the 6 remaining warnings.
-
-``` r
-#finding the levels per crop (banana and plantain) no weighted
-levels_per_crop_Q40_no_weighted<- tapply(avg_dept_no_weight_40$ave_cat, avg_dept_no_weight_40$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question40_no_weighted<- palette_banana(length(levels_per_crop_Q40_no_weighted$Banana))
-colors_plantain_question40_no_weighted<- palette_plantain(length(levels_per_crop_Q40_no_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_no_weighted_40 <- list(
-  Banana = levels_per_crop_Q40_no_weighted$Banana,
-  Plantain = levels_per_crop_Q40_no_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_no_weighted_40 <- list(
-  Banana = colors_banana_question40_no_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question40_no_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_no_weight_40 <- assign_group_color(data = avg_dept_no_weight_40, levels_by_crop = levels_by_crop_no_weighted_40, colors_by_crop = colors_by_crop_no_weighted_40,answer_col =  "ave_cat")
-
-#finding the levels per crop (banana and plantain) weighted
-levels_per_crop_Q40_weighted<- tapply(avg_dept_weight_40$ave_cat_weighted, avg_dept_weight_40$crop, function(x){(unique(x))})
-#generating a ramp palette according to the number of levels per crop
-colors_banana_question40_weighted<- palette_banana(length(levels_per_crop_Q40_weighted$Banana))
-colors_plantain_question40_weighted<- palette_plantain(length(levels_per_crop_Q40_weighted$Plantain))
-#Assigning the colors by crop and answer
-# Define the knowledge levels for each crop
-levels_by_crop_weighted_40 <- list(
-  Banana = levels_per_crop_Q40_weighted$Banana,
-  Plantain = levels_per_crop_Q40_weighted$Plantain
-)
-# Define the colors for each crop
-colors_by_crop_weighted_40 <- list(
-  Banana = colors_banana_question40_weighted, # Replace with actual color vector for Banana
-  Plantain = colors_plantain_question40_weighted # Replace with actual color vector for Plantain
-  # Add more crops and their color vectors here if needed
-)
-# Now call the function
-avg_dept_weight_40 <- assign_group_color(data = avg_dept_weight_40, levels_by_crop = levels_by_crop_weighted_40, colors_by_crop = colors_by_crop_weighted_40,answer_col =  "ave_cat_weighted")
-
-#tree map
-tree_map_3(data = avg_dept_no_weight_40, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
-```
 
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat'. You can
     ## override using the `.groups` argument.
@@ -13612,10 +10784,6 @@ tree_map_3(data = avg_dept_no_weight_40, "crop", "expert_in", "ave_cat", "group_
     ## $draw
     ## [1] TRUE
 
-``` r
-tree_map_3(data = avg_dept_weight_40, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
-```
-
     ## `summarise()` has grouped output by 'crop', 'expert_in', 'ave_cat_weighted'.
     ## You can override using the `.groups` argument.
 
@@ -13774,59 +10942,15 @@ tree_map_3(data = avg_dept_weight_40, "crop", "expert_in", "ave_cat_weighted", "
     ## $draw
     ## [1] TRUE
 
-``` r
-#Map of Colombia  
-#non weighted
-nal_q40_no_weight<- question_40 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
-  group_by(average) %>% 
-  mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =40))%>%
-  rename(EKE.expert.in = expert_in)
-
-nal_q40_no_weight<- full_join(codes_department, nal_q40_no_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q40_no_weight$cat<- factor(nal_q40_no_weight$cat, levels = level_40)
-colmap(departamentos, data = nal_q40_no_weight, data_id = "id_depto", var = "cat")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q40_no_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/questions_40-3.png)<!-- -->
 
-``` r
-# weighted
-nal_q40_weight<- inner_join(question_40, experience_of_each_expert)
-```
-
     ## Joining with `by = join_by(crop, expert_ID, expert_in)`
-
-``` r
-nal_q40_weight<- nal_q40_weight %>%
-  group_by(expert_in) %>%
-  mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
-  group_by(average_weighted) %>%
-  mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =40)) %>%
-  rename(EKE.expert.in=expert_in)
-
-nal_q40_weight<- full_join(codes_department, nal_q40_weight)
-```
-
     ## Joining with `by = join_by(EKE.expert.in)`
-
-``` r
-nal_q40_weight$cat_weighted<- factor(nal_q40_weight$cat_weighted, levels = level_40)
-colmap(departamentos, data = nal_q40_weight, data_id = "id_depto", var = "cat_weighted")+
-  scale_fill_manual(values = palette_soil(length(unique(nal_q40_weight$cat))-1), na.value = "#eeeeee")
-```
-
-    ## Scale for fill is already present.
-    ## Adding another scale for fill, which will replace the existing scale.
+    ## Scale for fill is already present. Adding another scale for fill, which will
+    ## replace the existing scale.
 
 ![](README_files/figure-gfm/questions_40-4.png)<!-- -->
