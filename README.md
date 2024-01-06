@@ -1,7 +1,7 @@
 Analisis of individual Questions EKE Colombia - Banano and Plantain 2023
 ================
 Jacobo Robledo
-2024-01-05
+2024-01-06
 
 ## Libraries, Functions, and Global Variables
 
@@ -285,6 +285,14 @@ Descriptive statistics by crop=
 
 ![](README_files/figure-gfm/questoin_13-1.png)<!-- -->![](README_files/figure-gfm/questoin_13-2.png)<!-- -->![](README_files/figure-gfm/questoin_13-3.png)<!-- -->![](README_files/figure-gfm/questoin_13-4.png)<!-- -->
 
+## Question 14: What procedures do producers follow to ensure the quality of banana planting material after acquisition? Please indicate all that apply.
+
+![](README_files/figure-gfm/question_14-1.png)<!-- -->![](README_files/figure-gfm/question_14-2.png)<!-- -->![](README_files/figure-gfm/question_14-3.png)<!-- -->![](README_files/figure-gfm/question_14-4.png)<!-- -->![](README_files/figure-gfm/question_14-5.png)<!-- -->![](README_files/figure-gfm/question_14-6.png)<!-- -->![](README_files/figure-gfm/question_14-7.png)<!-- -->![](README_files/figure-gfm/question_14-8.png)<!-- -->![](README_files/figure-gfm/question_14-9.png)<!-- -->![](README_files/figure-gfm/question_14-10.png)<!-- -->
+
+## Question 15: What are the current practices for pest and disease management that banana producers are implementing in your areas of expertise?
+
+![](README_files/figure-gfm/question_15-1.png)<!-- -->![](README_files/figure-gfm/question_15-2.png)<!-- -->![](README_files/figure-gfm/question_15-3.png)<!-- -->![](README_files/figure-gfm/question_15-4.png)<!-- -->![](README_files/figure-gfm/question_15-5.png)<!-- -->![](README_files/figure-gfm/question_15-6.png)<!-- -->![](README_files/figure-gfm/question_15-7.png)<!-- -->![](README_files/figure-gfm/question_15-8.png)<!-- -->![](README_files/figure-gfm/question_15-9.png)<!-- -->![](README_files/figure-gfm/question_15-10.png)<!-- -->
+
 ## Question 16: What percentage of chemical control practices (insecticides, fungicides, etc.) are implemented correctly in banana production systems in the places where you are an expert?
 
 ![](README_files/figure-gfm/questoin_16-1.png)<!-- -->![](README_files/figure-gfm/questoin_16-2.png)<!-- -->![](README_files/figure-gfm/questoin_16-3.png)<!-- -->![](README_files/figure-gfm/questoin_16-4.png)<!-- -->
@@ -329,6 +337,10 @@ Descriptive statistics by crop=
 
 ![](README_files/figure-gfm/question_26-1.png)<!-- -->![](README_files/figure-gfm/question_26-2.png)<!-- -->![](README_files/figure-gfm/question_26-3.png)<!-- -->![](README_files/figure-gfm/question_26-4.png)<!-- -->
 
+## Question 27: What are the most limiting factors to ensure the adequate implementation of management practices that can maintain an adequate phytosanitary status of banana plantations in the areas where you are an expert?
+
+![](README_files/figure-gfm/question_27-1.png)<!-- -->![](README_files/figure-gfm/question_27-2.png)<!-- -->![](README_files/figure-gfm/question_27-3.png)<!-- -->![](README_files/figure-gfm/question_27-4.png)<!-- -->![](README_files/figure-gfm/question_27-5.png)<!-- -->![](README_files/figure-gfm/question_27-6.png)<!-- -->![](README_files/figure-gfm/question_27-7.png)<!-- -->![](README_files/figure-gfm/question_27-8.png)<!-- -->![](README_files/figure-gfm/question_27-9.png)<!-- -->![](README_files/figure-gfm/question_27-10.png)<!-- -->
+
 ## Question 28: How important do you believe the role of migrant or itinerant workers is in the spread of pests and diseases in banana plantations in your areas of specialization?
 
 ![](README_files/figure-gfm/question_28-1.png)<!-- -->![](README_files/figure-gfm/question_28-2.png)<!-- -->![](README_files/figure-gfm/question_28-3.png)<!-- -->![](README_files/figure-gfm/question_28-4.png)<!-- -->
@@ -345,6 +357,18 @@ Descriptive statistics by crop=
 
 ![](README_files/figure-gfm/question_31-1.png)<!-- -->![](README_files/figure-gfm/question_31-2.png)<!-- -->![](README_files/figure-gfm/question_31-3.png)<!-- -->![](README_files/figure-gfm/question_31-4.png)<!-- -->
 
+## Question 32: What irrigation system is used in each area? Please check all that apply.
+
+![](README_files/figure-gfm/queestion_32-1.png)<!-- -->![](README_files/figure-gfm/queestion_32-2.png)<!-- -->![](README_files/figure-gfm/queestion_32-3.png)<!-- -->![](README_files/figure-gfm/queestion_32-4.png)<!-- -->![](README_files/figure-gfm/queestion_32-5.png)<!-- -->![](README_files/figure-gfm/queestion_32-6.png)<!-- -->![](README_files/figure-gfm/queestion_32-7.png)<!-- -->![](README_files/figure-gfm/queestion_32-8.png)<!-- -->![](README_files/figure-gfm/queestion_32-9.png)<!-- -->![](README_files/figure-gfm/queestion_32-10.png)<!-- -->
+
+## Question 33: What is the source of water for each region in the area where you are an expert? Please check all that apply.
+
+![](README_files/figure-gfm/queestion_33-1.png)<!-- -->![](README_files/figure-gfm/queestion_33-2.png)<!-- -->![](README_files/figure-gfm/queestion_33-3.png)<!-- -->![](README_files/figure-gfm/queestion_33-4.png)<!-- -->![](README_files/figure-gfm/queestion_33-5.png)<!-- -->![](README_files/figure-gfm/queestion_33-6.png)<!-- -->![](README_files/figure-gfm/queestion_33-7.png)<!-- -->![](README_files/figure-gfm/queestion_33-8.png)<!-- -->![](README_files/figure-gfm/queestion_33-9.png)<!-- -->![](README_files/figure-gfm/queestion_33-10.png)<!-- -->
+
+## Question 35: How is the water for irrigation treated in the areas where you are an expert? Please check all that apply.
+
+![](README_files/figure-gfm/questoin_35-1.png)<!-- -->![](README_files/figure-gfm/questoin_35-2.png)<!-- -->![](README_files/figure-gfm/questoin_35-3.png)<!-- -->![](README_files/figure-gfm/questoin_35-4.png)<!-- -->![](README_files/figure-gfm/questoin_35-5.png)<!-- -->![](README_files/figure-gfm/questoin_35-6.png)<!-- -->![](README_files/figure-gfm/questoin_35-7.png)<!-- -->![](README_files/figure-gfm/questoin_35-8.png)<!-- -->![](README_files/figure-gfm/questoin_35-9.png)<!-- -->![](README_files/figure-gfm/questoin_35-10.png)<!-- -->
+
 ## Question 36: What percentage of banana producers are engaged in the production of their own planting material?
 
 ![](README_files/figure-gfm/question_36-1.png)<!-- -->![](README_files/figure-gfm/question_36-2.png)<!-- -->![](README_files/figure-gfm/question_36-3.png)<!-- -->![](README_files/figure-gfm/question_36-4.png)<!-- -->
@@ -360,3 +384,7 @@ Descriptive statistics by crop=
 ## Question 40: Considering the economic, social, and environmental characteristics of each sub-region, how feasible would it be to contain future outbreaks of R4T in these areas?
 
 ![](README_files/figure-gfm/questions_40-1.png)<!-- -->![](README_files/figure-gfm/questions_40-2.png)<!-- -->![](README_files/figure-gfm/questions_40-3.png)<!-- -->![](README_files/figure-gfm/questions_40-4.png)<!-- -->
+
+## Question 41: What risk-associated factor do you believe is significant for the spread of Foc R4T but has not received sufficient efforts to mitigate it? Please check all that apply
+
+![](README_files/figure-gfm/question_41-1.png)<!-- -->![](README_files/figure-gfm/question_41-2.png)<!-- -->![](README_files/figure-gfm/question_41-3.png)<!-- -->![](README_files/figure-gfm/question_41-4.png)<!-- -->![](README_files/figure-gfm/question_41-5.png)<!-- -->![](README_files/figure-gfm/question_41-6.png)<!-- -->![](README_files/figure-gfm/question_41-7.png)<!-- -->![](README_files/figure-gfm/question_41-8.png)<!-- -->![](README_files/figure-gfm/question_41-9.png)<!-- -->![](README_files/figure-gfm/question_41-10.png)<!-- -->
