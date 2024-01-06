@@ -1535,7 +1535,6 @@ colmap(departamentos, data = nal_q11_weight, data_id = "id_depto", var = "cat_we
   scale_fill_manual(values = palette_soil(length(unique(nal_q11_weight$cat))-1), na.value = "#eeeeee")
 ```
 
-
 ## Question 13: `r unique(individual_surveys$question_in_english)[13]`
 
 ```{r questoin_13}
@@ -1631,6 +1630,459 @@ nal_q13_weight<- full_join(codes_department, nal_q13_weight)
 nal_q13_weight$cat_weighted<- factor(nal_q13_weight$cat_weighted, levels = c("Every 1 or 2 cycles", "Every 3 to 4 cycles", "Every 5 to 6 cycles",  "Every 7 or more cycles", "Not Sure"))
 colmap(departamentos, data = nal_q13_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q13_weight$cat))-1), na.value = "#eeeeee")
+```
+
+## Question 14: `r unique(individual_surveys$question_in_english)[14]`
+
+```{R question_14}
+#selecting only question 14----
+question_14<- filter(individual_surveys, question_number==14)
+#dput(unique(question_14$))
+question_14<- filter(question_14, answer_in_english!="Unsure")
+question_14_Frequencies_non_weighted<- count_elements_by_group(question_14, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q14_no_weighted<- tapply(question_14_Frequencies_non_weighted$answer_in_english, question_14_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question14_no_weighted<- palette_banana(length(levels_per_crop_Q14_no_weighted$Banana))
+colors_plantain_question14_no_weighted<- palette_plantain(length(levels_per_crop_Q14_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_14 <- list(
+  Banana = levels_per_crop_Q14_no_weighted$Banana,
+  Plantain = levels_per_crop_Q14_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_14 <- list(
+  Banana = colors_banana_question14_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question14_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_14 <- assign_group_color(data = question_14_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_14, colors_by_crop = colors_by_crop_no_weighted_14,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_14 <- avg_no_weight_14 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Compliance with Regulations" ~ "CWR",
+    answer_in_english == "Consultation with Experts" ~ "CWE",
+    answer_in_english == "Inspection and Testing" ~ "IAT",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Quarantine and Isolation" ~ "QAI",
+    answer_in_english == "Record Keeping" ~ "RK",
+    answer_in_english == "Storage Conditions" ~ "SC",
+    answer_in_english == "Training and Awareness" ~ "TAA",
+    answer_in_english == "Treatment and Disinfection" ~ "TAD",
+    answer_in_english == "Community Involvement" ~ "CI",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_14_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_14$crop,
+                                    h3= avg_no_weight_14$answer_in_english,
+                                    color= avg_no_weight_14$group_color,
+                                    weight= avg_no_weight_14$n,
+                                    codes= avg_no_weight_14$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_14_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_14_weihted<- inner_join(question_14, experience_of_each_expert)
+rep_question_14_weighted<- question_14_weihted %>%
+  slice(rep(1:n(), question_14_weihted$weights))
+question_14_Frequencies_weighted<- count_elements_by_group(rep_question_14_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_14 <- assign_group_color(data = question_14_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_14, colors_by_crop = colors_by_crop_no_weighted_14,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_14 <- avg_weight_14 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Compliance with Regulations" ~ "CWR",
+    answer_in_english == "Consultation with Experts" ~ "CWE",
+    answer_in_english == "Inspection and Testing" ~ "IAT",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Quarantine and Isolation" ~ "QAI",
+    answer_in_english == "Record Keeping" ~ "RK",
+    answer_in_english == "Storage Conditions" ~ "SC",
+    answer_in_english == "Training and Awareness" ~ "TAA",
+    answer_in_english == "Treatment and Disinfection" ~ "TAD",
+    answer_in_english == "Community Involvement" ~ "CI",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_weight_14_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_14$crop,
+                                   h3= avg_weight_14$answer_in_english,
+                                   color= avg_weight_14$group_color,
+                                   weight= avg_weight_14$n,
+                                   codes= avg_weight_14$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_14_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "weighted")
+#Frequencies by department
+question_14_frequencies_by_depto <- count_elements_by_group(question_14, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_14_frequencies_by_depto <- assign_group_color(data = question_14_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_14, colors_by_crop = colors_by_crop_no_weighted_14,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_14_frequencies_by_depto <- question_14_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Compliance with Regulations" ~ "CWR",
+    answer_in_english == "Consultation with Experts" ~ "CWE",
+    answer_in_english == "Inspection and Testing" ~ "IAT",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Quarantine and Isolation" ~ "QAI",
+    answer_in_english == "Record Keeping" ~ "RK",
+    answer_in_english == "Storage Conditions" ~ "SC",
+    answer_in_english == "Training and Awareness" ~ "TAA",
+    answer_in_english == "Treatment and Disinfection" ~ "TAD",
+    answer_in_english == "Community Involvement" ~ "CI",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_14_frequencies_by_depto<- select(question_14_frequencies_by_depto,!answer_in_english)
+question_14_frequencies_by_depto<- question_14_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_14_frequencies_by_depto<- select(question_14_frequencies_by_depto,!n & !total)
+#put it in long format
+question_14_frequencies_by_depto <- question_14_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_14_frequencies_by_depto_banana<- filter(question_14_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_14_plot$codes[which(avg_no_weight_14_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_14_frequencies_by_depto_plantain<- filter(question_14_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_14_plot$codes[which(avg_no_weight_14_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_14_frequencies_by_depto<- rbind(question_14_frequencies_by_depto_banana, question_14_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_14_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_14_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_14_frequencies_by_depto_wei <- count_elements_by_group(rep_question_14_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_14_frequencies_by_depto_wei <- assign_group_color(data = question_14_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_14, colors_by_crop = colors_by_crop_no_weighted_14,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_14_frequencies_by_depto_wei <- question_14_frequencies_by_depto_wei %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Compliance with Regulations" ~ "CWR",
+    answer_in_english == "Consultation with Experts" ~ "CWE",
+    answer_in_english == "Inspection and Testing" ~ "IAT",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Quarantine and Isolation" ~ "QAI",
+    answer_in_english == "Record Keeping" ~ "RK",
+    answer_in_english == "Storage Conditions" ~ "SC",
+    answer_in_english == "Training and Awareness" ~ "TAA",
+    answer_in_english == "Treatment and Disinfection" ~ "TAD",
+    answer_in_english == "Community Involvement" ~ "CI",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_14_frequencies_by_depto_wei<- select(question_14_frequencies_by_depto_wei,!answer_in_english)
+question_14_frequencies_by_depto_wei<- question_14_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_14_frequencies_by_depto_wei<- select(question_14_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_14_frequencies_by_depto_wei <- question_14_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_14_frequencies_by_depto_banana_wei<- filter(question_14_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_14_plot$codes[which(avg_no_weight_14_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_14_frequencies_by_depto_plantain_wei<- filter(question_14_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_14_plot$codes[which(avg_no_weight_14_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_14_frequencies_by_depto_wei<- rbind(question_14_frequencies_by_depto_banana_wei, question_14_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_14_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_14_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 14 diseases and pest in Colombia
+q14_top_14Colobia<- count_elements_by_group(question_14, "answer_in_english", c("answer_in_english"))
+q14_top_14Colobia$mean<-round((q14_top_14Colobia$n/sum(q14_top_14Colobia$n)*100),0)
+q14_top_14Colobia$background_color<- "white"
+q14_top_14Colobia$color<- palette_soil(length(unique(q14_top_14Colobia$answer_in_english)))
+#Make the abbreviations
+q14_top_14Colobia <- q14_top_14Colobia %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Compliance with Regulations" ~ "CWR",
+    answer_in_english == "Consultation with Experts" ~ "CWE",
+    answer_in_english == "Inspection and Testing" ~ "IAT",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Quarantine and Isolation" ~ "QAI",
+    answer_in_english == "Record Keeping" ~ "RK",
+    answer_in_english == "Storage Conditions" ~ "SC",
+    answer_in_english == "Training and Awareness" ~ "TAA",
+    answer_in_english == "Treatment and Disinfection" ~ "TAD",
+    answer_in_english == "Community Involvement" ~ "CI",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#sort the results by mean
+q14_top_14Colobia <- q14_top_14Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q14_top_14Colobia$cat_abbreviations<- factor(q14_top_14Colobia$cat_abbreviations, levels = q14_top_14Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q14_top_14Colobia,x_lab = "Procedure Followed", y_lab ="Proportion of Experts (%)", title = "
+Procedures Followed to Ensure the Quality of Planting Material -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 14 diseases and pest in Colombia -WEIGHTED
+q_14_weighted_top_14Colobia<- count_elements_by_group(rep_question_14_weighted, "answer_in_english", c("answer_in_english"))
+q_14_weighted_top_14Colobia$mean<-round((q_14_weighted_top_14Colobia$n/sum(q_14_weighted_top_14Colobia$n)*100),0)
+q_14_weighted_top_14Colobia$background_color<- "white"
+q_14_weighted_top_14Colobia$color<- palette_soil(length(unique(q_14_weighted_top_14Colobia$answer_in_english)))
+#Make the abbreviations
+q_14_weighted_top_14Colobia <- q_14_weighted_top_14Colobia %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Compliance with Regulations" ~ "CWR",
+    answer_in_english == "Consultation with Experts" ~ "CWE",
+    answer_in_english == "Inspection and Testing" ~ "IAT",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Quarantine and Isolation" ~ "QAI",
+    answer_in_english == "Record Keeping" ~ "RK",
+    answer_in_english == "Storage Conditions" ~ "SC",
+    answer_in_english == "Training and Awareness" ~ "TAA",
+    answer_in_english == "Treatment and Disinfection" ~ "TAD",
+    answer_in_english == "Community Involvement" ~ "CI",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#sort the results by mean
+q_14_weighted_top_14Colobia <- q_14_weighted_top_14Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_14_weighted_top_14Colobia$cat_abbreviations<- factor(q_14_weighted_top_14Colobia$cat_abbreviations, levels = q_14_weighted_top_14Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_14_weighted_top_14Colobia,x_lab = "Procedure Followed", y_lab ="Proportion of Experts (%)", title = "
+Procedures Followed to Ensure the Quality of Planting Material - W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
+## Question 15: `r unique(individual_surveys$question_in_english)[15]`
+```{r question_15}
+#selecting only question 15----
+question_15<- filter(individual_surveys, question_number==15)
+#dput(unique(question_15$answer_in_english))
+question_15<- filter(question_15, answer_in_english!="Unsure")
+question_15_Frequencies_non_weighted<- count_elements_by_group(question_15, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q15_no_weighted<- tapply(question_15_Frequencies_non_weighted$answer_in_english, question_15_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question15_no_weighted<- palette_banana(length(levels_per_crop_Q15_no_weighted$Banana))
+colors_plantain_question15_no_weighted<- palette_plantain(length(levels_per_crop_Q15_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_15 <- list(
+  Banana = levels_per_crop_Q15_no_weighted$Banana,
+  Plantain = levels_per_crop_Q15_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_15 <- list(
+  Banana = colors_banana_question15_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question15_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_15 <- assign_group_color(data = question_15_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_15, colors_by_crop = colors_by_crop_no_weighted_15,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_15 <- avg_no_weight_15 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Biological Control" ~ "BC",
+    answer_in_english == "Biosecurity Measures" ~ "BM",
+    answer_in_english == "Chemical Control" ~ "CC",
+    answer_in_english == "Community Participation" ~ "CP",
+    answer_in_english == "Cultural Control" ~ "CUC",
+    answer_in_english == "Education and Training" ~ "EAT",
+    answer_in_english == "Integrated Pest and Disease Management" ~ "IPDM",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "Physical Control" ~ "PC",
+    answer_in_english == "Regulatory Compliance" ~ "RC",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_15_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_15$crop,
+                                    h3= avg_no_weight_15$answer_in_english,
+                                    color= avg_no_weight_15$group_color,
+                                    weight= avg_no_weight_15$n,
+                                    codes= avg_no_weight_15$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_15_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_15_weihted<- inner_join(question_15, experience_of_each_expert)
+rep_question_15_weighted<- question_15_weihted %>%
+  slice(rep(1:n(), question_15_weihted$weights))
+question_15_Frequencies_weighted<- count_elements_by_group(rep_question_15_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_15 <- assign_group_color(data = question_15_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_15, colors_by_crop = colors_by_crop_no_weighted_15,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_15 <- avg_weight_15 %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Biological Control" ~ "BC",
+      answer_in_english == "Biosecurity Measures" ~ "BM",
+      answer_in_english == "Chemical Control" ~ "CC",
+      answer_in_english == "Community Participation" ~ "CP",
+      answer_in_english == "Cultural Control" ~ "CUC",
+      answer_in_english == "Education and Training" ~ "EAT",
+      answer_in_english == "Integrated Pest and Disease Management" ~ "IPDM",
+      answer_in_english == "Monitoring and Reporting" ~ "MAR",
+      answer_in_english == "Physical Control" ~ "PC",
+      answer_in_english == "Regulatory Compliance" ~ "RC",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met  
+      ))
+avg_weight_15_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_15$crop,
+                                   h3= avg_weight_15$answer_in_english,
+                                   color= avg_weight_15$group_color,
+                                   weight= avg_weight_15$n,
+                                   codes= avg_weight_15$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_15_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "weighted")
+#Frequencies by department
+question_15_frequencies_by_depto <- count_elements_by_group(question_15, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_15_frequencies_by_depto <- assign_group_color(data = question_15_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_15, colors_by_crop = colors_by_crop_no_weighted_15,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_15_frequencies_by_depto <- question_15_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Biological Control" ~ "BC",
+    answer_in_english == "Biosecurity Measures" ~ "BM",
+    answer_in_english == "Chemical Control" ~ "CC",
+    answer_in_english == "Community Participation" ~ "CP",
+    answer_in_english == "Cultural Control" ~ "CUC",
+    answer_in_english == "Education and Training" ~ "EAT",
+    answer_in_english == "Integrated Pest and Disease Management" ~ "IPDM",
+    answer_in_english == "Monitoring and Reporting" ~ "MAR",
+    answer_in_english == "Physical Control" ~ "PC",
+    answer_in_english == "Regulatory Compliance" ~ "RC",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#tree map
+question_15_frequencies_by_depto<- select(question_15_frequencies_by_depto,!answer_in_english)
+question_15_frequencies_by_depto<- question_15_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_15_frequencies_by_depto<- select(question_15_frequencies_by_depto,!n & !total)
+#put it in long format
+question_15_frequencies_by_depto <- question_15_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_15_frequencies_by_depto_banana<- filter(question_15_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_15_plot$codes[which(avg_no_weight_15_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_15_frequencies_by_depto_plantain<- filter(question_15_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_15_plot$codes[which(avg_no_weight_15_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_15_frequencies_by_depto<- rbind(question_15_frequencies_by_depto_banana, question_15_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_15_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_15_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_15_frequencies_by_depto_wei <- count_elements_by_group(rep_question_15_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_15_frequencies_by_depto_wei <- assign_group_color(data = question_15_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_15, colors_by_crop = colors_by_crop_no_weighted_15,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_15_frequencies_by_depto_wei <- question_15_frequencies_by_depto_wei %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Biological Control" ~ "BC",
+      answer_in_english == "Biosecurity Measures" ~ "BM",
+      answer_in_english == "Chemical Control" ~ "CC",
+      answer_in_english == "Community Participation" ~ "CP",
+      answer_in_english == "Cultural Control" ~ "CUC",
+      answer_in_english == "Education and Training" ~ "EAT",
+      answer_in_english == "Integrated Pest and Disease Management" ~ "IPDM",
+      answer_in_english == "Monitoring and Reporting" ~ "MAR",
+      answer_in_english == "Physical Control" ~ "PC",
+      answer_in_english == "Regulatory Compliance" ~ "RC",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+      ))
+#tree map
+question_15_frequencies_by_depto_wei<- select(question_15_frequencies_by_depto_wei,!answer_in_english)
+question_15_frequencies_by_depto_wei<- question_15_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_15_frequencies_by_depto_wei<- select(question_15_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_15_frequencies_by_depto_wei <- question_15_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_15_frequencies_by_depto_banana_wei<- filter(question_15_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_15_plot$codes[which(avg_no_weight_15_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_15_frequencies_by_depto_plantain_wei<- filter(question_15_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_15_plot$codes[which(avg_no_weight_15_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_15_frequencies_by_depto_wei<- rbind(question_15_frequencies_by_depto_banana_wei, question_15_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_15_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_15_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 15 diseases and pest in Colombia
+q15_top_15Colobia<- count_elements_by_group(question_15, "answer_in_english", c("answer_in_english"))
+q15_top_15Colobia$mean<-round((q15_top_15Colobia$n/sum(q15_top_15Colobia$n)*100),0)
+q15_top_15Colobia$background_color<- "white"
+q15_top_15Colobia$color<- palette_soil(length(unique(q15_top_15Colobia$answer_in_english)))
+#Make the abbreviations
+q15_top_15Colobia <- q15_top_15Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Biological Control" ~ "BC",
+      answer_in_english == "Biosecurity Measures" ~ "BM",
+      answer_in_english == "Chemical Control" ~ "CC",
+      answer_in_english == "Community Participation" ~ "CP",
+      answer_in_english == "Cultural Control" ~ "CUC",
+      answer_in_english == "Education and Training" ~ "EAT",
+      answer_in_english == "Integrated Pest and Disease Management" ~ "IPDM",
+      answer_in_english == "Monitoring and Reporting" ~ "MAR",
+      answer_in_english == "Physical Control" ~ "PC",
+      answer_in_english == "Regulatory Compliance" ~ "RC",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+      ))
+#sort the results by mean
+q15_top_15Colobia <- q15_top_15Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q15_top_15Colobia$cat_abbreviations<- factor(q15_top_15Colobia$cat_abbreviations, levels = q15_top_15Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q15_top_15Colobia,x_lab = "Management Practices", y_lab ="Proportion of Experts (%)", title = "
+Management Practices to Control Pest and Diseases -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 15 diseases and pest in Colombia -WEIGHTED
+q_15_weighted_top_15Colobia<- count_elements_by_group(rep_question_15_weighted, "answer_in_english", c("answer_in_english"))
+q_15_weighted_top_15Colobia$mean<-round((q_15_weighted_top_15Colobia$n/sum(q_15_weighted_top_15Colobia$n)*100),0)
+q_15_weighted_top_15Colobia$background_color<- "white"
+q_15_weighted_top_15Colobia$color<- palette_soil(length(unique(q_15_weighted_top_15Colobia$answer_in_english)))
+#Make the abbreviations
+q_15_weighted_top_15Colobia <- q_15_weighted_top_15Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Biological Control" ~ "BC",
+      answer_in_english == "Biosecurity Measures" ~ "BM",
+      answer_in_english == "Chemical Control" ~ "CC",
+      answer_in_english == "Community Participation" ~ "CP",
+      answer_in_english == "Cultural Control" ~ "CUC",
+      answer_in_english == "Education and Training" ~ "EAT",
+      answer_in_english == "Integrated Pest and Disease Management" ~ "IPDM",
+      answer_in_english == "Monitoring and Reporting" ~ "MAR",
+      answer_in_english == "Physical Control" ~ "PC",
+      answer_in_english == "Regulatory Compliance" ~ "RC",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+      ))
+#sort the results by mean
+q_15_weighted_top_15Colobia <- q_15_weighted_top_15Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_15_weighted_top_15Colobia$cat_abbreviations<- factor(q_15_weighted_top_15Colobia$cat_abbreviations, levels = q_15_weighted_top_15Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_15_weighted_top_15Colobia,x_lab = "Management Practices", y_lab ="Proportion of Experts (%)", title = "
+Management Practices to Control Pest and Diseases -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
 ```
 
 ## Question 16: `r unique(individual_surveys$question_in_english)[16]`
@@ -2771,6 +3223,247 @@ colmap(departamentos, data = nal_q26_weight, data_id = "id_depto", var = "cat_we
   scale_fill_manual(values = palette_soil(length(unique(nal_q26_weight$cat))-1), na.value = "#eeeeee")
 ```
 
+## Question 27: `r unique(individual_surveys$question_in_english)[27]`
+```{r question_27}
+#selecting only question 27----
+question_27<- filter(individual_surveys, question_number==27)
+#dput(unique(question_27$answer_in_english))
+question_27<- filter(question_27, answer_in_english!="Unsure")
+question_27_Frequencies_non_weighted<- count_elements_by_group(question_27, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q27_no_weighted<- tapply(question_27_Frequencies_non_weighted$answer_in_english, question_27_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question27_no_weighted<- palette_banana(length(levels_per_crop_Q27_no_weighted$Banana))
+colors_plantain_question27_no_weighted<- palette_plantain(length(levels_per_crop_Q27_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_27 <- list(
+  Banana = levels_per_crop_Q27_no_weighted$Banana,
+  Plantain = levels_per_crop_Q27_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_27 <- list(
+  Banana = colors_banana_question27_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question27_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_27 <- assign_group_color(data = question_27_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_27, colors_by_crop = colors_by_crop_no_weighted_27,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_27 <- avg_no_weight_27 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Access to Quality Planting Material" ~ "AQPM",
+    answer_in_english == "Access to Training and Extension Services" ~ "ATES",
+    answer_in_english == "Availability of Infrastructure and Equipment" ~ "AIE",
+    answer_in_english == "Availability of Labor" ~ "AOL",
+    answer_in_english == "Environmental Conditions" ~ "EC",
+    answer_in_english == "Financial Resources" ~ "FR",
+    answer_in_english == "Government Policies and Regulations" ~ "GPR",
+    answer_in_english == "Impacts of Climate Change" ~ "ICC",
+    answer_in_english == "Market Access" ~ "MA",
+    answer_in_english == "Pest and Disease Pressure" ~ "PDP",
+    answer_in_english == "Social Acceptance/Community Support" ~ "SACS",
+    answer_in_english == "Technical Knowledge" ~ "TK",
+   
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_27_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_27$crop,
+                                    h3= avg_no_weight_27$answer_in_english,
+                                    color= avg_no_weight_27$group_color,
+                                    weight= avg_no_weight_27$n,
+                                    codes= avg_no_weight_27$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_27_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_27_weihted<- inner_join(question_27, experience_of_each_expert)
+rep_question_27_weighted<- question_27_weihted %>%
+  slice(rep(1:n(), question_27_weihted$weights))
+question_27_Frequencies_weighted<- count_elements_by_group(rep_question_27_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_27 <- assign_group_color(data = question_27_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_27, colors_by_crop = colors_by_crop_no_weighted_27,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_27 <- avg_weight_27 %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Access to Quality Planting Material" ~ "AQPM",
+      answer_in_english == "Access to Training and Extension Services" ~ "ATES",
+      answer_in_english == "Availability of Infrastructure and Equipment" ~ "AIE",
+      answer_in_english == "Availability of Labor" ~ "AOL",
+      answer_in_english == "Environmental Conditions" ~ "EC",
+      answer_in_english == "Financial Resources" ~ "FR",
+      answer_in_english == "Government Policies and Regulations" ~ "GPR",
+      answer_in_english == "Impacts of Climate Change" ~ "ICC",
+      answer_in_english == "Market Access" ~ "MA",
+      answer_in_english == "Pest and Disease Pressure" ~ "PDP",
+      answer_in_english == "Social Acceptance/Community Support" ~ "SACS",
+      answer_in_english == "Technical Knowledge" ~ "TK",
+     
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+avg_weight_27_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_27$crop,
+                                   h3= avg_weight_27$answer_in_english,
+                                   color= avg_weight_27$group_color,
+                                   weight= avg_weight_27$n,
+                                   codes= avg_weight_27$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_27_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "weighted")
+#Frequencies by department
+question_27_frequencies_by_depto <- count_elements_by_group(question_27, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_27_frequencies_by_depto <- assign_group_color(data = question_27_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_27, colors_by_crop = colors_by_crop_no_weighted_27,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_27_frequencies_by_depto <- question_27_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Access to Quality Planting Material" ~ "AQPM",
+    answer_in_english == "Access to Training and Extension Services" ~ "ATES",
+    answer_in_english == "Availability of Infrastructure and Equipment" ~ "AIE",
+    answer_in_english == "Availability of Labor" ~ "AOL",
+    answer_in_english == "Environmental Conditions" ~ "EC",
+    answer_in_english == "Financial Resources" ~ "FR",
+    answer_in_english == "Government Policies and Regulations" ~ "GPR",
+    answer_in_english == "Impacts of Climate Change" ~ "ICC",
+    answer_in_english == "Market Access" ~ "MA",
+    answer_in_english == "Pest and Disease Pressure" ~ "PDP",
+    answer_in_english == "Social Acceptance/Community Support" ~ "SACS",
+    answer_in_english == "Technical Knowledge" ~ "TK",
+   
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_27_frequencies_by_depto<- select(question_27_frequencies_by_depto,!answer_in_english)
+question_27_frequencies_by_depto<- question_27_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_27_frequencies_by_depto<- select(question_27_frequencies_by_depto,!n & !total)
+#put it in long format
+question_27_frequencies_by_depto <- question_27_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_27_frequencies_by_depto_banana<- filter(question_27_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_27_plot$codes[which(avg_no_weight_27_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_27_frequencies_by_depto_plantain<- filter(question_27_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_27_plot$codes[which(avg_no_weight_27_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_27_frequencies_by_depto<- rbind(question_27_frequencies_by_depto_banana, question_27_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_27_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_27_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_27_frequencies_by_depto_wei <- count_elements_by_group(rep_question_27_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_27_frequencies_by_depto_wei <- assign_group_color(data = question_27_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_27, colors_by_crop = colors_by_crop_no_weighted_27,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_27_frequencies_by_depto_wei <- question_27_frequencies_by_depto_wei %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Access to Quality Planting Material" ~ "AQPM",
+      answer_in_english == "Access to Training and Extension Services" ~ "ATES",
+      answer_in_english == "Availability of Infrastructure and Equipment" ~ "AIE",
+      answer_in_english == "Availability of Labor" ~ "AOL",
+      answer_in_english == "Environmental Conditions" ~ "EC",
+      answer_in_english == "Financial Resources" ~ "FR",
+      answer_in_english == "Government Policies and Regulations" ~ "GPR",
+      answer_in_english == "Impacts of Climate Change" ~ "ICC",
+      answer_in_english == "Market Access" ~ "MA",
+      answer_in_english == "Pest and Disease Pressure" ~ "PDP",
+      answer_in_english == "Social Acceptance/Community Support" ~ "SACS",
+      answer_in_english == "Technical Knowledge" ~ "TK",
+     
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#tree map
+question_27_frequencies_by_depto_wei<- select(question_27_frequencies_by_depto_wei,!answer_in_english)
+question_27_frequencies_by_depto_wei<- question_27_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_27_frequencies_by_depto_wei<- select(question_27_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_27_frequencies_by_depto_wei <- question_27_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_27_frequencies_by_depto_banana_wei<- filter(question_27_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_27_plot$codes[which(avg_no_weight_27_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_27_frequencies_by_depto_plantain_wei<- filter(question_27_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_27_plot$codes[which(avg_no_weight_27_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_27_frequencies_by_depto_wei<- rbind(question_27_frequencies_by_depto_banana_wei, question_27_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_27_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_27_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 27 diseases and pest in Colombia
+q27_top_27Colobia<- count_elements_by_group(question_27, "answer_in_english", c("answer_in_english"))
+q27_top_27Colobia$mean<-round((q27_top_27Colobia$n/sum(q27_top_27Colobia$n)*100),0)
+q27_top_27Colobia$background_color<- "white"
+q27_top_27Colobia$color<- palette_soil(length(unique(q27_top_27Colobia$answer_in_english)))
+#Make the abbreviations
+q27_top_27Colobia <- q27_top_27Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Access to Quality Planting Material" ~ "AQPM",
+      answer_in_english == "Access to Training and Extension Services" ~ "ATES",
+      answer_in_english == "Availability of Infrastructure and Equipment" ~ "AIE",
+      answer_in_english == "Availability of Labor" ~ "AOL",
+      answer_in_english == "Environmental Conditions" ~ "EC",
+      answer_in_english == "Financial Resources" ~ "FR",
+      answer_in_english == "Government Policies and Regulations" ~ "GPR",
+      answer_in_english == "Impacts of Climate Change" ~ "ICC",
+      answer_in_english == "Market Access" ~ "MA",
+      answer_in_english == "Pest and Disease Pressure" ~ "PDP",
+      answer_in_english == "Social Acceptance/Community Support" ~ "SACS",
+      answer_in_english == "Technical Knowledge" ~ "TK",
+     
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q27_top_27Colobia <- q27_top_27Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q27_top_27Colobia$cat_abbreviations<- factor(q27_top_27Colobia$cat_abbreviations, levels = q27_top_27Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q27_top_27Colobia,x_lab = "Limiting Factors", y_lab ="Proportion of Experts (%)", title = "
+Factors that Hinder the Implementation of Management Practices -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 27 diseases and pest in Colombia -WEIGHTED
+q_27_weighted_top_27Colobia<- count_elements_by_group(rep_question_27_weighted, "answer_in_english", c("answer_in_english"))
+q_27_weighted_top_27Colobia$mean<-round((q_27_weighted_top_27Colobia$n/sum(q_27_weighted_top_27Colobia$n)*100),0)
+q_27_weighted_top_27Colobia$background_color<- "white"
+q_27_weighted_top_27Colobia$color<- palette_soil(length(unique(q_27_weighted_top_27Colobia$answer_in_english)))
+#Make the abbreviations
+q_27_weighted_top_27Colobia <- q_27_weighted_top_27Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Access to Quality Planting Material" ~ "AQPM",
+      answer_in_english == "Access to Training and Extension Services" ~ "ATES",
+      answer_in_english == "Availability of Infrastructure and Equipment" ~ "AIE",
+      answer_in_english == "Availability of Labor" ~ "AOL",
+      answer_in_english == "Environmental Conditions" ~ "EC",
+      answer_in_english == "Financial Resources" ~ "FR",
+      answer_in_english == "Government Policies and Regulations" ~ "GPR",
+      answer_in_english == "Impacts of Climate Change" ~ "ICC",
+      answer_in_english == "Market Access" ~ "MA",
+      answer_in_english == "Pest and Disease Pressure" ~ "PDP",
+      answer_in_english == "Social Acceptance/Community Support" ~ "SACS",
+      answer_in_english == "Technical Knowledge" ~ "TK",
+     
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q_27_weighted_top_27Colobia <- q_27_weighted_top_27Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_27_weighted_top_27Colobia$cat_abbreviations<- factor(q_27_weighted_top_27Colobia$cat_abbreviations, levels = q_27_weighted_top_27Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_27_weighted_top_27Colobia,x_lab = "Limiting Factors", y_lab ="Proportion of Experts (%)", title = "
+Factors that Hinder the Implementation of Management Practices -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
 ## Question 28: `r unique(individual_surveys$question_in_english)[28]`
 ```{r question_28}
 #selecting only question 28----
@@ -3184,6 +3877,621 @@ colmap(departamentos, data = nal_q31_weight, data_id = "id_depto", var = "cat_we
   scale_fill_manual(values = palette_soil(length(unique(nal_q31_weight$cat))-1), na.value = "#eeeeee")
 ```
 
+## Question 32: `r unique(individual_surveys$question_in_english)[32]`
+```{r queestion_32}
+#selecting only question 32----
+question_32<- filter(individual_surveys, question_number==32)
+#dput(unique(question_32$answer_in_english))
+question_32<- filter(question_32, answer_in_english!="Unsure")
+question_32_Frequencies_non_weighted<- count_elements_by_group(question_32, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q32_no_weighted<- tapply(question_32_Frequencies_non_weighted$answer_in_english, question_32_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question32_no_weighted<- palette_banana(length(levels_per_crop_Q32_no_weighted$Banana))
+colors_plantain_question32_no_weighted<- palette_plantain(length(levels_per_crop_Q32_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_32 <- list(
+  Banana = levels_per_crop_Q32_no_weighted$Banana,
+  Plantain = levels_per_crop_Q32_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_32 <- list(
+  Banana = colors_banana_question32_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question32_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_32 <- assign_group_color(data = question_32_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_32, colors_by_crop = colors_by_crop_no_weighted_32,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_32 <- avg_no_weight_32 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Basin" ~ "BAS",
+    answer_in_english == "Drip" ~ "DRP",
+    answer_in_english == "Furrow/Trench" ~ "FUR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Other" ~ "OTH",
+    answer_in_english == "Sprinkler" ~ "SPR",
+    
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_32_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_32$crop,
+                                    h3= avg_no_weight_32$answer_in_english,
+                                    color= avg_no_weight_32$group_color,
+                                    weight= avg_no_weight_32$n,
+                                    codes= avg_no_weight_32$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_32_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_32_weihted<- inner_join(question_32, experience_of_each_expert)
+rep_question_32_weighted<- question_32_weihted %>%
+  slice(rep(1:n(), question_32_weihted$weights))
+question_32_Frequencies_weighted<- count_elements_by_group(rep_question_32_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_32 <- assign_group_color(data = question_32_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_32, colors_by_crop = colors_by_crop_no_weighted_32,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_32 <- avg_weight_32 %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Basin" ~ "BAS",
+      answer_in_english == "Drip" ~ "DRP",
+      answer_in_english == "Furrow/Trench" ~ "FUR",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Other" ~ "OTH",
+      answer_in_english == "Sprinkler" ~ "SPR",
+      
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+avg_weight_32_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_32$crop,
+                                   h3= avg_weight_32$answer_in_english,
+                                   color= avg_weight_32$group_color,
+                                   weight= avg_weight_32$n,
+                                   codes= avg_weight_32$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_32_plot))
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = T, color_label = "#654321", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, color_label = "#654321", seed = 3, title = "weighted")
+#Frequencies by department
+question_32_frequencies_by_depto <- count_elements_by_group(question_32, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_32_frequencies_by_depto <- assign_group_color(data = question_32_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_32, colors_by_crop = colors_by_crop_no_weighted_32,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_32_frequencies_by_depto <- question_32_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Basin" ~ "BAS",
+    answer_in_english == "Drip" ~ "DRP",
+    answer_in_english == "Furrow/Trench" ~ "FUR",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Other" ~ "OTH",
+    answer_in_english == "Sprinkler" ~ "SPR",
+    
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_32_frequencies_by_depto<- select(question_32_frequencies_by_depto,!answer_in_english)
+question_32_frequencies_by_depto<- question_32_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_32_frequencies_by_depto<- select(question_32_frequencies_by_depto,!n & !total)
+#put it in long format
+question_32_frequencies_by_depto <- question_32_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_32_frequencies_by_depto_banana<- filter(question_32_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_32_plot$codes[which(avg_no_weight_32_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_32_frequencies_by_depto_plantain<- filter(question_32_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_32_plot$codes[which(avg_no_weight_32_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_32_frequencies_by_depto<- rbind(question_32_frequencies_by_depto_banana, question_32_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_32_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_32_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_32_frequencies_by_depto_wei <- count_elements_by_group(rep_question_32_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_32_frequencies_by_depto_wei <- assign_group_color(data = question_32_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_32, colors_by_crop = colors_by_crop_no_weighted_32,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_32_frequencies_by_depto_wei <- question_32_frequencies_by_depto_wei %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Basin" ~ "BAS",
+      answer_in_english == "Drip" ~ "DRP",
+      answer_in_english == "Furrow/Trench" ~ "FUR",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Other" ~ "OTH",
+      answer_in_english == "Sprinkler" ~ "SPR",
+      
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#tree map
+question_32_frequencies_by_depto_wei<- select(question_32_frequencies_by_depto_wei,!answer_in_english)
+question_32_frequencies_by_depto_wei<- question_32_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_32_frequencies_by_depto_wei<- select(question_32_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_32_frequencies_by_depto_wei <- question_32_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_32_frequencies_by_depto_banana_wei<- filter(question_32_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_32_plot$codes[which(avg_no_weight_32_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_32_frequencies_by_depto_plantain_wei<- filter(question_32_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_32_plot$codes[which(avg_no_weight_32_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_32_frequencies_by_depto_wei<- rbind(question_32_frequencies_by_depto_banana_wei, question_32_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_32_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_32_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 32 diseases and pest in Colombia
+q32_top_32Colobia<- count_elements_by_group(question_32, "answer_in_english", c("answer_in_english"))
+q32_top_32Colobia$mean<-round((q32_top_32Colobia$n/sum(q32_top_32Colobia$n)*100),0)
+q32_top_32Colobia$background_color<- "white"
+q32_top_32Colobia$color<- palette_soil(length(unique(q32_top_32Colobia$answer_in_english)))
+#Make the abbreviations
+q32_top_32Colobia <- q32_top_32Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Basin" ~ "BAS",
+      answer_in_english == "Drip" ~ "DRP",
+      answer_in_english == "Furrow/Trench" ~ "FUR",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Other" ~ "OTH",
+      answer_in_english == "Sprinkler" ~ "SPR",
+      
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q32_top_32Colobia <- q32_top_32Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q32_top_32Colobia$cat_abbreviations<- factor(q32_top_32Colobia$cat_abbreviations, levels = q32_top_32Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q32_top_32Colobia,x_lab = "Irrigation System", y_lab ="Proportion of Experts (%)", title = "
+Irrigation Systems Utilized in Musaceae Prodruction -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 32 diseases and pest in Colombia -WEIGHTED
+q_32_weighted_top_32Colobia<- count_elements_by_group(rep_question_32_weighted, "answer_in_english", c("answer_in_english"))
+q_32_weighted_top_32Colobia$mean<-round((q_32_weighted_top_32Colobia$n/sum(q_32_weighted_top_32Colobia$n)*100),0)
+q_32_weighted_top_32Colobia$background_color<- "white"
+q_32_weighted_top_32Colobia$color<- palette_soil(length(unique(q_32_weighted_top_32Colobia$answer_in_english)))
+#Make the abbreviations
+q_32_weighted_top_32Colobia <- q_32_weighted_top_32Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Basin" ~ "BAS",
+      answer_in_english == "Drip" ~ "DRP",
+      answer_in_english == "Furrow/Trench" ~ "FUR",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Other" ~ "OTH",
+      answer_in_english == "Sprinkler" ~ "SPR",
+      
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q_32_weighted_top_32Colobia <- q_32_weighted_top_32Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_32_weighted_top_32Colobia$cat_abbreviations<- factor(q_32_weighted_top_32Colobia$cat_abbreviations, levels = q_32_weighted_top_32Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_32_weighted_top_32Colobia,x_lab = "Irrigation System", y_lab ="Proportion of Experts (%)", title = "
+Irrigation Systems Utilized in Musaceae Prodruction -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
+
+## Question 33: `r unique(individual_surveys$question_in_english)[33]`
+```{r queestion_33}
+#selecting only question 33----
+question_33<- filter(individual_surveys, question_number==33)
+#dput(unique(question_33$answer_in_english))
+question_33<- filter(question_33, answer_in_english!="Unsure")
+question_33_Frequencies_non_weighted<- count_elements_by_group(question_33, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q33_no_weighted<- tapply(question_33_Frequencies_non_weighted$answer_in_english, question_33_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question33_no_weighted<- palette_banana(length(levels_per_crop_Q33_no_weighted$Banana))
+colors_plantain_question33_no_weighted<- palette_plantain(length(levels_per_crop_Q33_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_33 <- list(
+  Banana = levels_per_crop_Q33_no_weighted$Banana,
+  Plantain = levels_per_crop_Q33_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_33 <- list(
+  Banana = colors_banana_question33_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question33_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_33 <- assign_group_color(data = question_33_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_33, colors_by_crop = colors_by_crop_no_weighted_33,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_33 <- avg_no_weight_33 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Community Irrigation Districts" ~ "CID",
+    answer_in_english == "Dams" ~ "DAM",
+    answer_in_english == "Groundwater" ~ "GW",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Others" ~ "OTH",
+    answer_in_english == "Rainwater" ~ "RW",
+    answer_in_english == "Surface Water" ~ "SW",
+    answer_in_english == "Treated Wastewater" ~ "TWW",
+    answer_in_english == "Unsure" ~ "UNS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_33_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_33$crop,
+                                    h3= avg_no_weight_33$answer_in_english,
+                                    color= avg_no_weight_33$group_color,
+                                    weight= avg_no_weight_33$n,
+                                    codes= avg_no_weight_33$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_33_plot))
+vt_d3(gdp_json, color_border = "#654331", size_border = "1.5px", label = T, color_label = "#654331", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654331", size_border = "1.5px", label = F, color_label = "#654331", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_33_weihted<- inner_join(question_33, experience_of_each_expert)
+rep_question_33_weighted<- question_33_weihted %>%
+  slice(rep(1:n(), question_33_weihted$weights))
+question_33_Frequencies_weighted<- count_elements_by_group(rep_question_33_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_33 <- assign_group_color(data = question_33_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_33, colors_by_crop = colors_by_crop_no_weighted_33,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_33 <- avg_weight_33 %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Irrigation Districts" ~ "CID",
+      answer_in_english == "Dams" ~ "DAM",
+      answer_in_english == "Groundwater" ~ "GW",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Others" ~ "OTH",
+      answer_in_english == "Rainwater" ~ "RW",
+      answer_in_english == "Surface Water" ~ "SW",
+      answer_in_english == "Treated Wastewater" ~ "TWW",
+      answer_in_english == "Unsure" ~ "UNS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+avg_weight_33_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_33$crop,
+                                   h3= avg_weight_33$answer_in_english,
+                                   color= avg_weight_33$group_color,
+                                   weight= avg_weight_33$n,
+                                   codes= avg_weight_33$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_33_plot))
+vt_d3(gdp_json, color_border = "#654331", size_border = "1.5px", label = T, color_label = "#654331", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654331", size_border = "1.5px", label = F, color_label = "#654331", seed = 3, title = "weighted")
+#Frequencies by department
+question_33_frequencies_by_depto <- count_elements_by_group(question_33, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_33_frequencies_by_depto <- assign_group_color(data = question_33_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_33, colors_by_crop = colors_by_crop_no_weighted_33,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_33_frequencies_by_depto <- question_33_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Community Irrigation Districts" ~ "CID",
+    answer_in_english == "Dams" ~ "DAM",
+    answer_in_english == "Groundwater" ~ "GW",
+    answer_in_english == "None" ~ "NON",
+    answer_in_english == "Others" ~ "OTH",
+    answer_in_english == "Rainwater" ~ "RW",
+    answer_in_english == "Surface Water" ~ "SW",
+    answer_in_english == "Treated Wastewater" ~ "TWW",
+    answer_in_english == "Unsure" ~ "UNS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_33_frequencies_by_depto<- select(question_33_frequencies_by_depto,!answer_in_english)
+question_33_frequencies_by_depto<- question_33_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_33_frequencies_by_depto<- select(question_33_frequencies_by_depto,!n & !total)
+#put it in long format
+question_33_frequencies_by_depto <- question_33_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_33_frequencies_by_depto_banana<- filter(question_33_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_33_plot$codes[which(avg_no_weight_33_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_33_frequencies_by_depto_plantain<- filter(question_33_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_33_plot$codes[which(avg_no_weight_33_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_33_frequencies_by_depto<- rbind(question_33_frequencies_by_depto_banana, question_33_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_33_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_33_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_33_frequencies_by_depto_wei <- count_elements_by_group(rep_question_33_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_33_frequencies_by_depto_wei <- assign_group_color(data = question_33_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_33, colors_by_crop = colors_by_crop_no_weighted_33,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_33_frequencies_by_depto_wei <- question_33_frequencies_by_depto_wei %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Irrigation Districts" ~ "CID",
+      answer_in_english == "Dams" ~ "DAM",
+      answer_in_english == "Groundwater" ~ "GW",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Others" ~ "OTH",
+      answer_in_english == "Rainwater" ~ "RW",
+      answer_in_english == "Surface Water" ~ "SW",
+      answer_in_english == "Treated Wastewater" ~ "TWW",
+      answer_in_english == "Unsure" ~ "UNS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#tree map
+question_33_frequencies_by_depto_wei<- select(question_33_frequencies_by_depto_wei,!answer_in_english)
+question_33_frequencies_by_depto_wei<- question_33_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_33_frequencies_by_depto_wei<- select(question_33_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_33_frequencies_by_depto_wei <- question_33_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_33_frequencies_by_depto_banana_wei<- filter(question_33_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_33_plot$codes[which(avg_no_weight_33_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_33_frequencies_by_depto_plantain_wei<- filter(question_33_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_33_plot$codes[which(avg_no_weight_33_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_33_frequencies_by_depto_wei<- rbind(question_33_frequencies_by_depto_banana_wei, question_33_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_33_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_33_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 33 diseases and pest in Colombia
+q33_top_33Colobia<- count_elements_by_group(question_33, "answer_in_english", c("answer_in_english"))
+q33_top_33Colobia$mean<-round((q33_top_33Colobia$n/sum(q33_top_33Colobia$n)*100),0)
+q33_top_33Colobia$background_color<- "white"
+q33_top_33Colobia$color<- palette_soil(length(unique(q33_top_33Colobia$answer_in_english)))
+#Make the abbreviations
+q33_top_33Colobia <- q33_top_33Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Irrigation Districts" ~ "CID",
+      answer_in_english == "Dams" ~ "DAM",
+      answer_in_english == "Groundwater" ~ "GW",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Others" ~ "OTH",
+      answer_in_english == "Rainwater" ~ "RW",
+      answer_in_english == "Surface Water" ~ "SW",
+      answer_in_english == "Treated Wastewater" ~ "TWW",
+      answer_in_english == "Unsure" ~ "UNS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q33_top_33Colobia <- q33_top_33Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q33_top_33Colobia$cat_abbreviations<- factor(q33_top_33Colobia$cat_abbreviations, levels = q33_top_33Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q33_top_33Colobia,x_lab = "Water Source", y_lab ="Proportion of Experts (%)", title = "
+Water Source Utilized for Musaceae Prodruction -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 33 diseases and pest in Colombia -WEIGHTED
+q_33_weighted_top_33Colobia<- count_elements_by_group(rep_question_33_weighted, "answer_in_english", c("answer_in_english"))
+q_33_weighted_top_33Colobia$mean<-round((q_33_weighted_top_33Colobia$n/sum(q_33_weighted_top_33Colobia$n)*100),0)
+q_33_weighted_top_33Colobia$background_color<- "white"
+q_33_weighted_top_33Colobia$color<- palette_soil(length(unique(q_33_weighted_top_33Colobia$answer_in_english)))
+#Make the abbreviations
+q_33_weighted_top_33Colobia <- q_33_weighted_top_33Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Irrigation Districts" ~ "CID",
+      answer_in_english == "Dams" ~ "DAM",
+      answer_in_english == "Groundwater" ~ "GW",
+      answer_in_english == "None" ~ "NON",
+      answer_in_english == "Others" ~ "OTH",
+      answer_in_english == "Rainwater" ~ "RW",
+      answer_in_english == "Surface Water" ~ "SW",
+      answer_in_english == "Treated Wastewater" ~ "TWW",
+      answer_in_english == "Unsure" ~ "UNS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q_33_weighted_top_33Colobia <- q_33_weighted_top_33Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_33_weighted_top_33Colobia$cat_abbreviations<- factor(q_33_weighted_top_33Colobia$cat_abbreviations, levels = q_33_weighted_top_33Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_33_weighted_top_33Colobia,x_lab = "Water Source", y_lab ="Proportion of Experts (%)", title = "
+Water Source Utilized for Musaceae Prodruction -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
+
+## Question 35: `r unique(individual_surveys$question_in_english)[35]`
+
+```{r questoin_35}
+#selecting only question 35----
+question_35<- filter(individual_surveys, question_number==35)
+#dput(unique(question_35$answer_in_english))
+question_35<- filter(question_35, answer_in_english!="Unsure")
+question_35_Frequencies_non_weighted<- count_elements_by_group(question_35, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q35_no_weighted<- tapply(question_35_Frequencies_non_weighted$answer_in_english, question_35_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question35_no_weighted<- palette_banana(length(levels_per_crop_Q35_no_weighted$Banana))
+colors_plantain_question35_no_weighted<- palette_plantain(length(levels_per_crop_Q35_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_35 <- list(
+  Banana = levels_per_crop_Q35_no_weighted$Banana,
+  Plantain = levels_per_crop_Q35_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_35 <- list(
+  Banana = colors_banana_question35_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question35_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_35 <- assign_group_color(data = question_35_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_35, colors_by_crop = colors_by_crop_no_weighted_35,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_35 <- avg_no_weight_35 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Chemical Treatment" ~ "CT",
+    answer_in_english == "Filtration" ~ "FIL",
+    answer_in_english == "No Treatment" ~ "NT",
+    answer_in_english == "Physical Treatment" ~ "PT",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_35_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_35$crop,
+                                    h3= avg_no_weight_35$answer_in_english,
+                                    color= avg_no_weight_35$group_color,
+                                    weight= avg_no_weight_35$n,
+                                    codes= avg_no_weight_35$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_35_plot))
+vt_d3(gdp_json, color_border = "#654351", size_border = "1.5px", label = T, color_label = "#654351", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654351", size_border = "1.5px", label = F, color_label = "#654351", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_35_weihted<- inner_join(question_35, experience_of_each_expert)
+rep_question_35_weighted<- question_35_weihted %>%
+  slice(rep(1:n(), question_35_weihted$weights))
+question_35_Frequencies_weighted<- count_elements_by_group(rep_question_35_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_35 <- assign_group_color(data = question_35_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_35, colors_by_crop = colors_by_crop_no_weighted_35,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_35 <- avg_weight_35 %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Chemical Treatment" ~ "CT",
+      answer_in_english == "Filtration" ~ "FIL",
+      answer_in_english == "No Treatment" ~ "NT",
+      answer_in_english == "Physical Treatment" ~ "PT",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+avg_weight_35_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_35$crop,
+                                   h3= avg_weight_35$answer_in_english,
+                                   color= avg_weight_35$group_color,
+                                   weight= avg_weight_35$n,
+                                   codes= avg_weight_35$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_35_plot))
+vt_d3(gdp_json, color_border = "#654351", size_border = "1.5px", label = T, color_label = "#654351", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654351", size_border = "1.5px", label = F, color_label = "#654351", seed = 3, title = "weighted")
+#Frequencies by department
+question_35_frequencies_by_depto <- count_elements_by_group(question_35, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_35_frequencies_by_depto <- assign_group_color(data = question_35_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_35, colors_by_crop = colors_by_crop_no_weighted_35,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_35_frequencies_by_depto <- question_35_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Chemical Treatment" ~ "CT",
+    answer_in_english == "Filtration" ~ "FIL",
+    answer_in_english == "No Treatment" ~ "NT",
+    answer_in_english == "Physical Treatment" ~ "PT",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_35_frequencies_by_depto<- select(question_35_frequencies_by_depto,!answer_in_english)
+question_35_frequencies_by_depto<- question_35_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_35_frequencies_by_depto<- select(question_35_frequencies_by_depto,!n & !total)
+#put it in long format
+question_35_frequencies_by_depto <- question_35_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_35_frequencies_by_depto_banana<- filter(question_35_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_35_plot$codes[which(avg_no_weight_35_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_35_frequencies_by_depto_plantain<- filter(question_35_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_35_plot$codes[which(avg_no_weight_35_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_35_frequencies_by_depto<- rbind(question_35_frequencies_by_depto_banana, question_35_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_35_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_35_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_35_frequencies_by_depto_wei <- count_elements_by_group(rep_question_35_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_35_frequencies_by_depto_wei <- assign_group_color(data = question_35_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_35, colors_by_crop = colors_by_crop_no_weighted_35,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_35_frequencies_by_depto_wei <- question_35_frequencies_by_depto_wei %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Chemical Treatment" ~ "CT",
+      answer_in_english == "Filtration" ~ "FIL",
+      answer_in_english == "No Treatment" ~ "NT",
+      answer_in_english == "Physical Treatment" ~ "PT",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#tree map
+question_35_frequencies_by_depto_wei<- select(question_35_frequencies_by_depto_wei,!answer_in_english)
+question_35_frequencies_by_depto_wei<- question_35_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_35_frequencies_by_depto_wei<- select(question_35_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_35_frequencies_by_depto_wei <- question_35_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_35_frequencies_by_depto_banana_wei<- filter(question_35_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_35_plot$codes[which(avg_no_weight_35_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_35_frequencies_by_depto_plantain_wei<- filter(question_35_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_35_plot$codes[which(avg_no_weight_35_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_35_frequencies_by_depto_wei<- rbind(question_35_frequencies_by_depto_banana_wei, question_35_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_35_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_35_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 35 diseases and pest in Colombia
+q35_top_35Colobia<- count_elements_by_group(question_35, "answer_in_english", c("answer_in_english"))
+q35_top_35Colobia$mean<-round((q35_top_35Colobia$n/sum(q35_top_35Colobia$n)*100),0)
+q35_top_35Colobia$background_color<- "white"
+q35_top_35Colobia$color<- palette_soil(length(unique(q35_top_35Colobia$answer_in_english)))
+#Make the abbreviations
+q35_top_35Colobia <- q35_top_35Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Chemical Treatment" ~ "CT",
+      answer_in_english == "Filtration" ~ "FIL",
+      answer_in_english == "No Treatment" ~ "NT",
+      answer_in_english == "Physical Treatment" ~ "PT",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q35_top_35Colobia <- q35_top_35Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q35_top_35Colobia$cat_abbreviations<- factor(q35_top_35Colobia$cat_abbreviations, levels = q35_top_35Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q35_top_35Colobia,x_lab = "Water Treatment", y_lab ="Proportion of Experts (%)", title = "
+Irrigation Water Treatment Utilized for Musaceae Prodruction -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 35 diseases and pest in Colombia -WEIGHTED
+q_35_weighted_top_35Colobia<- count_elements_by_group(rep_question_35_weighted, "answer_in_english", c("answer_in_english"))
+q_35_weighted_top_35Colobia$mean<-round((q_35_weighted_top_35Colobia$n/sum(q_35_weighted_top_35Colobia$n)*100),0)
+q_35_weighted_top_35Colobia$background_color<- "white"
+q_35_weighted_top_35Colobia$color<- palette_soil(length(unique(q_35_weighted_top_35Colobia$answer_in_english)))
+#Make the abbreviations
+q_35_weighted_top_35Colobia <- q_35_weighted_top_35Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Chemical Treatment" ~ "CT",
+      answer_in_english == "Filtration" ~ "FIL",
+      answer_in_english == "No Treatment" ~ "NT",
+      answer_in_english == "Physical Treatment" ~ "PT",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q_35_weighted_top_35Colobia <- q_35_weighted_top_35Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_35_weighted_top_35Colobia$cat_abbreviations<- factor(q_35_weighted_top_35Colobia$cat_abbreviations, levels = q_35_weighted_top_35Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_35_weighted_top_35Colobia,x_lab = "Water Treatment", y_lab ="Proportion of Experts (%)", title = "
+Irrigation Water Treatment Utilized for Musaceae Prodruction -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
+## Question 36: `r unique(individual_surveys$question_in_english)[36]`
+
+```{r question_36}
 
 ## Question 36: `r unique(individual_surveys$question_in_english)[36]`
 
@@ -3582,3 +4890,247 @@ colmap(departamentos, data = nal_q40_weight, data_id = "id_depto", var = "cat_we
   scale_fill_manual(values = palette_soil(length(unique(nal_q40_weight$cat))-1), na.value = "#eeeeee")
 
 ```
+
+## Question 41: `r unique(individual_surveys$question_in_english)[41]`
+
+
+```{r question_41}
+#selecting only question 41----
+question_41<- filter(individual_surveys, question_number==41)
+#dput(unique(question_41$answer_in_english))
+question_41<- filter(question_41, answer_in_english!="Unsure")
+question_41_Frequencies_non_weighted<- count_elements_by_group(question_41, "answer_in_english", c("crop"))
+#finding the levels per crop (banana and plantain) no weighted
+levels_per_crop_Q41_no_weighted<- tapply(question_41_Frequencies_non_weighted$answer_in_english, question_41_Frequencies_non_weighted$crop, function(x){(unique(x))})
+#generating a ramp palette according to the number of levels per crop
+colors_banana_question41_no_weighted<- palette_banana(length(levels_per_crop_Q41_no_weighted$Banana))
+colors_plantain_question41_no_weighted<- palette_plantain(length(levels_per_crop_Q41_no_weighted$Plantain))
+#Assigning the colors by crop and answer
+# Define the knowledge levels for each crop
+levels_by_crop_no_weighted_41 <- list(
+  Banana = levels_per_crop_Q41_no_weighted$Banana,
+  Plantain = levels_per_crop_Q41_no_weighted$Plantain
+)
+# Define the colors for each crop
+colors_by_crop_no_weighted_41 <- list(
+  Banana = colors_banana_question41_no_weighted, # Replace with actual color vector for Banana
+  Plantain = colors_plantain_question41_no_weighted # Replace with actual color vector for Plantain
+  # Add more crops and their color vectors here if needed
+)
+# Now call the function
+avg_no_weight_41 <- assign_group_color(data = question_41_Frequencies_non_weighted, levels_by_crop = levels_by_crop_no_weighted_41, colors_by_crop = colors_by_crop_no_weighted_41,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_no_weight_41 <- avg_no_weight_41 %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Community Awareness" ~ "CA",
+    answer_in_english == "Effects of Climate Change" ~ "ECC",
+    answer_in_english == "Inadequate Biosecurity Measures" ~ "IBM",
+    answer_in_english == "Invasive Species" ~ "IS",
+    answer_in_english == "Lack of Quarantine Enforcement" ~ "LQE",
+    answer_in_english == "Limited Disease Surveillance" ~ "LDS",
+    answer_in_english == "Market Demand" ~ "MD",
+    answer_in_english == "Migration" ~ "MIG",
+    answer_in_english == "Political Factors" ~ "PF",
+    answer_in_english == "Social Instability" ~ "SI",
+    answer_in_english == "Trade of Infected Plant Material" ~ "TIPM",
+    answer_in_english == "Weak Regulatory Framework" ~ "WRF",
+    answer_in_english == "Not Sure" ~ "NS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+avg_no_weight_41_plot<- data.frame(h1= "total",
+                                    h2= avg_no_weight_41$crop,
+                                    h3= avg_no_weight_41$answer_in_english,
+                                    color= avg_no_weight_41$group_color,
+                                    weight= avg_no_weight_41$n,
+                                    codes= avg_no_weight_41$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_no_weight_41_plot))
+vt_d3(gdp_json, color_border = "#654411", size_border = "1.5px", label = T, color_label = "#654411", seed = 3, title = "non-weighted")
+vt_d3(gdp_json, color_border = "#654411", size_border = "1.5px", label = F, color_label = "#654411", seed = 3, title = "non-weighted")
+#kable(question_5_frequencies)
+#weighted
+question_41_weihted<- inner_join(question_41, experience_of_each_expert)
+rep_question_41_weighted<- question_41_weihted %>%
+  slice(rep(1:n(), question_41_weihted$weights))
+question_41_Frequencies_weighted<- count_elements_by_group(rep_question_41_weighted, "answer_in_english", c("crop"))
+# Now call the function
+avg_weight_41 <- assign_group_color(data = question_41_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_41, colors_by_crop = colors_by_crop_no_weighted_41,answer_col =  "answer_in_english")
+#Make the abbreviations
+avg_weight_41 <- avg_weight_41 %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Awareness" ~ "CA",
+      answer_in_english == "Effects of Climate Change" ~ "ECC",
+      answer_in_english == "Inadequate Biosecurity Measures" ~ "IBM",
+      answer_in_english == "Invasive Species" ~ "IS",
+      answer_in_english == "Lack of Quarantine Enforcement" ~ "LQE",
+      answer_in_english == "Limited Disease Surveillance" ~ "LDS",
+      answer_in_english == "Market Demand" ~ "MD",
+      answer_in_english == "Migration" ~ "MIG",
+      answer_in_english == "Political Factors" ~ "PF",
+      answer_in_english == "Social Instability" ~ "SI",
+      answer_in_english == "Trade of Infected Plant Material" ~ "TIPM",
+      answer_in_english == "Weak Regulatory Framework" ~ "WRF",
+      answer_in_english == "Not Sure" ~ "NS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+avg_weight_41_plot<- data.frame(h1= "total",
+                                   h2= avg_weight_41$crop,
+                                   h3= avg_weight_41$answer_in_english,
+                                   color= avg_weight_41$group_color,
+                                   weight= avg_weight_41$n,
+                                   codes= avg_weight_41$cat_abbreviations)
+gdp_json <- vt_export_json(vt_input_from_df(avg_weight_41_plot))
+vt_d3(gdp_json, color_border = "#654411", size_border = "1.5px", label = T, color_label = "#654411", seed = 3, title = "weighted")
+vt_d3(gdp_json, color_border = "#654411", size_border = "1.5px", label = F, color_label = "#654411", seed = 3, title = "weighted")
+#Frequencies by department
+question_41_frequencies_by_depto <- count_elements_by_group(question_41, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_41_frequencies_by_depto <- assign_group_color(data = question_41_frequencies_by_depto, levels_by_crop = levels_by_crop_no_weighted_41, colors_by_crop = colors_by_crop_no_weighted_41,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_41_frequencies_by_depto <- question_41_frequencies_by_depto %>%
+  mutate(cat_abbreviations = case_when(
+    answer_in_english == "Community Awareness" ~ "CA",
+    answer_in_english == "Effects of Climate Change" ~ "ECC",
+    answer_in_english == "Inadequate Biosecurity Measures" ~ "IBM",
+    answer_in_english == "Invasive Species" ~ "IS",
+    answer_in_english == "Lack of Quarantine Enforcement" ~ "LQE",
+    answer_in_english == "Limited Disease Surveillance" ~ "LDS",
+    answer_in_english == "Market Demand" ~ "MD",
+    answer_in_english == "Migration" ~ "MIG",
+    answer_in_english == "Political Factors" ~ "PF",
+    answer_in_english == "Social Instability" ~ "SI",
+    answer_in_english == "Trade of Infected Plant Material" ~ "TIPM",
+    answer_in_english == "Weak Regulatory Framework" ~ "WRF",
+    answer_in_english == "Not Sure" ~ "NS",
+    TRUE ~ NA_character_  # Default case if none of the above conditions are met
+  ))
+#tree map
+question_41_frequencies_by_depto<- select(question_41_frequencies_by_depto,!answer_in_english)
+question_41_frequencies_by_depto<- question_41_frequencies_by_depto %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_41_frequencies_by_depto<- select(question_41_frequencies_by_depto,!n & !total)
+#put it in long format
+question_41_frequencies_by_depto <- question_41_frequencies_by_depto %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_41_frequencies_by_depto_banana<- filter(question_41_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_41_plot$codes[which(avg_no_weight_41_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_41_frequencies_by_depto_plantain<- filter(question_41_frequencies_by_depto, cat_abbreviations %in% avg_no_weight_41_plot$codes[which(avg_no_weight_41_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_41_frequencies_by_depto<- rbind(question_41_frequencies_by_depto_banana, question_41_frequencies_by_depto_plantain)
+#tree map only plantain
+tree_map_3(data = filter(question_41_frequencies_by_depto, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#tree map only banana
+tree_map_3(data = filter(question_41_frequencies_by_depto, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="non-weighted")
+#Weighted
+#Frequencies by department
+question_41_frequencies_by_depto_wei <- count_elements_by_group(rep_question_41_weighted, "answer_in_english", c("crop", "expert_in"))
+# Now call the function
+question_41_frequencies_by_depto_wei <- assign_group_color(data = question_41_frequencies_by_depto_wei, levels_by_crop = levels_by_crop_no_weighted_41, colors_by_crop = colors_by_crop_no_weighted_41,answer_col =  "answer_in_english")
+#Make the abbreviations
+question_41_frequencies_by_depto_wei <- question_41_frequencies_by_depto_wei %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Awareness" ~ "CA",
+      answer_in_english == "Effects of Climate Change" ~ "ECC",
+      answer_in_english == "Inadequate Biosecurity Measures" ~ "IBM",
+      answer_in_english == "Invasive Species" ~ "IS",
+      answer_in_english == "Lack of Quarantine Enforcement" ~ "LQE",
+      answer_in_english == "Limited Disease Surveillance" ~ "LDS",
+      answer_in_english == "Market Demand" ~ "MD",
+      answer_in_english == "Migration" ~ "MIG",
+      answer_in_english == "Political Factors" ~ "PF",
+      answer_in_english == "Social Instability" ~ "SI",
+      answer_in_english == "Trade of Infected Plant Material" ~ "TIPM",
+      answer_in_english == "Weak Regulatory Framework" ~ "WRF",
+      answer_in_english == "Not Sure" ~ "NS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#tree map
+question_41_frequencies_by_depto_wei<- select(question_41_frequencies_by_depto_wei,!answer_in_english)
+question_41_frequencies_by_depto_wei<- question_41_frequencies_by_depto_wei %>%
+  group_by(crop,expert_in) %>%
+  mutate(total= sum(n),
+         mean= round((n/total)*100,0))
+question_41_frequencies_by_depto_wei<- select(question_41_frequencies_by_depto_wei,!n & !total)
+#put it in long format
+question_41_frequencies_by_depto_wei <- question_41_frequencies_by_depto_wei %>% 
+  uncount(weights = mean, .id = "id")
+#for banana
+question_41_frequencies_by_depto_banana_wei<- filter(question_41_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_41_plot$codes[which(avg_no_weight_41_plot$h2=="Banana")], crop=="Banana")
+#for plantain
+question_41_frequencies_by_depto_plantain_wei<- filter(question_41_frequencies_by_depto_wei, cat_abbreviations %in% avg_no_weight_41_plot$codes[which(avg_no_weight_41_plot$h2=="Plantain")], crop=="Plantain")
+#merge both data set
+question_41_frequencies_by_depto_wei<- rbind(question_41_frequencies_by_depto_banana_wei, question_41_frequencies_by_depto_plantain_wei)
+#tree map only plantain
+tree_map_3(data = filter(question_41_frequencies_by_depto_wei, crop=="Plantain"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+#tree map only banana
+tree_map_3(data = filter(question_41_frequencies_by_depto_wei, crop=="Banana"), "crop", "expert_in", "cat_abbreviations", "group_color", title="weighted")
+
+#Additional top 41 diseases and pest in Colombia
+q41_top_41Colobia<- count_elements_by_group(question_41, "answer_in_english", c("answer_in_english"))
+q41_top_41Colobia$mean<-round((q41_top_41Colobia$n/sum(q41_top_41Colobia$n)*100),0)
+q41_top_41Colobia$background_color<- "white"
+q41_top_41Colobia$color<- palette_soil(length(unique(q41_top_41Colobia$answer_in_english)))
+#Make the abbreviations
+q41_top_41Colobia <- q41_top_41Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Awareness" ~ "CA",
+      answer_in_english == "Effects of Climate Change" ~ "ECC",
+      answer_in_english == "Inadequate Biosecurity Measures" ~ "IBM",
+      answer_in_english == "Invasive Species" ~ "IS",
+      answer_in_english == "Lack of Quarantine Enforcement" ~ "LQE",
+      answer_in_english == "Limited Disease Surveillance" ~ "LDS",
+      answer_in_english == "Market Demand" ~ "MD",
+      answer_in_english == "Migration" ~ "MIG",
+      answer_in_english == "Political Factors" ~ "PF",
+      answer_in_english == "Social Instability" ~ "SI",
+      answer_in_english == "Trade of Infected Plant Material" ~ "TIPM",
+      answer_in_english == "Weak Regulatory Framework" ~ "WRF",
+      answer_in_english == "Not Sure" ~ "NS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q41_top_41Colobia <- q41_top_41Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q41_top_41Colobia$cat_abbreviations<- factor(q41_top_41Colobia$cat_abbreviations, levels = q41_top_41Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q41_top_41Colobia,x_lab = "Risk Factor", y_lab ="Proportion of Experts (%)", title = "
+Risk Factors that Must be Focus on -  NW" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+
+
+
+#Additional top 41 diseases and pest in Colombia -WEIGHTED
+q_41_weighted_top_41Colobia<- count_elements_by_group(rep_question_41_weighted, "answer_in_english", c("answer_in_english"))
+q_41_weighted_top_41Colobia$mean<-round((q_41_weighted_top_41Colobia$n/sum(q_41_weighted_top_41Colobia$n)*100),0)
+q_41_weighted_top_41Colobia$background_color<- "white"
+q_41_weighted_top_41Colobia$color<- palette_soil(length(unique(q_41_weighted_top_41Colobia$answer_in_english)))
+#Make the abbreviations
+q_41_weighted_top_41Colobia <- q_41_weighted_top_41Colobia %>%
+    mutate(cat_abbreviations = case_when(
+      answer_in_english == "Community Awareness" ~ "CA",
+      answer_in_english == "Effects of Climate Change" ~ "ECC",
+      answer_in_english == "Inadequate Biosecurity Measures" ~ "IBM",
+      answer_in_english == "Invasive Species" ~ "IS",
+      answer_in_english == "Lack of Quarantine Enforcement" ~ "LQE",
+      answer_in_english == "Limited Disease Surveillance" ~ "LDS",
+      answer_in_english == "Market Demand" ~ "MD",
+      answer_in_english == "Migration" ~ "MIG",
+      answer_in_english == "Political Factors" ~ "PF",
+      answer_in_english == "Social Instability" ~ "SI",
+      answer_in_english == "Trade of Infected Plant Material" ~ "TIPM",
+      answer_in_english == "Weak Regulatory Framework" ~ "WRF",
+      answer_in_english == "Not Sure" ~ "NS",
+      TRUE ~ NA_character_  # Default case if none of the above conditions are met
+    ))
+#sort the results by mean
+q_41_weighted_top_41Colobia <- q_41_weighted_top_41Colobia %>%
+  arrange(desc(mean))
+#Finding the order of the levels
+q_41_weighted_top_41Colobia$cat_abbreviations<- factor(q_41_weighted_top_41Colobia$cat_abbreviations, levels = q_41_weighted_top_41Colobia$cat_abbreviations)
+#plot most important pest and diseases
+bar_plot_banana_plantain(data_set = q_41_weighted_top_41Colobia,x_lab = "Risk Factor", y_lab ="Proportion of Experts (%)", title = "
+Risk Factors that Must be Focus on -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
+```
+
