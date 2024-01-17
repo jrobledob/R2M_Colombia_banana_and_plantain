@@ -1,7 +1,7 @@
 Analisis of individual Questions EKE Colombia - Banano and Plantain 2023
 ================
 Jacobo Robledo
-2024-01-06
+2024-01-10
 
 ## Libraries, Functions, and Global Variables
 
@@ -227,6 +227,75 @@ categories.
 To assign colors to a dataset `df` with crops ‘Banana’ and ‘Plantain’
 and their respective levels and colors:
 
+#### `summarise_frequencies` Function
+
+**Description:**  
+This function is designed to calculate and summarize frequencies within
+a dataset. It groups the data based on a set of primary columns,
+computes the total count per group, then groups the data again using a
+second set of columns to calculate the frequency and the average
+frequency. Finally, it averages these frequencies to derive a mean
+frequency for each unique combination in the second group.
+
+**Parameters:**
+
+- `data`: A data frame containing the dataset to be analyzed.
+- `first_group_cols`: A vector of column names from the data frame used
+  for the initial grouping.
+- `second_group_cols`: A vector of column names from the data frame used
+  for the subsequent grouping and frequency calculation.
+
+**Details:**  
+The function utilizes `dplyr` functions for data manipulation. It first
+groups the data with `first_group_cols` and computes a total count for
+each group. The data is then regrouped using `second_group_cols`, where
+it calculates both the frequency and average frequency. The final
+operation is summarizing these results to find the mean of average
+frequencies for each group combination.
+
+**Returns:**  
+A data frame containing the mean of average frequencies for each unique
+combination of `second_group_cols`.
+
+**Example Usage:**  
+`summarise_frequencies(question_12_long, c(\"crop\", \"expert_in\"), c(\"crop\", \"expert_in\", \"Add_parameters_english\"))`
+
+#### `create_sankey` Function
+
+**Description:**  
+This function creates a Sankey diagram from a given dataset. It prepares
+the data by selecting necessary columns and restructuring them for use
+in the Sankey diagram. Nodes are created from the source and target
+columns, and a Sankey diagram is generated using the `networkD3`
+package.
+
+**Parameters:**
+
+- `data`: A data frame containing the data for the Sankey diagram.
+- `source`: The name of the column in ‘data’ to be used as the source of
+  the links.
+- `target`: The name of the column in ‘data’ to be used as the target of
+  the links.
+- `value`: The name of the column in ‘data’ that provides values for the
+  link widths.
+- `ColourScal`: A character string representing the JavaScript command
+  for D3 color scale.
+
+**Details:**  
+The function first selects the specified source, target, and value
+columns from the data. Then, it creates a set of nodes based on the
+unique values from the source and target columns. The source and target
+columns are mapped to these nodes, and the `sankeyNetwork` function from
+the `networkD3` package is used to create and print the Sankey diagram.
+
+**Returns:**  
+A Sankey diagram visualizing the flow between different nodes as
+specified by the source and target, with the link widths proportional to
+the specified value.
+
+**Example Usage:**  
+`# Assuming 'question_12_long_frequencies' is your dataset and 'ColourScal' is defined sankey <- create_sankey(   data = question_12_long_frequencies,   source = "expert_in",   target = "Add_parameters_english",   value = "freq_unique",   ColourScal = 'd3.scaleOrdinal().range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])' )`
+
 ## Question 1: How many years of experience do you have in each department?
 
 ![](README_files/figure-gfm/question_1-1.png)<!-- -->![](README_files/figure-gfm/question_1-2.png)<!-- -->
@@ -280,6 +349,10 @@ Descriptive statistics by crop=
 ## Question 11: What is the proportion of formal and informal trade of banana planting material?
 
 ![](README_files/figure-gfm/questoin_11-1.png)<!-- -->![](README_files/figure-gfm/questoin_11-2.png)<!-- -->![](README_files/figure-gfm/questoin_11-3.png)<!-- -->![](README_files/figure-gfm/questoin_11-4.png)<!-- -->
+
+## Question 12: Where and in what percentages does each place obtain its planting material? Ensure that the contents of each row add up to 100%.
+
+![](README_files/figure-gfm/question_12-1.png)<!-- -->![](README_files/figure-gfm/question_12-2.png)<!-- -->![](README_files/figure-gfm/question_12-3.png)<!-- -->![](README_files/figure-gfm/question_12-4.png)<!-- -->![](README_files/figure-gfm/question_12-5.png)<!-- -->![](README_files/figure-gfm/question_12-6.png)<!-- -->
 
 ## Question 13: How frequent is the use of new planting material to renew the production system?
 
@@ -365,6 +438,10 @@ Descriptive statistics by crop=
 
 ![](README_files/figure-gfm/queestion_33-1.png)<!-- -->![](README_files/figure-gfm/queestion_33-2.png)<!-- -->![](README_files/figure-gfm/queestion_33-3.png)<!-- -->![](README_files/figure-gfm/queestion_33-4.png)<!-- -->![](README_files/figure-gfm/queestion_33-5.png)<!-- -->![](README_files/figure-gfm/queestion_33-6.png)<!-- -->![](README_files/figure-gfm/queestion_33-7.png)<!-- -->![](README_files/figure-gfm/queestion_33-8.png)<!-- -->![](README_files/figure-gfm/queestion_33-9.png)<!-- -->![](README_files/figure-gfm/queestion_33-10.png)<!-- -->
 
+## Question 34: What regions and in what percentage share a water source for irrigation? Ensure that the contents of each row add up to 100%.
+
+![](README_files/figure-gfm/question_34-1.png)<!-- -->![](README_files/figure-gfm/question_34-2.png)<!-- -->![](README_files/figure-gfm/question_34-3.png)<!-- -->![](README_files/figure-gfm/question_34-4.png)<!-- -->![](README_files/figure-gfm/question_34-5.png)<!-- -->![](README_files/figure-gfm/question_34-6.png)<!-- -->
+
 ## Question 35: How is the water for irrigation treated in the areas where you are an expert? Please check all that apply.
 
 ![](README_files/figure-gfm/questoin_35-1.png)<!-- -->![](README_files/figure-gfm/questoin_35-2.png)<!-- -->![](README_files/figure-gfm/questoin_35-3.png)<!-- -->![](README_files/figure-gfm/questoin_35-4.png)<!-- -->![](README_files/figure-gfm/questoin_35-5.png)<!-- -->![](README_files/figure-gfm/questoin_35-6.png)<!-- -->![](README_files/figure-gfm/questoin_35-7.png)<!-- -->![](README_files/figure-gfm/questoin_35-8.png)<!-- -->![](README_files/figure-gfm/questoin_35-9.png)<!-- -->![](README_files/figure-gfm/questoin_35-10.png)<!-- -->
@@ -376,6 +453,10 @@ Descriptive statistics by crop=
 ## Question 37: If cost were not a concern, what is the likelihood that these regions would implement biosecurity strategies to mitigate or prevent Foc R4T?
 
 ![](README_files/figure-gfm/question_37-1.png)<!-- -->![](README_files/figure-gfm/question_37-2.png)<!-- -->![](README_files/figure-gfm/question_37-3.png)<!-- -->![](README_files/figure-gfm/question_37-4.png)<!-- -->
+
+## Question 38: What regions and in what percentage communicate with each other about managing Foc-R4T? Ensure that the contents of each row add up to 100%.
+
+![](README_files/figure-gfm/question_38-1.png)<!-- -->![](README_files/figure-gfm/question_38-2.png)<!-- -->![](README_files/figure-gfm/question_38-3.png)<!-- -->![](README_files/figure-gfm/question_38-4.png)<!-- -->![](README_files/figure-gfm/question_38-5.png)<!-- -->![](README_files/figure-gfm/question_38-6.png)<!-- -->
 
 ## Question 39: What are the risks associated with the introduction or reintroduction of TR4 through any of Colombia’s borders?
 

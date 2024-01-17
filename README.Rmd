@@ -195,6 +195,54 @@ To assign colors to a dataset `df` with crops 'Banana' and 'Plantain' and their 
 `r #df <- assign_group_color(df, levels_by_crop, colors_by_crop)`
 
 
+#### `summarise_frequencies` Function
+
+**Description:**  
+This function is designed to calculate and summarize frequencies within a dataset. It groups the data based on a set of primary columns, computes the total count per group, then groups the data again using a second set of columns to calculate the frequency and the average frequency. Finally, it averages these frequencies to derive a mean frequency for each unique combination in the second group.
+
+**Parameters:**  
+
+- `data`: A data frame containing the dataset to be analyzed.
+- `first_group_cols`: A vector of column names from the data frame used for the initial grouping.
+- `second_group_cols`: A vector of column names from the data frame used for the subsequent grouping and frequency calculation.
+
+**Details:**  
+The function utilizes `dplyr` functions for data manipulation. It first groups the data with `first_group_cols` and computes a total count for each group. The data is then regrouped using `second_group_cols`, where it calculates both the frequency and average frequency. The final operation is summarizing these results to find the mean of average frequencies for each group combination.
+
+**Returns:**  
+A data frame containing the mean of average frequencies for each unique combination of `second_group_cols`.
+
+**Example Usage:**  
+`summarise_frequencies(question_12_long, c(\"crop\", \"expert_in\"), c(\"crop\", \"expert_in\", \"Add_parameters_english\"))`
+
+#### `create_sankey` Function
+
+**Description:**  
+This function creates a Sankey diagram from a given dataset. It prepares the data by selecting necessary columns and restructuring them for use in the Sankey diagram. Nodes are created from the source and target columns, and a Sankey diagram is generated using the `networkD3` package.
+
+**Parameters:**  
+
+- `data`: A data frame containing the data for the Sankey diagram.
+- `source`: The name of the column in 'data' to be used as the source of the links.
+- `target`: The name of the column in 'data' to be used as the target of the links.
+- `value`: The name of the column in 'data' that provides values for the link widths.
+- `ColourScal`: A character string representing the JavaScript command for D3 color scale.
+
+**Details:**  
+The function first selects the specified source, target, and value columns from the data. Then, it creates a set of nodes based on the unique values from the source and target columns. The source and target columns are mapped to these nodes, and the `sankeyNetwork` function from the `networkD3` package is used to create and print the Sankey diagram.
+
+**Returns:**  
+A Sankey diagram visualizing the flow between different nodes as specified by the source and target, with the link widths proportional to the specified value.
+
+**Example Usage:**  
+`# Assuming 'question_12_long_frequencies' is your dataset and 'ColourScal' is defined
+sankey <- create_sankey(
+  data = question_12_long_frequencies,
+  source = "expert_in",
+  target = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = 'd3.scaleOrdinal().range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+)`
 
 ```{r libraries}
 #libraries----
@@ -208,6 +256,10 @@ To assign colors to a dataset `df` with crops 'Banana' and 'Plantain' and their 
   library(webshot2)
   library(purrr)
   library(rlang)
+  library(patchwork)
+  library(hrbrthemes)
+  library(circlize)
+  library(networkD3)
 
 #Global variables
   #set the color palette for bananas and plantains
@@ -230,6 +282,19 @@ To assign colors to a dataset `df` with crops 'Banana' and 'Plantain' and their 
   colnames(experience_of_each_expert)[which(colnames(experience_of_each_expert)=="numeric_answer")]<- "weights"
   #correct the missing answer which is "Antioquia"
   experience_of_each_expert$expert_in[which(is.na(experience_of_each_expert$expert_in))]<- "Antioquia"
+  list_of_deptos<- unique(c(individual_surveys$expert_in, individual_surveys$Add_parameters_english))
+list_of_deptos<- list_of_deptos[!list_of_deptos %in% c(NA, "Local Certified Corms", 
+                                                "Local Markets (informal)", 
+                                                "Corms Stored From Previous Cycles Of The Same Farm",
+                                                "Certified Tissue Culture Plants from International Production",
+                                                "Certified Banana Nurseries in Colombia",
+                                                "Planting Materials Shared by Neighbors or Communities",
+                                                "Certified Tissue Culture Plants from National Production",
+                                                "Planting Materials Supplied by the Government or a Research Institution",
+                                                "Wild Sources or Naturally Grown Sprouts",
+                                                "Not Sure")]
+list_of_deptos<- data.frame(expert_in= sort(list_of_deptos))
+
     
 #function tree_map_3 
   tree_map_3<- function(data,group, subgroup_1, subgroup_2, color_column, title){
@@ -361,6 +426,64 @@ assign_group_color <- function(data, answer_col, levels_by_crop, colors_by_crop)
   
   return(data)
 }
+
+#functions summarise_frequencies
+summarise_frequencies <- function(data, first_group_cols, second_group_cols) {
+  # Ensure that the column names are in the form of symbols for dplyr
+  first_group_cols <- rlang::syms(first_group_cols)
+  second_group_cols <- rlang::syms(second_group_cols)
+  # Perform the operations
+  data %>%
+    group_by(!!!first_group_cols) %>% 
+    mutate(total = n()) %>%
+    group_by(!!!second_group_cols) %>%
+    mutate(freq = n(), average = freq / total) %>%
+    summarise(freq_unique = mean(average), .groups = 'drop')
+}
+# Example usage
+# summarise_frequencies(question_12_long, c("crop", "expert_in"), c("crop", "expert_in", "Add_parameters_english"))
+
+#function create_sankey
+create_sankey <- function(data, source, target, value, ColourScal) {
+  # Prepare the data
+  data <- data %>%
+    select(!!sym(source), !!sym(target), !!sym(value)) %>%
+    rename(source = 1, target = 2, value = 3) %>%
+    mutate(target = paste(target, " ", sep="")) %>%
+    as.data.frame()  # Ensure it's a plain data frame
+  
+  # Create nodes
+  nodes <- distinct(data, source, .keep_all = TRUE) %>%
+    rename(name = source) %>%
+    bind_rows(distinct(data, target, .keep_all = TRUE) %>% 
+                rename(name = target)) %>%
+    distinct(name, .keep_all = TRUE) %>%
+    mutate(ID = row_number() - 1)
+  
+  # Map source and target to IDs
+  data$IDsource <- match(data$source, nodes$name) - 1 
+  data$IDtarget <- match(data$target, nodes$name) - 1 
+  
+  # Create the Sankey diagram
+  sankey <- sankeyNetwork(Links = data, Nodes = nodes,
+                          Source = "IDsource", Target = "IDtarget",
+                          Value = "value", NodeID = "name",
+                          sinksRight = FALSE, colourScale = ColourScal,
+                          nodeWidth = 40, fontSize = 13, nodePadding = 20,
+                          )
+  
+  return(sankey)  # Print the Sankey diagram
+}
+
+# Example usage of the function
+# Assuming 'question_12_long_frequencies' is your dataset and you've defined 'ColourScal' outside the function.
+# sankey <- create_sankey(
+#   data = question_12_long_frequencies,
+#   source = "expert_in",
+#   target = "Add_parameters_english",
+#   value = "freq_unique",
+#   ColourScal = 'd3.scaleOrdinal().range(["#FDE725FF","#B4DE2CFF","#6DCD59FF","#35B779FF","#1F9E89FF","#26828EFF","#31688EFF","#3E4A89FF","#482878FF","#440154FF"])'
+# )
 ```
 
 ## Question 1: `r unique(individual_surveys$question_in_english)[1]`
@@ -1535,6 +1658,116 @@ colmap(departamentos, data = nal_q11_weight, data_id = "id_depto", var = "cat_we
   scale_fill_manual(values = palette_soil(length(unique(nal_q11_weight$cat))-1), na.value = "#eeeeee")
 ```
 
+
+
+
+
+
+
+## Question 12: `r unique(individual_surveys$question_in_english)[12]`
+
+```{r question_12}
+#selecting only question 12----
+question_12<- filter(individual_surveys, question_number==12)
+#select Add_parameters_english different than "Not Sure"
+question_12<- filter(question_12, Add_parameters_english!="Not Sure")
+#Verify the unique values in the numeric_answer column
+unique(question_12$numeric_answer)
+#Verify if the percentages by expert and department sum 100% and select those that are not 100%
+verification_12<- question_12 %>%
+  group_by(crop, expert_in, expert_ID) %>%
+  summarise(sum= sum(as.numeric(numeric_answer))) %>%
+  filter(sum!=100)
+#Remove the experts by department and crop that answer more or less than 100%
+question_12<- anti_join(question_12, verification_12, by=c("crop", "expert_in", "expert_ID"))
+#double chech all the kept values are 100%
+# verification_12<- question_12 %>%
+#   group_by(crop, expert_in, expert_ID) %>%
+#   summarise(sum= sum(as.numeric(numeric_answer)))
+# nrow(verification_12)
+# sum(verification_12$sum==100)
+question_12<- inner_join(question_12, experience_of_each_expert)
+#repeat the interaction the number of times given in the numeric answer column
+question_12$numeric_answer<- as.numeric(question_12$numeric_answer)
+question_12_long<- question_12 %>%
+  slice(rep(1:n(),question_12$numeric_answer)) 
+#Add the weights for the weighted data set
+question_12_long_weighted<- question_12_long %>%
+  slice(rep(1:n(), question_12_long$weights))
+question_12_long_frequencies<- summarise_frequencies(data=question_12_long, first_group_cols = c("crop","expert_in"), second_group_cols =  c("crop","expert_in", "Add_parameters_english"))
+question_12_long_frequencies_weighted<- summarise_frequencies(data=question_12_long_weighted, first_group_cols = c("crop","expert_in"), second_group_cols =  c("crop","expert_in", "Add_parameters_english"))
+#shift for plantain source target 
+question_12_long_frequencies_banana<- filter(question_12_long_frequencies, crop=="Banana")
+question_12_long_frequencies_plantain<- filter(question_12_long_frequencies, crop=="Plantain")
+colnames(question_12_long_frequencies_plantain)<- c("crop",  "Add_parameters_english", "expert_in", "freq_unique")
+question_12_long_frequencies<- rbind(question_12_long_frequencies_banana, question_12_long_frequencies_plantain)
+#weighted
+question_12_long_frequencies_banana<- filter(question_12_long_frequencies_weighted, crop=="Banana")
+question_12_long_frequencies_plantain<- filter(question_12_long_frequencies_weighted, crop=="Plantain")
+colnames(question_12_long_frequencies_plantain)<- c("crop",  "Add_parameters_english", "expert_in", "freq_unique")
+question_12_long_frequencies_weighted<- rbind(question_12_long_frequencies_banana, question_12_long_frequencies_plantain)
+
+
+#National non weighted 
+sankey_national_non_weighted_12 <- create_sankey(
+  data = question_12_long_frequencies,
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_soil(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_national_non_weighted_12
+
+
+sankey_banana_non_weighted_12 <- create_sankey(
+  data = filter(question_12_long_frequencies, crop=="Banana"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_banana(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_banana_non_weighted_12
+
+#Plantain non weighted 
+sankey_plantain_non_weighted_12 <- create_sankey(
+  data = filter(question_12_long_frequencies, crop=="Plantain"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_plantain_non_weighted_12
+
+
+#National weighted 
+sankey_national_non_weighted_12 <- create_sankey(
+  data = question_12_long_frequencies_weighted,
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_soil(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_national_non_weighted_12
+#banana weighted 
+sankey_banana_non_weighted_12 <- create_sankey(
+  data = filter(question_12_long_frequencies_weighted, crop=="Banana"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_banana(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_banana_non_weighted_12
+#Plantain weighted 
+sankey_plantain_non_weighted_12 <- create_sankey(
+  data = filter(question_12_long_frequencies_weighted, crop=="Plantain"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_plantain_non_weighted_12
+```
+
 ## Question 13: `r unique(individual_surveys$question_in_english)[13]`
 
 ```{r questoin_13}
@@ -1863,6 +2096,8 @@ Procedures Followed to Ensure the Quality of Planting Material - W" ,x = "cat_ab
 ```
 
 ## Question 15: `r unique(individual_surveys$question_in_english)[15]`
+
+
 ```{r question_15}
 #selecting only question 15----
 question_15<- filter(individual_surveys, question_number==15)
@@ -2085,6 +2320,7 @@ bar_plot_banana_plantain(data_set = q_15_weighted_top_15Colobia,x_lab = "Managem
 Management Practices to Control Pest and Diseases -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
 ```
 
+
 ## Question 16: `r unique(individual_surveys$question_in_english)[16]`
 
 ```{r questoin_16}
@@ -2183,6 +2419,7 @@ nal_q16_weight$cat_weighted<- factor(nal_q16_weight$cat_weighted, levels = level
 colmap(departamentos, data = nal_q16_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q16_weight$cat))-1), na.value = "#eeeeee")
 ```
+
 
 ## Question 17: `r unique(individual_surveys$question_in_english)[17]`
 
@@ -2295,6 +2532,7 @@ colmap(departamentos, data = nal_q17_weight, data_id = "id_depto", var = "cat_we
   scale_fill_manual(values = palette_soil(length(unique(nal_q17_weight$cat))-1), na.value = "#eeeeee")
 ```
 
+
 ## Question 18: `r unique(individual_surveys$question_in_english)[18]`
 
 ```{r question_18}
@@ -2393,6 +2631,7 @@ nal_q18_weight$cat_weighted<- factor(nal_q18_weight$cat_weighted, levels = level
 colmap(departamentos, data = nal_q18_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q18_weight$cat))-1), na.value = "#eeeeee")
 ```
+
 
 ## Question 19: `r unique(individual_surveys$question_in_english)[19]`
 
@@ -2816,6 +3055,7 @@ colmap(departamentos, data = nal_q22_weight, data_id = "id_depto", var = "cat_we
 
 ```
 
+
 ## Question 23: `r unique(individual_surveys$question_in_english)[23]`
 
 ```{r question_23}
@@ -2928,7 +3168,10 @@ colmap(departamentos, data = nal_q23_weight, data_id = "id_depto", var = "cat_we
 
 ```
 
+
 ## Question 24: `r unique(individual_surveys$question_in_english)[24]`
+
+
 ```{r question_24}
 #selecting only question 24----
 question_24<- filter(individual_surveys, question_number==24)
@@ -3027,6 +3270,8 @@ colmap(departamentos, data = nal_q24_weight, data_id = "id_depto", var = "cat_we
 ```
 
 ## Question 25: `r unique(individual_surveys$question_in_english)[25]`
+
+
 ```{r question_25}
 #selecting only question 25----
 question_25<- filter(individual_surveys, question_number==25)
@@ -3126,6 +3371,7 @@ colmap(departamentos, data = nal_q25_weight, data_id = "id_depto", var = "cat_we
 ```
 
 ## Question 26: `r unique(individual_surveys$question_in_english)[26]`
+
 ```{r question_26}
 #selecting only question 26----
 question_26<- filter(individual_surveys, question_number==26)
@@ -3224,6 +3470,8 @@ colmap(departamentos, data = nal_q26_weight, data_id = "id_depto", var = "cat_we
 ```
 
 ## Question 27: `r unique(individual_surveys$question_in_english)[27]`
+
+
 ```{r question_27}
 #selecting only question 27----
 question_27<- filter(individual_surveys, question_number==27)
@@ -3465,6 +3713,8 @@ Factors that Hinder the Implementation of Management Practices -  W" ,x = "cat_a
 ```
 
 ## Question 28: `r unique(individual_surveys$question_in_english)[28]`
+
+
 ```{r question_28}
 #selecting only question 28----
 question_28<- filter(individual_surveys, question_number==28)
@@ -3562,6 +3812,7 @@ nal_q28_weight$cat_weighted<- factor(nal_q28_weight$cat_weighted, levels = level
 colmap(departamentos, data = nal_q28_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q28_weight$cat))-1), na.value = "#eeeeee")
 ```
+
 
 ## Question 29: `r unique(individual_surveys$question_in_english)[29]`
 
@@ -3878,6 +4129,8 @@ colmap(departamentos, data = nal_q31_weight, data_id = "id_depto", var = "cat_we
 ```
 
 ## Question 32: `r unique(individual_surveys$question_in_english)[32]`
+
+
 ```{r queestion_32}
 #selecting only question 32----
 question_32<- filter(individual_surveys, question_number==32)
@@ -4084,6 +4337,8 @@ Irrigation Systems Utilized in Musaceae Prodruction -  W" ,x = "cat_abbreviation
 
 
 ## Question 33: `r unique(individual_surveys$question_in_english)[33]`
+
+
 ```{r queestion_33}
 #selecting only question 33----
 question_33<- filter(individual_surveys, question_number==33)
@@ -4300,6 +4555,98 @@ bar_plot_banana_plantain(data_set = q_33_weighted_top_33Colobia,x_lab = "Water S
 Water Source Utilized for Musaceae Prodruction -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
 ```
 
+## Question 34: `r unique(individual_surveys$question_in_english)[34]`
+
+```{r question_34}
+#selecting only question 34----
+question_34<- filter(individual_surveys, question_number==34)
+#select Add_parameters_english different than "Not Sure"
+question_34<- filter(question_34, Add_parameters_english!="Not Sure")
+#Verify the unique values in the numeric_answer column
+unique(question_34$numeric_answer)
+#Verify if the percentages by expert and department sum 100% and select those that are not 100%
+verification_34<- question_34 %>%
+  group_by(crop, expert_in, expert_ID) %>%
+  summarise(sum= sum(as.numeric(numeric_answer))) %>%
+  filter(sum!=100)
+#Remove the experts by department and crop that answer more or less than 100%
+question_34<- anti_join(question_34, verification_34, by=c("crop", "expert_in", "expert_ID"))
+#double chech all the kept values are 100%
+# verification_34<- question_34 %>%
+#   group_by(crop, expert_in, expert_ID) %>%
+#   summarise(sum= sum(as.numeric(numeric_answer)))
+# nrow(verification_34)
+# sum(verification_34$sum==100)
+question_34<- inner_join(question_34, experience_of_each_expert)
+#repeat the interaction the number of times given in the numeric answer column
+question_34$numeric_answer<- as.numeric(question_34$numeric_answer)
+question_34_long<- question_34 %>%
+  slice(rep(1:n(),question_34$numeric_answer)) 
+#Add the weights for the weighted data set
+question_34_long_weighted<- question_34_long %>%
+  slice(rep(1:n(), question_34_long$weights))
+question_34_long_frequencies<- summarise_frequencies(data=question_34_long, first_group_cols = c("crop","expert_in"), second_group_cols =  c("crop","expert_in", "Add_parameters_english"))
+question_34_long_frequencies_weighted<- summarise_frequencies(data=question_34_long_weighted, first_group_cols = c("crop","expert_in"), second_group_cols =  c("crop","expert_in", "Add_parameters_english"))
+
+#National non weighted 
+sankey_national_non_weighted_34 <- create_sankey(
+  data = question_34_long_frequencies,
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_soil(length(unique(question_34_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_national_non_weighted_34
+
+
+sankey_banana_non_weighted_34 <- create_sankey(
+  data = filter(question_34_long_frequencies, crop=="Banana"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_banana(length(unique(question_34_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_banana_non_weighted_34
+
+#Plantain non weighted 
+sankey_plantain_non_weighted_34 <- create_sankey(
+  data = filter(question_34_long_frequencies, crop=="Plantain"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_34_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_plantain_non_weighted_34
+
+
+#National weighted 
+sankey_national_non_weighted_34 <- create_sankey(
+  data = question_34_long_frequencies_weighted,
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_soil(length(unique(question_34_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_national_non_weighted_34
+#banana weighted 
+sankey_banana_non_weighted_34 <- create_sankey(
+  data = filter(question_34_long_frequencies_weighted, crop=="Banana"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_banana(length(unique(question_34_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_banana_non_weighted_34
+#Plantain weighted 
+sankey_plantain_non_weighted_34 <- create_sankey(
+  data = filter(question_34_long_frequencies_weighted, crop=="Plantain"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_34_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_plantain_non_weighted_34
+```
 
 ## Question 35: `r unique(individual_surveys$question_in_english)[35]`
 
@@ -4688,6 +5035,102 @@ nal_q37_weight$cat_weighted<- factor(nal_q37_weight$cat_weighted, levels = level
 colmap(departamentos, data = nal_q37_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q37_weight$cat))-1), na.value = "#eeeeee")
 ```
+
+
+## Question 38: `r unique(individual_surveys$question_in_english)[38]`
+
+```{r question_38}
+#selecting only question 38----
+question_38<- filter(individual_surveys, question_number==38)
+#select Add_parameters_english different than "Not Sure"
+question_38<- filter(question_38, Add_parameters_english!="Not Sure")
+#Verify the unique values in the numeric_answer column
+unique(question_38$numeric_answer)
+#Verify if the percentages by expert and department sum 100% and select those that are not 100%
+verification_38<- question_38 %>%
+  group_by(crop, expert_in, expert_ID) %>%
+  summarise(sum= sum(as.numeric(numeric_answer))) %>%
+  filter(sum!=100)
+#Remove the experts by department and crop that answer more or less than 100%
+question_38<- anti_join(question_38, verification_38, by=c("crop", "expert_in", "expert_ID"))
+#double chech all the kept values are 100%
+# verification_38<- question_38 %>%
+#   group_by(crop, expert_in, expert_ID) %>%
+#   summarise(sum= sum(as.numeric(numeric_answer)))
+# nrow(verification_38)
+# sum(verification_38$sum==100)
+question_38<- inner_join(question_38, experience_of_each_expert)
+#repeat the interaction the number of times given in the numeric answer column
+question_38$numeric_answer<- as.numeric(question_38$numeric_answer)
+question_38_long<- question_38 %>%
+  slice(rep(1:n(),question_38$numeric_answer)) 
+#Add the weights for the weighted data set
+question_38_long_weighted<- question_38_long %>%
+  slice(rep(1:n(), question_38_long$weights))
+question_38_long_frequencies<- summarise_frequencies(data=question_38_long, first_group_cols = c("crop","expert_in"), second_group_cols =  c("crop","expert_in", "Add_parameters_english"))
+question_38_long_frequencies_weighted<- summarise_frequencies(data=question_38_long_weighted, first_group_cols = c("crop","expert_in"), second_group_cols =  c("crop","expert_in", "Add_parameters_english"))
+
+
+#National non weighted 
+sankey_national_non_weighted_38 <- create_sankey(
+  data = question_38_long_frequencies,
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_soil(length(unique(question_38_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_national_non_weighted_38
+
+
+sankey_banana_non_weighted_38 <- create_sankey(
+  data = filter(question_38_long_frequencies, crop=="Banana"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_banana(length(unique(question_38_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_banana_non_weighted_38
+
+#Plantain non weighted 
+sankey_plantain_non_weighted_38 <- create_sankey(
+  data = filter(question_38_long_frequencies, crop=="Plantain"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_38_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_plantain_non_weighted_38
+
+
+#National weighted 
+sankey_national_non_weighted_38 <- create_sankey(
+  data = question_38_long_frequencies_weighted,
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_soil(length(unique(question_38_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_national_non_weighted_38
+#banana weighted 
+sankey_banana_non_weighted_38 <- create_sankey(
+  data = filter(question_38_long_frequencies_weighted, crop=="Banana"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_banana(length(unique(question_38_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_banana_non_weighted_38
+#Plantain weighted 
+sankey_plantain_non_weighted_38 <- create_sankey(
+  data = filter(question_38_long_frequencies_weighted, crop=="Plantain"),
+  target = "expert_in",
+  source = "Add_parameters_english",
+  value = "freq_unique",
+  ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_38_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
+)
+sankey_plantain_non_weighted_38
+```
+
 
 ## Question 39: `r unique(individual_surveys$question_in_english)[39]`
 
@@ -5130,4 +5573,5 @@ q_41_weighted_top_41Colobia$cat_abbreviations<- factor(q_41_weighted_top_41Colob
 bar_plot_banana_plantain(data_set = q_41_weighted_top_41Colobia,x_lab = "Risk Factor", y_lab ="Proportion of Experts (%)", title = "
 Risk Factors that Must be Focus on -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
 ```
+
 
