@@ -1768,7 +1768,7 @@ question_12_long_frequencies_weighted_net<- question_12_long_frequencies_weighte
 question_12_long_frequencies_weighted_net <- separate_rows(question_12_long_frequencies_weighted_net, crop, sep = ",") 
 colnames(question_12_long_frequencies_weighted_net)<- c("Value", "From", "To",  "freq_unique")
 # This data will be used for the weighted edges:
-write.csv(question_12_long_frequencies_weighted_net, "./Data/SUP_Proportion_of_movement_of_planting_materials_by_departments.csv", row.names = FALSE)
+# write.csv(question_12_long_frequencies_weighted_net, "./Data/SUP_Proportion_of_movement_of_planting_materials_by_departments.csv", row.names = FALSE)
 
 
 ```
@@ -2157,6 +2157,7 @@ vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, colo
 question_15_weihted<- inner_join(question_15, experience_of_each_expert)
 rep_question_15_weighted<- question_15_weihted %>%
   slice(rep(1:n(), question_15_weihted$weights))
+# write.csv(rep_question_15_weighted, "./Data/SUP_question_15_weighted.csv")
 question_15_Frequencies_weighted<- count_elements_by_group(rep_question_15_weighted, "answer_in_english", c("crop"))
 # Now call the function
 avg_weight_15 <- assign_group_color(data = question_15_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_15, colors_by_crop = colors_by_crop_no_weighted_15,answer_col =  "answer_in_english")
