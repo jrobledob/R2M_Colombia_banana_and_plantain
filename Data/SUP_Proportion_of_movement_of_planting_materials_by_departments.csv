@@ -1,0 +1,81 @@
+"crop","expert_in","Add_parameters_english","freq_unique"
+"BN","Antioquia","Antioquia",0.836
+"BC","Antioquia","Antioquia",0.836
+"BN","Antioquia","Caldas",0.004
+"BC","Antioquia","Caldas",0.004
+"BN","Antioquia","Cesar",0.004
+"BC","Antioquia","Cesar",0.004
+"BN","Antioquia","Cundinamarca",0.144
+"BC","Antioquia","Cundinamarca",0.144
+"BN","Antioquia","Magdalena",0.012
+"BC","Antioquia","Magdalena",0.012
+"BN","Cesar","Antioquia",1
+"BC","Cesar","Antioquia",1
+"BN","Chocó","Antioquia",1
+"BC","Chocó","Antioquia",1
+"BN","La Guajira","Antioquia",0.428571428571429
+"BC","La Guajira","Antioquia",0.428571428571429
+"BN","La Guajira","La Guajira",0.528571428571429
+"BC","La Guajira","La Guajira",0.528571428571429
+"BN","La Guajira","Magdalena",0.0428571428571429
+"BC","La Guajira","Magdalena",0.0428571428571429
+"BN","Magdalena","Antioquia",0.5
+"BC","Magdalena","Antioquia",0.5
+"BN","Magdalena","La Guajira",0.0833333333333333
+"BC","Magdalena","La Guajira",0.0833333333333333
+"BN","Magdalena","Magdalena",0.416666666666667
+"BC","Magdalena","Magdalena",0.416666666666667
+"PN","Antioquia","Antioquia",1
+"PC","Antioquia","Antioquia",1
+"PN","Arauca","Arauca",0.94
+"PC","Arauca","Arauca",0.94
+"PN","Casanare","Arauca",0.06
+"PC","Casanare","Arauca",0.06
+"PN","Caldas","Caldas",0.667857142857143
+"PC","Caldas","Caldas",0.667857142857143
+"PN","Quindío","Caldas",0.117857142857143
+"PC","Quindío","Caldas",0.117857142857143
+"PN","Risaralda","Caldas",0.192857142857143
+"PC","Risaralda","Caldas",0.192857142857143
+"PN","Valle Del Cauca","Caldas",0.0214285714285714
+"PC","Valle Del Cauca","Caldas",0.0214285714285714
+"PN","Casanare","Casanare",1
+"PC","Casanare","Casanare",1
+"PN","Chocó","Chocó",1
+"PC","Chocó","Chocó",1
+"PN","La Guajira","La Guajira",0.4
+"PC","La Guajira","La Guajira",0.4
+"PN","Magdalena","La Guajira",0.6
+"PC","Magdalena","La Guajira",0.6
+"PN","Magdalena","Magdalena",1
+"PC","Magdalena","Magdalena",1
+"PN","Arauca","Meta",0.00682438580527752
+"PC","Arauca","Meta",0.00682438580527752
+"PN","Casanare","Meta",0.00682438580527752
+"PC","Casanare","Meta",0.00682438580527752
+"PN","Huila","Meta",0.00181983621474067
+"PC","Huila","Meta",0.00181983621474067
+"PN","Magdalena","Meta",0.089171974522293
+"PC","Magdalena","Meta",0.089171974522293
+"PN","Meta","Meta",0.884895359417652
+"PC","Meta","Meta",0.884895359417652
+"PN","Quindío","Meta",0.00181983621474067
+"PC","Quindío","Meta",0.00181983621474067
+"PN","Tolima","Meta",0.0086442220200182
+"PC","Tolima","Meta",0.0086442220200182
+"PN","Cauca","Quindío",0.0588235294117647
+"PC","Cauca","Quindío",0.0588235294117647
+"PN","Quindío","Quindío",0.6
+"PC","Quindío","Quindío",0.6
+"PN","Risaralda","Quindío",0.270588235294118
+"PC","Risaralda","Quindío",0.270588235294118
+"PN","Valle Del Cauca","Quindío",0.0705882352941176
+"PC","Valle Del Cauca","Quindío",0.0705882352941176
+"PN","Caldas","Risaralda",0.0571428571428571
+"PC","Caldas","Risaralda",0.0571428571428571
+"PN","Quindío","Risaralda",0.314285714285714
+"PC","Quindío","Risaralda",0.314285714285714
+"PN","Risaralda","Risaralda",0.571428571428571
+"PC","Risaralda","Risaralda",0.571428571428571
+"PN","Valle Del Cauca","Risaralda",0.0571428571428571
+"PC","Valle Del Cauca","Risaralda",0.0571428571428571
