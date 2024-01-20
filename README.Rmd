@@ -1764,6 +1764,7 @@ question_12_long_frequencies_weighted_net<- question_12_long_frequencies_weighte
     crop=="Plantain" ~ "PN,PC"
   ))
 # Separate the "crop" column by commas and create new rows
+
 question_12_long_frequencies_weighted_net <- separate_rows(question_12_long_frequencies_weighted_net, crop, sep = ",") 
 colnames(question_12_long_frequencies_weighted_net)<- c("Value", "From", "To",  "freq_unique")
 # This data will be used for the weighted edges:
