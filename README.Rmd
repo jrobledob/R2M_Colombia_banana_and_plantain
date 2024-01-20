@@ -1656,6 +1656,9 @@ nal_q11_weight<- full_join(codes_department, nal_q11_weight)
 nal_q11_weight$cat_weighted<- factor(nal_q11_weight$cat_weighted, levels = level_11)
 colmap(departamentos, data = nal_q11_weight, data_id = "id_depto", var = "cat_weighted")+
   scale_fill_manual(values = palette_soil(length(unique(nal_q11_weight$cat))-1), na.value = "#eeeeee")
+#this information will be used for weighting the network of trade of planting material
+nal_q11_weight$percentage_informal<-round(nal_q11_weight$average_weighted -1, 0)*10
+write.csv(nal_q11_weight, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/SUP_Percentage_of_informal_planting_material_by_department.csv", row.names = F)
 ```
 
 
