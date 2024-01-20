@@ -246,20 +246,8 @@ sankey <- create_sankey(
 
 ```{r libraries}
 #libraries----
-  library(treemap)
-  library(tidyverse)
-  library(RColorBrewer)
-  library("colmaps")
-  library("homicidios")
-  library(voronoiTreemap)
-  library(webshot)
-  library(webshot2)
-  library(purrr)
-  library(rlang)
-  library(patchwork)
-  library(hrbrthemes)
-  library(circlize)
-  library(networkD3)
+  
+
 
 #Global variables
   #set the color palette for bananas and plantains
@@ -1769,6 +1757,19 @@ sankey_plantain_non_weighted_12 <- create_sankey(
   ColourScal = paste("d3.scaleOrdinal().range([\"", paste(palette_plantain(length(unique(question_12_long_frequencies$Add_parameters_english))), collapse = "\", \""), "\"])", sep = "")
 )
 sankey_plantain_non_weighted_12
+
+question_12_long_frequencies_weighted_net<- question_12_long_frequencies_weighted %>%
+  mutate(crop= case_when(
+    crop=="Banana" ~"BN,BC",
+    crop=="Plantain" ~ "PN,PC"
+  ))
+# Separate the "crop" column by commas and create new rows
+question_12_long_frequencies_weighted_net <- separate_rows(question_12_long_frequencies_weighted_net, crop, sep = ",") 
+colnames(question_12_long_frequencies_weighted_net)<- c("Value", "From", "To",  "freq_unique")
+# This data will be used for the weighted edges:
+write.csv(question_12_long_frequencies_weighted_net, "./Data/SUP_Proportion_of_movement_of_planting_materials_by_departments.csv", row.names = FALSE)
+
+
 ```
 
 ## Question 13: `r unique(individual_surveys$question_in_english)[13]`
