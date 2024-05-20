@@ -247,6 +247,20 @@ sankey <- create_sankey(
 ```{r libraries}
 #libraries----
   
+  library(treemap)
+  library(tidyverse)
+  library(RColorBrewer)
+  library("colmaps")
+  library("homicidios")
+  library(voronoiTreemap)
+  library(webshot)
+  library(webshot2)
+  library(purrr)
+  library(rlang)
+  library(patchwork)
+  library(hrbrthemes)
+  library(circlize)
+  library(networkD3)
 
 
 #Global variables
@@ -2398,6 +2412,8 @@ avg_dept_weight_16 <- assign_group_color(data = avg_dept_weight_16, levels_by_cr
 #tree map
 tree_map_3(data = avg_dept_no_weight_16, "crop", "expert_in", "ave_cat", "group_color", title="No weighted")
 tree_map_3(data = avg_dept_weight_16, "crop", "expert_in", "ave_cat_weighted", "group_color", title="weighted")
+
+
 #Map of Colombia  
 #non weighted
 nal_q16_no_weight<- question_16 %>% group_by(expert_in) %>%
@@ -5580,4 +5596,157 @@ bar_plot_banana_plantain(data_set = q_41_weighted_top_41Colobia,x_lab = "Risk Fa
 Risk Factors that Must be Focus on -  W" ,x = "cat_abbreviations", y = "mean", alpha = 0.3,background_color = "background_color", bar_color = "color",proportional_limit =1.10)
 ```
 
+## Preparing Questions for HeatMap:
+
+```{r heatmap}
+library(reshape2)
+library(ComplexHeatmap)
+#Selecting the questions regarding to the correct utilization of management practices
+heat_map_data_correct<- rbind(avg_dept_weight_16, avg_dept_weight_17, avg_dept_weight_18, avg_dept_weight_20)
+#Calculating the mean by crop by expert by question number. Every question number is a different management practice
+heat_map_data_matrix_correct<-  heat_map_data_correct %>%
+  group_by(crop, expert_in, question_number) %>%
+  summarise(value = mean(average_weighted))
+#Format the data set to long
+heat_map_data_matrix_correct<- dcast(data = heat_map_data_matrix_correct, formula = crop+expert_in~question_number)
+#Standardazing the data
+mat<- heat_map_data_matrix_correct[, c("16", "17", "18", "20")]
+mat<- mat/11
+#Adding a blank space to the banana observations 
+rownames(mat)<-c("Antioquia ", "Caldas ", "Cesar ", "Chocó ", "Córdoba ", "Huila ", 
+"La Guajira ", "Magdalena ", "Quindío ", "Risaralda ", "Antioquia", 
+"Arauca", "Atlántico", "Bolívar", "Caldas", "Casanare", "Córdoba", 
+"Huila", "La Guajira", "Magdalena", "Meta", "Norte De Santander", 
+"Quindío", "Risaralda", "Santander", "Sucre", "Tolima")
+
+
+#Selecting the questions regarding to the preceived effectiveness of management practices
+heat_map_data_perceived<- rbind(avg_dept_weight_22, avg_dept_weight_23, avg_dept_weight_24, avg_dept_weight_25)
+#Calculating the mean by crop by expert by question number. Every question number is a different management practice
+heat_map_data_matrix_perceived<-  heat_map_data_perceived %>%
+  group_by(crop, expert_in, question_number) %>%
+  summarise(value = mean(average_weighted))
+#Format the data set to long
+heat_map_data_matrix_perceived<- dcast(data = heat_map_data_matrix_perceived, formula = crop+expert_in~question_number)
+#Standardazing the data
+mat_2<- heat_map_data_matrix_perceived[, c("22", "23", "24", "25")]
+mat_2<- mat_2/5
+#
+rownames(mat_2)<- c("Antioquia ", "Caldas ", "Cesar ", "Chocó ", "Córdoba ", "Huila ", 
+"La Guajira ", "Magdalena ", "Quindío ", "Risaralda ", "Antioquia", 
+"Arauca", "Atlántico", "Bolívar", "Caldas", "Casanare", "Córdoba", 
+"Huila", "La Guajira", "Magdalena", "Meta", "Norte De Santander", 
+"Quindío", "Risaralda", "Santander", "Sucre", "Tolima")
+
+#implementation of management practices
+implementation<- read.csv("./Data/SUP_Implentation_of_management_practices.csv")
+#creating the matrix for the heatmap
+mat_3<- implementation[, c("Integrated.Pest.and.Disease.Management", 
+"Chemical.Control", "Community.Participation", "Monitoring.and.Reporting", 
+"Cultural.Control", "Physical.Control", "Regulatory.Compliance", 
+"Education.and.Training", "Biosecurity.Measures", "Biological.Control"
+)]
+#selecting the row names
+rownames(mat_3)<- c("Antioquia ", "Caldas ", "Cesar ", "Chocó ", "Córdoba ", "Huila ", 
+"La Guajira ", "Magdalena ", "Quindío ", "Risaralda ", "Antioquia", 
+"Arauca", "Atlántico", "Bolívar", "Caldas", "Casanare", "Córdoba", 
+"Huila", "La Guajira", "Magdalena", "Meta", "Norte De Santander", 
+"Quindío", "Risaralda", "Santander", "Sucre", "Tolima")
+
+
+
+
+
+
+
+
+
+mat_final<- cbind(mat_3, mat, mat_2)
+#Colnames
+# colnames(mat_final)<- c("Int. Pest. Mang.", "Chem. Contr.", 
+# "Community.Parti.", "Monit. and Report.", "Cult. Contr.", 
+# "Phys. Contr.", "Regu. Compliance", "Edu. and Trai.", 
+# "Biosec. Meas.", "Bio. Contr.", "Chem. Contr.", "Bio. Contr.", "Cult. Contr.", 
+# "Biosec. Meas.", "Chem. Contr.", "Bio. Contr.", "Cult. Contr.", "Biosec. Meas.")
+
+
+colnames(mat_final) <- c("Integrated Pest Management", "Chemical Control", 
+                         "Community Participation", "Monitoring and Reporting", "Cultural Control", 
+                         "Physical Control", "Regulatory Compliance", "Education and Training", 
+                         "Biosecurity Measures", "Biological Control", "Chemical Control", "Biological Control", "Cultural Control", 
+                         "Biosecurity Measures", "Chemical Control", "Biological Control", "Cultural Control", "Biosecurity Measures")
+
+
+# 
+# 
+# 
+# column_ha = HeatmapAnnotation(Level=c(rep("Implementation", ncol(mat_3)), rep("Correct utilization", ncol(mat)), rep("Perceived effectiveness", ncol(mat_2))))
+# 
+# 
+# row_ha = rowAnnotation(crop = heat_map_data_matrix$crop)
+# 
+# 
+# 
+# Heatmap(mat_final, name = "mat_final", 
+#         top_annotation = column_ha,
+#         right_annotation = row_ha,
+#          cluster_columns = FALSE
+#         )
+# 
+
+
+# Assuming mat_final is your matrix
+# column_ha is the column annotation which you may need to define
+# row_ha is the row annotation which you may need to define
+
+# 1. Color setting for the heatmap
+my_colors <- colorRamp2(c(min(mat_final, na.rm = TRUE), 0, max(mat_final, na.rm = TRUE)), 
+                        c("#FFF2CC", "white", "#654321"))
+
+# 2. Color setting for 'crop' annotation
+row_ha = rowAnnotation(crop = heat_map_data_matrix$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
+
+
+# 3. Reorder the levels for the 'Level' annotation
+# You need to create your column_ha with the levels in the correct order
+# This is a placeholder for the actual code you would use to create your column_ha
+column_ha_data<- c(rep("Implementation", ncol(mat_3)), rep("Correct utilization", ncol(mat)), rep("Perceived effectiveness", ncol(mat_2)))
+column_ha_levels_ordered <- HeatmapAnnotation(Level = factor(column_ha_data, levels = c("Implementation", "Correct utilization", "Perceived effectiveness")),col = list(Level = c("Implementation" = "#654321", "Perceived effectiveness" = "#9E825C", "Correct utilization" = "#D8C298")))
+
+
+# Create the Heatmap
+Heatmap(mat_final, name = "Standard scale",
+        col = my_colors,
+        top_annotation = column_ha_levels_ordered,
+        right_annotation = row_ha,
+        cluster_columns = FALSE)
+
+
+
+
+# Extracting the "Biosec. Meas." column. Ensure the column name matches exactly.
+biosec_meas_matrix <- mat_final[, "Biosec. Meas.", drop = FALSE]  # drop=FALSE to keep it as a matrix
+
+# Assuming you want to keep the row annotations as is but remove column annotations since it's only one column.
+# If you still want to show that this is the "Biosec. Meas." you can modify this according to your needs.
+
+# Color setting for the heatmap
+my_colors <- colorRamp2(c(min(biosec_meas_matrix, na.rm = TRUE), 0, max(biosec_meas_matrix, na.rm = TRUE)), 
+                        c("#FFF2CC", "white", "#654321"))
+
+# Assuming you want to keep row annotations related to 'crop'
+# Ensure heat_map_data_matrix$crop exists or adjust as necessary to your data structure
+row_ha = rowAnnotation(crop = heat_map_data_matrix$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
+
+# Create the Heatmap for "Biosec. Meas." column
+Heatmap(biosec_meas_matrix, name = "Biosecurity Measures",
+        col = my_colors,
+        right_annotation = row_ha,
+        cluster_columns = FALSE,
+        cluster_rows = FALSE
+        )  # Adjust clustering as per your analysis needs
+
+# Note: The clustering, color annotations, and other features should be adjusted based on your specific analysis goals and the data characteristics.
+
+```
 
