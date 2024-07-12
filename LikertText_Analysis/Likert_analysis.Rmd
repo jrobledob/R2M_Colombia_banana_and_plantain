@@ -203,6 +203,6 @@ data = lk$results %>%
       dplyr::arrange((`5`)) %>% 
       dplyr::mutate(Item = paste(str_pad(row_number(),2, pad = "0"), Item, sep = ' '))
 lk1 =likert(summary = data) #Repeat the Likert analysis with the sorted data
-likert.heat.plot(lk1) 
+likert.heat.plot(lk1,low.color = "white", high.color = "orange") 
 ```
 
