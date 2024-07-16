@@ -1075,12 +1075,17 @@ question_7 <- question_7 %>%
 question_7$answer_in_english<- factor(question_7$answer_in_english,levels = c("Extremely Unlikely", "Very Unlikely", "Somewhat Unlikely", 
                                                                               "Unlikely", "Neutral", "Somewhat Likely", "Likely", 
                                                                               "Very Likely", "Extremely Likely"))
+#Delete an answer with incorrect information
+question_7$numeric_answer[question_7$numeric_answer=="5,10"]<- NA
+question_7$round_num_answer[question_7$round_num_answer=="5,10"]<- NA
+question_7$numeric_answer<- as.numeric(question_7$numeric_answer)
+question_7$round_num_answer<- as.numeric(question_7$round_num_answer)
 #average by department (weighted and no weighted)
 #not weighted 
 avg_dept_no_weight_7<- question_7 %>%
   group_by(crop, expert_in) %>%
   mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average= mean(numeric_answer)) %>%
+  mutate(average= mean(numeric_answer, na.rm = T)) %>%
   group_by(average)%>%
   mutate(ave_cat= category_by_mean_by_question(7, mean =average, language = "en"))
 #weighted 
@@ -1088,7 +1093,7 @@ add_weights_question_7<- inner_join(question_7, experience_of_each_expert)
 avg_dept_weight_7<- add_weights_question_7 %>%
   group_by(crop, expert_in) %>%
   mutate(numeric_answer=as.numeric(numeric_answer))%>%
-  mutate(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  mutate(average_weighted= weighted.mean(numeric_answer, weights, na.rm = T)) %>% 
   group_by(average_weighted)%>%
   mutate(ave_cat_weighted= category_by_mean_by_question(7, mean =average_weighted, language = "en"))
 
@@ -1138,7 +1143,7 @@ tree_map_3(data = avg_dept_weight_7, "crop", "expert_in", "ave_cat_weighted", "g
 #Map of Colombia  
 #non weighted
 nal_q7_no_weight<- question_7 %>% group_by(expert_in) %>%
-  summarise(average= mean(as.numeric(numeric_answer))) %>%
+  summarise(average= mean(as.numeric(numeric_answer), na.rm = T)) %>%
   group_by(average) %>% 
   mutate(cat= category_by_mean_by_question(language = "en", mean = average, question =7))%>%
   rename(EKE.expert.in = expert_in)
@@ -1158,7 +1163,7 @@ nal_q7_weight<- inner_join(question_7, experience_of_each_expert)
 nal_q7_weight<- nal_q7_weight %>%
   group_by(expert_in) %>%
   mutate(numeric_answer=as.numeric(numeric_answer)) %>%
-  summarise(average_weighted= weighted.mean(numeric_answer, weights)) %>% 
+  summarise(average_weighted= weighted.mean(numeric_answer, weights, na.rm = T)) %>% 
   group_by(average_weighted) %>%
   mutate(cat_weighted= category_by_mean_by_question(language = "en", mean = average_weighted, question =7)) %>%
   rename(EKE.expert.in=expert_in)
@@ -1782,7 +1787,7 @@ question_12_long_frequencies_weighted_net<- question_12_long_frequencies_weighte
 question_12_long_frequencies_weighted_net <- separate_rows(question_12_long_frequencies_weighted_net, crop, sep = ",") 
 colnames(question_12_long_frequencies_weighted_net)<- c("Value", "From", "To",  "freq_unique")
 # This data will be used for the weighted edges:
-# write.csv(question_12_long_frequencies_weighted_net, "./Data/SUP_Proportion_of_movement_of_planting_materials_by_departments.csv", row.names = FALSE)
+write.csv(question_12_long_frequencies_weighted_net, "./Data/SUP_Proportion_of_movement_of_planting_materials_by_departments.csv", row.names = FALSE)
 
 
 ```
@@ -2171,7 +2176,7 @@ vt_d3(gdp_json, color_border = "#654321", size_border = "1.5px", label = F, colo
 question_15_weihted<- inner_join(question_15, experience_of_each_expert)
 rep_question_15_weighted<- question_15_weihted %>%
   slice(rep(1:n(), question_15_weihted$weights))
-# write.csv(rep_question_15_weighted, "./Data/SUP_question_15_weighted.csv")
+write.csv(rep_question_15_weighted, "./Data/SUP_question_15_weighted.csv")
 question_15_Frequencies_weighted<- count_elements_by_group(rep_question_15_weighted, "answer_in_english", c("crop"))
 # Now call the function
 avg_weight_15 <- assign_group_color(data = question_15_Frequencies_weighted, levels_by_crop = levels_by_crop_no_weighted_15, colors_by_crop = colors_by_crop_no_weighted_15,answer_col =  "answer_in_english")
@@ -5611,13 +5616,15 @@ heat_map_data_matrix_correct<-  heat_map_data_correct %>%
 heat_map_data_matrix_correct<- dcast(data = heat_map_data_matrix_correct, formula = crop+expert_in~question_number)
 #Standardazing the data
 mat<- heat_map_data_matrix_correct[, c("16", "17", "18", "20")]
-mat<- mat/11
+mat<- mat/max(mat)
 #Adding a blank space to the banana observations 
-rownames(mat)<-c("Antioquia ", "Caldas ", "Cesar ", "Chocó ", "Córdoba ", "Huila ", 
-"La Guajira ", "Magdalena ", "Quindío ", "Risaralda ", "Antioquia", 
-"Arauca", "Atlántico", "Bolívar", "Caldas", "Casanare", "Córdoba", 
-"Huila", "La Guajira", "Magdalena", "Meta", "Norte De Santander", 
-"Quindío", "Risaralda", "Santander", "Sucre", "Tolima")
+#dput(heat_map_data_matrix_correct$expert_in)
+rownames(mat)<-c("Antioquia", "Caldas", "Cesar", "Chocó", "Córdoba", "Huila", 
+"La Guajira", "Magdalena", "Quindío", "Risaralda", "Antioquia ", 
+"Arauca", "Atlántico", "Bolívar", "Caldas ", "Casanare", "Cauca", 
+"Córdoba ", "Huila ", "La Guajira ", "Magdalena ", "Meta", "Nariño", 
+"Norte De Santander", "Quindío ", "Risaralda ", "Santander", "Sucre", 
+"Tolima", "Valle Del Cauca")
 
 
 #Selecting the questions regarding to the preceived effectiveness of management practices
@@ -5630,13 +5637,43 @@ heat_map_data_matrix_perceived<-  heat_map_data_perceived %>%
 heat_map_data_matrix_perceived<- dcast(data = heat_map_data_matrix_perceived, formula = crop+expert_in~question_number)
 #Standardazing the data
 mat_2<- heat_map_data_matrix_perceived[, c("22", "23", "24", "25")]
-mat_2<- mat_2/5
-#
-rownames(mat_2)<- c("Antioquia ", "Caldas ", "Cesar ", "Chocó ", "Córdoba ", "Huila ", 
-"La Guajira ", "Magdalena ", "Quindío ", "Risaralda ", "Antioquia", 
-"Arauca", "Atlántico", "Bolívar", "Caldas", "Casanare", "Córdoba", 
-"Huila", "La Guajira", "Magdalena", "Meta", "Norte De Santander", 
-"Quindío", "Risaralda", "Santander", "Sucre", "Tolima")
+mat_2<- mat_2/max(mat_2)
+
+#dput(heat_map_data_perceived$expert_in)
+
+rownames(mat_2)<- c("Antioquia", "Caldas", "Cesar", "Chocó", "Córdoba", "Huila", 
+"La Guajira", "Magdalena", "Quindío", "Risaralda", "Antioquia ", 
+"Arauca", "Atlántico", "Bolívar", "Caldas ", "Casanare", "Cauca", 
+"Córdoba ", "Huila ", "La Guajira ", "Magdalena ", "Meta", "Nariño", 
+"Norte De Santander", "Quindío ", "Risaralda ", "Santander", "Sucre", 
+"Tolima", "Valle Del Cauca")
+
+#read the Sup_question_15_weighted
+implementation<- read.csv("./Data/SUP_question_15_weighted.csv")
+#count the number of expert_IDs by department in the data set
+experts<- implementation %>%
+  group_by(expert_in, crop) %>%
+  summarise(total_experts= n())
+
+# count the frequencies of the answer_in_english column of the implementation data set by expert_in and crop using the count_elements_by_group function
+question_15_frequencies<- count_elements_by_group(implementation, "answer_in_english", c("crop", "expert_in"))
+
+#Join the question_15_frequencies and experts data set 
+question_15_frequencies<- inner_join(question_15_frequencies, experts)
+# calculate the percentage dividing n to total_experts
+question_15_frequencies$percentage<-question_15_frequencies$n/question_15_frequencies$total_experts
+#reformat the wide format
+question_15_frequencies<- dcast(data = question_15_frequencies, formula = crop+expert_in~answer_in_english)
+#Standardazing the data
+write.csv(question_15_frequencies, "./Data/SUP_Implentation_of_management_practices.csv")
+mat_3<- question_15_frequencies[, c("Biological Control", "Biosecurity Measures", 
+"Chemical Control", "Community Participation", "Cultural Control", 
+"Education and Training", "Integrated Pest and Disease Management", 
+"Monitoring and Reporting", "Physical Control", "Regulatory Compliance")]
+
+
+
+
 
 #implementation of management practices
 implementation<- read.csv("./Data/SUP_Implentation_of_management_practices.csv")
@@ -5647,13 +5684,12 @@ mat_3<- implementation[, c("Integrated.Pest.and.Disease.Management",
 "Education.and.Training", "Biosecurity.Measures", "Biological.Control"
 )]
 #selecting the row names
-rownames(mat_3)<- c("Antioquia ", "Caldas ", "Cesar ", "Chocó ", "Córdoba ", "Huila ", 
-"La Guajira ", "Magdalena ", "Quindío ", "Risaralda ", "Antioquia", 
-"Arauca", "Atlántico", "Bolívar", "Caldas", "Casanare", "Córdoba", 
-"Huila", "La Guajira", "Magdalena", "Meta", "Norte De Santander", 
-"Quindío", "Risaralda", "Santander", "Sucre", "Tolima")
-
-
+rownames(mat_3)<- c("Antioquia", "Caldas", "Cesar", "Chocó", "Córdoba", "Huila", 
+"La Guajira", "Magdalena", "Quindío", "Risaralda", "Antioquia ", 
+"Arauca", "Atlántico", "Bolívar", "Caldas ", "Casanare", "Cauca", 
+"Córdoba ", "Huila ", "La Guajira ", "Magdalena ", "Meta", "Nariño", 
+"Norte De Santander", "Quindío ", "Risaralda ", "Santander", "Sucre", 
+"Tolima", "Valle Del Cauca")
 
 
 
@@ -5704,7 +5740,7 @@ my_colors <- colorRamp2(c(min(mat_final, na.rm = TRUE), 0, max(mat_final, na.rm 
                         c("#FFF2CC", "white", "#654321"))
 
 # 2. Color setting for 'crop' annotation
-row_ha = rowAnnotation(crop = heat_map_data_matrix$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
+row_ha = rowAnnotation(crop = heat_map_data_matrix_correct$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
 
 
 # 3. Reorder the levels for the 'Level' annotation
@@ -5725,7 +5761,7 @@ Heatmap(mat_final, name = "Standard scale",
 
 
 # Extracting the "Biosec. Meas." column. Ensure the column name matches exactly.
-biosec_meas_matrix <- mat_final[, "Biosec. Meas.", drop = FALSE]  # drop=FALSE to keep it as a matrix
+biosec_meas_matrix <- mat_final[, "Biosecurity Measures", drop = FALSE]  # drop=FALSE to keep it as a matrix
 
 # Assuming you want to keep the row annotations as is but remove column annotations since it's only one column.
 # If you still want to show that this is the "Biosec. Meas." you can modify this according to your needs.
@@ -5734,19 +5770,19 @@ biosec_meas_matrix <- mat_final[, "Biosec. Meas.", drop = FALSE]  # drop=FALSE t
 my_colors <- colorRamp2(c(min(biosec_meas_matrix, na.rm = TRUE), 0, max(biosec_meas_matrix, na.rm = TRUE)), 
                         c("#FFF2CC", "white", "#654321"))
 
-# Assuming you want to keep row annotations related to 'crop'
-# Ensure heat_map_data_matrix$crop exists or adjust as necessary to your data structure
-row_ha = rowAnnotation(crop = heat_map_data_matrix$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
-
-# Create the Heatmap for "Biosec. Meas." column
-Heatmap(biosec_meas_matrix, name = "Biosecurity Measures",
-        col = my_colors,
-        right_annotation = row_ha,
-        cluster_columns = FALSE,
-        cluster_rows = FALSE
-        )  # Adjust clustering as per your analysis needs
-
-# Note: The clustering, color annotations, and other features should be adjusted based on your specific analysis goals and the data characteristics.
+# # Assuming you want to keep row annotations related to 'crop'
+# # Ensure heat_map_data_matrix$crop exists or adjust as necessary to your data structure
+# row_ha = rowAnnotation(crop = heat_map_data_matrix$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
+# 
+# # Create the Heatmap for "Biosec. Meas." column
+# Heatmap(biosec_meas_matrix, name = "Biosecurity Measures",
+#         col = my_colors,
+#         right_annotation = row_ha,
+#         cluster_columns = FALSE,
+#         cluster_rows = FALSE
+#         )  # Adjust clustering as per your analysis needs
+# 
+# # Note: The clustering, color annotations, and other features should be adjusted based on your specific analysis goals and the data characteristics.
 
 ```
 

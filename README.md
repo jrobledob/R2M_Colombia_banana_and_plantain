@@ -1,7 +1,7 @@
 Analisis of individual Questions EKE Colombia - Banano and Plantain 2023
 ================
 Jacobo Robledo
-2024-01-10
+2024-07-12
 
 ## Libraries, Functions, and Global Variables
 
@@ -302,7 +302,7 @@ the specified value.
 
 #### Descriptive statistics:
 
-Total number of experts that answer this question= 46
+Total number of experts that answer this question= 101
 
 Mode in all the surveys= 5 to 9
 
@@ -469,3 +469,7 @@ Descriptive statistics by crop=
 ## Question 41: What risk-associated factor do you believe is significant for the spread of Foc R4T but has not received sufficient efforts to mitigate it? Please check all that apply
 
 ![](README_files/figure-gfm/question_41-1.png)<!-- -->![](README_files/figure-gfm/question_41-2.png)<!-- -->![](README_files/figure-gfm/question_41-3.png)<!-- -->![](README_files/figure-gfm/question_41-4.png)<!-- -->![](README_files/figure-gfm/question_41-5.png)<!-- -->![](README_files/figure-gfm/question_41-6.png)<!-- -->![](README_files/figure-gfm/question_41-7.png)<!-- -->![](README_files/figure-gfm/question_41-8.png)<!-- -->![](README_files/figure-gfm/question_41-9.png)<!-- -->![](README_files/figure-gfm/question_41-10.png)<!-- -->
+
+## Preparing Questions for HeatMap:
+
+![](README_files/figure-gfm/heatmap-1.png)<!-- -->
