@@ -1,0 +1,312 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Network analysis:
+
+This section perform the analysis of the banana and plantain planting meterial and stakeholder movement network.
+
+### Preparing the data set for the network analysis
+
+#### Network of planting material
+
+```{r}
+# Upload the network of panting material from github
+net_plant_mat<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Network_of_Planting_Material_2023_12_08.csv", header = TRUE, row.names = 1)
+head(net_plant_mat)
+```
+
+The data set has more than one category by cell. First we will check what are all the categories that are in the data set. They shoul be: BC, BN, PC, PN for banana registerd and non-registered and plantain registered and non-registered, respectively.
+
+```{r}
+# Unlist the data to get all entries in a single vector
+all_values <- unlist(net_plant_mat)
+# Filter out the zeroes if they are not needed
+all_values <- all_values[all_values != "0"]
+# Split the comma-separated values and unlist again
+all_values_split <- unlist(strsplit(all_values, ","))
+# Get unique values
+unique_values <- unique(all_values_split)
+# Display the unique values
+print(unique_values)
+```
+
+The data set is correctly formatted. Now we will need to create a binary matrix for each category (four in total --\> "BC" "BN" "PN" "PC"). We will create a matrix of the same size as the original data set, but with 1s and 0s. 1s will indicate that the category is present in the cell, and 0s will indicate that it is not.
+
+```{r}
+# Get the dimensions of the original data
+n_rows <- nrow(net_plant_mat)
+n_cols <- ncol(net_plant_mat)
+# Initialize a list to store the binary matrices for each category
+binary_matrices <- list()
+# Define the four categories
+categories <- c("BC", "BN", "PN", "PC")
+# Loop through each category
+for (category in categories) {
+  # Initialize an empty matrix of the same size as net_plant_mat with 0s
+  binary_matrix <- matrix(0, nrow = n_rows, ncol = n_cols)
+  # Loop through each cell in the data frame
+  for (i in 1:n_rows) {
+    for (j in 1:n_cols) {
+      # Check if the category is present in the current cell
+      if (grepl(category, net_plant_mat[i, j])) {
+        binary_matrix[i, j] <- 1
+      }
+      
+    }
+  }
+  # Store the binary matrix in the list with the category name as the key
+  binary_matrices[[category]] <- binary_matrix
+  # Convert the matrix to a data frame and assign row and column names
+  binary_df <- as.data.frame(binary_matrix)
+  rownames(binary_df) <- rownames(net_plant_mat)
+  colnames(binary_df) <- colnames(net_plant_mat)
+  # Create the file name using the specified format
+  file_name <- paste0("C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Net_", category, ".csv")
+  # Write the data frame to a CSV file
+  write.csv(binary_df, file_name, row.names = TRUE)
+}
+```
+
+Check that the unique categories between the binary data sets and the original data set is the same.
+
+```{r}
+# Unlist the data to get all entries in a single vector
+all_values <- unlist(net_plant_mat)
+# Filter out the zeroes if they are not needed
+all_values <- all_values[all_values != "0"]
+# Split the comma-separated values and unlist again
+all_values_split <- unlist(strsplit(all_values, ","))
+# Get unique values
+unique_original_categories <- unique(all_values_split)
+# Loop through each category and check if the binary matrix is correct
+for (category in categories) {
+  # Get the corresponding binary matrix
+  binary_matrix <- binary_matrices[[category]]
+  # Extract the positions where there is a 1 in the binary matrix
+  positions <- which(binary_matrix == 1, arr.ind = TRUE)
+  # Check if all positions in the original matrix contain the correct category
+  for (pos in 1:nrow(positions)) {
+    row <- positions[pos, 1]
+    col <- positions[pos, 2]
+    # Verify the category is in the original matrix at these positions
+    if (!grepl(category, net_plant_mat[row, col])) {
+      stop(paste("Mismatch found for category", category, "at position (", row, ",", col, ")"))
+    }
+  }
+}
+# If the script completes without stopping, it means all checks passed
+cat("All binary matrices correctly reflect the categories in the original data set.\n")
+```
+
+The four data sets will be used later for the network analysis. Names of the files:
+
+-   DATA_MAP_Net_BC.csv
+-   DATA_MAP_Net_BN.csv
+-   DATA_MAP_Net_PN.csv
+-   DATA_MAP_Net_PC.csv
+
+#### Data set of the planted area by department in the last three years
+
+This data set was taken from AGRONET. It is a data set that contains the planted area of banana and plantain by department in the last three years (from 2020 to 2022, needs to be filtered). The data set for banana is the sum of the information provided in this web page for these crops: BANANO y BANANO EXPORTACION . The data set for plantain is the sum of the information provided in this web page for these crops: PLATANO, and PLATANO EXPORTACION. This data set will be used to calculate the absolute link weihgts of the plantain material network. For that we assume that the *demand of planting material* of each department is proportional to cum sum of the change of planted area in the last three years. We have assumption that if the cum sum of the change of planted area is negative there is a superhabit of planting material in that department and therefore the demand is very small *(set as 1 ha)*. If it is positive there is a deficit of planting material. The steps to calculate the cum sum of the change of planted area area:
+
+**Step 1: Calculate Yearly Area Changes**
+
+$$
+\Delta A_{i,t} = A_{i,t+1} - A_{i,t} \quad \text{for } t = 2020 \text{ to } 2021
+$$
+
+**Step 2: Calculate Cumulative Area Change**
+
+$$
+\Delta A_{i} = \sum_{t=2020}^{2021} \Delta A_{i,t}
+$$
+
+```{r}
+# Upload the data set from github
+banana<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_AREA_Banano.csv", header = TRUE)
+banana_exp<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_AREA_Banano_Exportacion.csv", header = TRUE)
+plantain<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_AREA_Platano.csv", header = TRUE)
+plantain_exp<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_AREA_Platano_Exportacion.csv", header = TRUE)
+
+#merge the banana data sets and the plantain data sets
+banana<- rbind(banana, banana_exp)
+plantain<- rbind(plantain, plantain_exp)
+head(banana)
+```
+
+```{r}
+head(plantain)
+```
+
+This data sets (banana and plantain) need to be process for the network analysis. The steps are:
+
+-   Select only the cells which Año is either 2020, 2021 or 2022
+-   Group by Departamento and sum the values of the planted area
+-   Create a new column called "Cultivo" with the name of the crop (banana or plantain)
+-   The years 2020, 2021 and 2022 will be independent columns
+-   Calculate the delta years (2022-2021, 2021-2020) for the planted area in two new columns for each crop
+
+```{r}
+# Select only the cells which Año is either 2020, 2021 or 2022
+banana<- banana[banana$Año %in% c(2020, 2021, 2022),]
+plantain<- plantain[plantain$Año %in% c(2020, 2021, 2022),]
+#Remove the ',' from the Area..ha. column and transform it to numeric
+banana$Area..ha.<- as.numeric(gsub(",", "", banana$Area..ha.))
+plantain$Area..ha.<- as.numeric(gsub(",", "", plantain$Area..ha.))
+# Group by Departamento and Año and sum the values of the planted area (Area..ha.)
+banana<- aggregate(banana$Area..ha., by = list(banana$Departamento, banana$Año), FUN = sum)
+plantain<- aggregate(plantain$Area..ha., by = list(plantain$Departamento, plantain$Año), FUN = sum)
+# Create a new column called "Cultivo" with the name of the crop (banana or plantain)
+banana$Cultivo<- "Banana"
+plantain$Cultivo<- "Plantain"
+#rename the columns 
+colnames(banana)<- c("Departamento", "Año", "Area..ha.", "Cultivo")
+colnames(plantain)<- c("Departamento", "Año", "Area..ha.", "Cultivo")
+#make the categories of the Año indepent columns
+library(tidyr)
+banana<- spread(banana, key = Año, value = Area..ha.)
+plantain<- spread(plantain, key = Año, value = Area..ha.)
+#Calculate the delta years (2022-2021, 2021-2020) for the planted area in two new columns for each crop
+banana$delta_2022_2021<- banana$`2022`-banana$`2021`
+banana$delta_2021_2020<- banana$`2021`-banana$`2020`
+#caluculate the cum sum of the change of planted area
+banana$delta_cumsum<- banana$delta_2022_2021+banana$delta_2021_2020
+plantain$delta_2022_2021<- plantain$`2022`-plantain$`2021`
+plantain$delta_2021_2020<- plantain$`2021`-plantain$`2020`
+#caluculate the cum sum of the change of planted area
+plantain$delta_cumsum<- plantain$delta_2022_2021+plantain$delta_2021_2020
+# Make the cumsum of the negative values equal to 1
+banana$delta_cumsum[banana$delta_cumsum<0]<- 1
+plantain$delta_cumsum[plantain$delta_cumsum<0]<- 1
+head(banana)
+```
+
+```{r}
+head(plantain)
+```
+
+The `delta_cumsum` column is equivalent to the increase in planted area in the last three years. This area (in hectares) will be multiplied by the number of plants per hectare to get the demand for planting material in each department.
+
+*The planting density for plantain ($\rho_{\text{plantain}}$) is 1600 plants per hectare, and for banana ($\rho_{\text{banana}}$) is 2700 plants per hectare.*
+
+```{r}
+# Define the planting densities
+rho_plantain <- 1600
+rho_banana <- 2700
+# Calculate the demand for planting material in each department
+banana$demanda<- banana$delta_cumsum*rho_banana
+plantain$demanda<- plantain$delta_cumsum*rho_plantain
+head(banana)
+```
+```{r}
+head(plantain)
+```
+
+Next the data sets must be unified with the names of in the network of planting material data set (net_plant_mat). For that we will change the names in net_plant_mat to uppercase and remove the accents.
+
+
+```{r}
+# identify the names in the plantain data sets
+dput(unique(plantain$Departamento))
+```
+```{r}
+# identify the names in the banana data sets
+dput(unique(banana$Departamento))
+```
+
+
+```{r}
+# Identify the names in the network of planting material data set
+dput(unique(colnames(net_plant_mat)))
+```
+```{r}
+# Create a named vector where the names correspond to the format in net_plant_mat
+name_mapping_plantain <- c(
+  "AMAZONAS" = "Amazonas", 
+  "ANTIOQUIA" = "Antioquia", 
+  "ARAUCA" = "Arauca", 
+  "ATLANTICO" = "Atlántico", 
+  "BOLIVAR" = "Bolívar", 
+  "BOYACA" = "Boyacá", 
+  "CALDAS" = "Caldas", 
+  "CAQUETA" = "Caquetá", 
+  "CASANARE" = "Casanare", 
+  "CAUCA" = "Cauca", 
+  "CESAR" = "Cesar", 
+  "CHOCO" = "Chocó", 
+  "CORDOBA" = "Córdoba", 
+  "CUNDINAMARCA" = "Cundinamarca", 
+  "GUAINIA" = "Guainía", 
+  "GUAVIARE" = "Guaviare", 
+  "HUILA" = "Huila", 
+  "LA GUAJIRA" = "La.Guajira", 
+  "MAGDALENA" = "Magdalena", 
+  "META" = "Meta", 
+  "NARIÑO" = "Nariño", 
+  "NORTE DE SANTANDER" = "Norte.de.Santander", 
+  "PUTUMAYO" = "Putumayo", 
+  "QUINDIO" = "Quindío", 
+  "RISARALDA" = "Risaralda", 
+  "SAN ANDRES Y PROVIDENCIA" = "San.Andrés.y.Providencia", 
+  "SANTANDER" = "Santander", 
+  "SUCRE" = "Sucre", 
+  "TOLIMA" = "Tolima", 
+  "VALLE DEL CAUCA" = "Valle.del.Cauca", 
+  "VAUPES" = "Vaupés", 
+  "VICHADA" = "Vichada"
+)
+# Replace the names in plantain$Departamento using the mapping
+plantain$Departamento <- name_mapping_plantain[plantain$Departamento]
+
+# Check if all names have been replaced correctly
+dput(unique(plantain$Departamento))
+```
+```{r}
+# For bananas
+name_mapping_bn <- c(
+  "ANTIOQUIA" = "Antioquia", 
+  "ATLANTICO" = "Atlántico", 
+  "BOYACA" = "Boyacá", 
+  "CALDAS" = "Caldas", 
+  "CAQUETA" = "Caquetá", 
+  "CASANARE" = "Casanare", 
+  "CAUCA" = "Cauca", 
+  "CESAR" = "Cesar", 
+  "CHOCO" = "Chocó", 
+  "CUNDINAMARCA" = "Cundinamarca", 
+  "HUILA" = "Huila", 
+  "LA GUAJIRA" = "La.Guajira", 
+  "MAGDALENA" = "Magdalena", 
+  "META" = "Meta", 
+  "NARIÑO" = "Nariño", 
+  "NORTE DE SANTANDER" = "Norte.de.Santander", 
+  "PUTUMAYO" = "Putumayo", 
+  "QUINDIO" = "Quindío", 
+  "RISARALDA" = "Risaralda", 
+  "SAN ANDRES Y PROVIDENCIA" = "San.Andrés.y.Providencia", 
+  "SANTANDER" = "Santander",
+  "TOLIMA" = "Tolima", 
+  "VALLE DEL CAUCA" = "Valle.del.Cauca", 
+  "VAUPES" = "Vaupés")
+# Replace the names in banana$Departamento using the mapping
+banana$Departamento <- name_mapping_bn[banana$Departamento]
+# Check if all names have been replaced correctly
+dput(unique(banana$Departamento))
+```
+Save the data set only with the name of the department and the demand of planting material.
+
+# Problem!!! some values have NAs in the banana data set. We need to deal with them.
+
+
+```{r}
+# Select only the columns Departamento and demanda
+banana<- banana[,c("Departamento", "demanda", "Cultivo")]
+plantain<- plantain[,c("Departamento", "demanda",  "Cultivo")]
+# Write the data frame to a CSV file
+write.csv(banana, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_Seed_demand_Banana.csv", row.names = FALSE)
+write.csv(plantain, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_Seed_demand_Plantain.csv", row.names = FALSE)
+```
+
+
