@@ -1,0 +1,208 @@
+---
+title: "Analisis of individual Questions EKE Colombia - Banano and Plantain 2023"
+author: "Laura Valbuena"
+date: "`r Sys.Date()`"
+output: github_document
+editor_options: 
+  markdown: 
+    wrap: sentence
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE, results = 'hide')
+```
+
+## Likert library functions, and Global Variables
+
+#### Before starting
+- You need a data frame with the questions in the columns and the responses in the rows 
+- The variables in the data frame should be factors 
+
+#### `likert` Function -Based on CRAN https://cran.r-project.org/web/packages/likert/likert.pdf
+
+**Description:**\
+This function analyzes Likert type items and provides statistics about them.
+
+**Parameters:**\
+
+-   `items`: Data frame with the likert items.
+
+-   `summary`: (Optional) A pre-summarized data frame. 
+
+**Details:**\
+For each column this function calculates the percentage of responses for each factor. 
+
+**Returns:**\
+A data frame with columns "item", "Factor_1", "Factor_2", ..., "Factor_n" with percentage of responses in values. 
+
+**Example Usage:**\
+`likert(data_frame)`
+
+#### `summary` Function -Based on CRAN https://cran.r-project.org/web/packages/likert/likert.pdf
+
+**Description:**\
+This function prints summary table of likert analysis
+
+**Parameters:**\
+
+-   `Object`: Likert class data frame.
+
+**Details:**\
+This functions provides aditional information about the likert analysis. 
+
+**Returns:**\
+A data frame with columns "item", "low", "neutral", "high", "mean", "sd". Low, neutral and high correspond to the percentage of responses in levels below neutral, neutral and above neutral respectively. Mean ans sd column gives the mean and standard deviation of the results. 
+
+**Example Usage:**\
+summary(Likert_data_frame)
+
+#### `likert.histogram.plot` Function -Based on CRAN https://cran.r-project.org/web/packages/likert/likert.pdf
+
+**Description:**\
+Histogram plot of the results
+
+**Parameters:**\
+
+-   `Object`: Likert class data frame.
+
+-   `xlab`: Label for x-axis.
+
+**Details:**\
+This functions plots the number of responses of the likert analysis in a histogram plot. 
+
+**Returns:**\
+A histogram plot with missing values at left and complete response count at right. 
+
+**Example Usage:**\
+likert.histogram.plot(Likert_data_frame, xlab = "Number of responses")
+
+#### `likert.bar.plot` Function -Based on CRAN https://cran.r-project.org/web/packages/likert/likert.pdf
+
+**Description:**\
+Bar plot of the results
+
+**Parameters:**\
+
+-   `Object`: Likert class data frame.
+
+**Details:**\
+This functions plots the likert analysis in a bar plot. 
+
+**Returns:**\
+A bar plot with items at y-axis and percentage at x-axis. Up the plot there are the percentage values for low, neutral and high levels. Bars shows the distribution of responses for each factor. 
+
+**Example Usage:**\
+likert.bar.plot(Likert_data_frame)
+
+#### `likert.density.plot` Function -Based on CRAN https://cran.r-project.org/web/packages/likert/likert.pdf
+
+**Description:**\
+density plot of the results
+
+**Parameters:**\
+
+-   `Object`: Likert class data frame.
+
+-   `facet`: If "FALSE" it returns one plot with the density distribution of all items. Default "TRUE". 
+
+-   `bw`: Smoothing bandwidth. Default 0.5.
+
+**Details:**\
+This functions plots the density distribution of the likert analysis. 
+
+**Returns:**\
+Density plot with factor in the x-axis. vertical lines shows the mean of the items.
+
+**Example Usage:**\
+likert.density.plot(Likert_data_frame, facet=FALSE, bw=0.5)
+
+#### `likert.heat.plot` Function -Based on CRAN https://cran.r-project.org/web/packages/likert/likert.pdf
+
+**Description:**\
+Heat plot of the results
+
+**Parameters:**\
+
+-   `Object`: Likert class data frame.
+
+**Details:**\
+This functions plots the likert analysis in a heat plot. 
+
+**Returns:**\
+A heat plot with items at y-axis and factors at x-axis. Shows the percentage of responses for each factor. Items are sorted in alphabet order.   
+
+**Example Usage:**\
+likert.heat.plot(Likert_data_frame)
+
+```{r libraries}
+library(readr)
+library(likert)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(stringr)
+```
+
+#Dataset structure
+```{r Data_structure}
+#Read data from GitHub
+Data = read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_Focus_Group_Discussions_Likert_Scale_2023_12_08.csv")
+
+#Create the scale with dummies variables
+Data = Data %>% mutate(Answer_Likert=recode(Answer_Likert,"Muy de acuerdo"=5,"De acuerdo"=4,
+                                            "Ni de acuerdo ni en desacuerdo"=3,"En desacuerdo"=2,
+                                            "Muy en desacuerdo"=1))
+
+#Select the data and create the data frame structure for Likert analysis
+Data1 = Data[c("Group","question_number","Answer_Likert")]
+Data_n = spread(Data1,key=question_number,value=Answer_Likert)
+Data_n = Data_n[,-1]
+
+#Transform scale into factors
+Data_n = lapply(Data_n, function(x) factor(x, levels = 1:max(x, na.rm = TRUE)))
+Data_n = as.data.frame(Data_n)
+```
+
+#Likert analysis
+```{r likert_analysis}
+lk =likert(Data_n)
+lk
+```
+
+#summary
+```{r summary}
+summary(lk)
+```
+
+#likert histogram plot
+```{r likert.histogram.plot}
+likert.histogram.plot(lk, xlab = "Number of  responses")
+```
+
+#likert bar plot
+```{r likert.bar.plot}
+likert.bar.plot(lk)
+```
+
+#likert density plot 
+```{r likert.density.plot}
+#In this case, we have 23 questions and if we plot them in a facet it can be confusing. for function could help you to create multiple plots.
+
+for (col in colnames(Data_n)){
+  data = data.frame(Data_n[[col]])
+  colnames(data) = col
+  lk_ = likert(data)
+  print(likert.density.plot(lk_))
+}
+```
+
+#likert heat plot
+```{r likert.heat.plot}
+#likert heatmap always sort the data by alphabet so we had to change the items name.
+data = lk$results %>%
+      dplyr::arrange((`5`)) %>% 
+      dplyr::mutate(Item = paste(str_pad(row_number(),2, pad = "0"), Item, sep = ' '))
+lk1 =likert(summary = data) #Repeat the Likert analysis with the sorted data
+likert.heat.plot(lk1,low.color = "white", high.color = "orange") 
+```
+

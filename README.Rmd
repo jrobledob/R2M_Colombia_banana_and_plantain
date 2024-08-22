@@ -5749,13 +5749,16 @@ row_ha = rowAnnotation(crop = heat_map_data_matrix_correct$crop, col = list(crop
 column_ha_data<- c(rep("Implementation", ncol(mat_3)), rep("Correct utilization", ncol(mat)), rep("Perceived effectiveness", ncol(mat_2)))
 column_ha_levels_ordered <- HeatmapAnnotation(Level = factor(column_ha_data, levels = c("Implementation", "Correct utilization", "Perceived effectiveness")),col = list(Level = c("Implementation" = "#654321", "Perceived effectiveness" = "#9E825C", "Correct utilization" = "#D8C298")))
 
+# Replace all NA values with 0
+mat_final[is.na(mat_final)] <- 0
 
 # Create the Heatmap
 Heatmap(mat_final, name = "Standard scale",
         col = my_colors,
         top_annotation = column_ha_levels_ordered,
         right_annotation = row_ha,
-        cluster_columns = FALSE)
+        cluster_columns = FALSE,
+        na_col = "white")
 
 
 
@@ -5773,16 +5776,16 @@ my_colors <- colorRamp2(c(min(biosec_meas_matrix, na.rm = TRUE), 0, max(biosec_m
 # # Assuming you want to keep row annotations related to 'crop'
 # # Ensure heat_map_data_matrix$crop exists or adjust as necessary to your data structure
 # row_ha = rowAnnotation(crop = heat_map_data_matrix$crop, col = list(crop = c("Banana" = "#FFDA00", "Plantain" = "#28B463")))
-# 
-# # Create the Heatmap for "Biosec. Meas." column
-# Heatmap(biosec_meas_matrix, name = "Biosecurity Measures",
-#         col = my_colors,
-#         right_annotation = row_ha,
-#         cluster_columns = FALSE,
-#         cluster_rows = FALSE
-#         )  # Adjust clustering as per your analysis needs
-# 
-# # Note: The clustering, color annotations, and other features should be adjusted based on your specific analysis goals and the data characteristics.
+
+# Create the Heatmap for "Biosec. Meas." column
+Heatmap(biosec_meas_matrix, name = "Biosecurity Measures",
+        col = my_colors,
+        right_annotation = row_ha,
+        cluster_columns = FALSE,
+        cluster_rows = FALSE
+        )  # Adjust clustering as per your analysis needs
+
+# Note: The clustering, color annotations, and other features should be adjusted based on your specific analysis goals and the data characteristics.
 
 ```
 
