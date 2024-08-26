@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ## Network analysis:
@@ -102,14 +104,16 @@ cat("All binary matrices correctly reflect the categories in the original data s
 
 The four data sets will be used later for the network analysis. Names of the files:
 
+```         
 -   DATA_MAP_Net_BC.csv
 -   DATA_MAP_Net_BN.csv
 -   DATA_MAP_Net_PN.csv
 -   DATA_MAP_Net_PC.csv
+```
 
-#### Data set of the planted area by department in the last three years
+#### Organizing the Data set of the planted area by department in the last three years
 
-This data set was taken from AGRONET. It is a data set that contains the planted area of banana and plantain by department in the last three years (from 2020 to 2022, needs to be filtered). The data set for banana is the sum of the information provided in this web page for these crops: BANANO y BANANO EXPORTACION . The data set for plantain is the sum of the information provided in this web page for these crops: PLATANO, and PLATANO EXPORTACION. This data set will be used to calculate the absolute link weihgts of the plantain material network. For that we assume that the *demand of planting material* of each department is proportional to cum sum of the change of planted area in the last three years. We have assumption that if the cum sum of the change of planted area is negative there is a superhabit of planting material in that department and therefore the demand is very small *(set as 1 ha)*. If it is positive there is a deficit of planting material. The steps to calculate the cum sum of the change of planted area area:
+This data set was taken from AGRONET. It is a data set that contains the planted area of banana and plantain by department in the last three years (from 2020 to 2022, needs to be filtered). Some values in 2022 are absent for some departmenest. **In this case the values will be set as 0**. The data set for banana is the sum of the information provided in this web page for these crops: BANANO y BANANO EXPORTACION . The data set for plantain is the sum of the information provided in this web page for these crops: PLATANO, and PLATANO EXPORTACION. This data set will be used to calculate the absolute link weihgts of the plantin material network. For that we assume that the *demand of planting material* of each department is proportional to cum sum of the change of planted area in the last three years. We have assumption that if the cum sum of the change of planted area is negative there is a superhabit of planting material in that department and therefore the demand is very small *(set as 1 ha)*. If it is positive there is a deficit of planting material. The steps to calculate the cum sum of the change of planted area area:
 
 **Step 1: Calculate Yearly Area Changes**
 
@@ -146,7 +150,9 @@ This data sets (banana and plantain) need to be process for the network analysis
 -   Group by Departamento and sum the values of the planted area
 -   Create a new column called "Cultivo" with the name of the crop (banana or plantain)
 -   The years 2020, 2021 and 2022 will be independent columns
+-   Make the NAs of the new created columns equal to 0
 -   Calculate the delta years (2022-2021, 2021-2020) for the planted area in two new columns for each crop
+-   Sum the delta years to get the cum sum of the change of planted area
 
 ```{r}
 # Select only the cells which Año is either 2020, 2021 or 2022
@@ -168,6 +174,9 @@ colnames(plantain)<- c("Departamento", "Año", "Area..ha.", "Cultivo")
 library(tidyr)
 banana<- spread(banana, key = Año, value = Area..ha.)
 plantain<- spread(plantain, key = Año, value = Area..ha.)
+#Make the NAs of the new created columns equal to 0
+banana[is.na(banana)]<- 0
+plantain[is.na(plantain)]<- 0
 #Calculate the delta years (2022-2021, 2021-2020) for the planted area in two new columns for each crop
 banana$delta_2022_2021<- banana$`2022`-banana$`2021`
 banana$delta_2021_2020<- banana$`2021`-banana$`2020`
@@ -189,7 +198,7 @@ head(plantain)
 
 The `delta_cumsum` column is equivalent to the increase in planted area in the last three years. This area (in hectares) will be multiplied by the number of plants per hectare to get the demand for planting material in each department.
 
-*The planting density for plantain ($\rho_{\text{plantain}}$) is 1600 plants per hectare, and for banana ($\rho_{\text{banana}}$) is 2700 plants per hectare.*
+*The planting density for plantain (*$\rho_{\text{plantain}}$) is 1600 plants per hectare, and for banana ($\rho_{\text{banana}}$) is 2700 plants per hectare.
 
 ```{r}
 # Define the planting densities
@@ -200,27 +209,28 @@ banana$demanda<- banana$delta_cumsum*rho_banana
 plantain$demanda<- plantain$delta_cumsum*rho_plantain
 head(banana)
 ```
+
 ```{r}
 head(plantain)
 ```
 
 Next the data sets must be unified with the names of in the network of planting material data set (net_plant_mat). For that we will change the names in net_plant_mat to uppercase and remove the accents.
 
-
 ```{r}
 # identify the names in the plantain data sets
 dput(unique(plantain$Departamento))
 ```
+
 ```{r}
 # identify the names in the banana data sets
 dput(unique(banana$Departamento))
 ```
 
-
 ```{r}
 # Identify the names in the network of planting material data set
 dput(unique(colnames(net_plant_mat)))
 ```
+
 ```{r}
 # Create a named vector where the names correspond to the format in net_plant_mat
 name_mapping_plantain <- c(
@@ -263,6 +273,7 @@ plantain$Departamento <- name_mapping_plantain[plantain$Departamento]
 # Check if all names have been replaced correctly
 dput(unique(plantain$Departamento))
 ```
+
 ```{r}
 # For bananas
 name_mapping_bn <- c(
@@ -295,10 +306,8 @@ banana$Departamento <- name_mapping_bn[banana$Departamento]
 # Check if all names have been replaced correctly
 dput(unique(banana$Departamento))
 ```
+
 Save the data set only with the name of the department and the demand of planting material.
-
-# Problem!!! some values have NAs in the banana data set. We need to deal with them.
-
 
 ```{r}
 # Select only the columns Departamento and demanda
@@ -309,4 +318,119 @@ write.csv(banana, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_
 write.csv(plantain, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_Seed_demand_Plantain.csv", row.names = FALSE)
 ```
 
+The new data set created are:
 
+```         
+-   DATA_Seed_demand_Banana.csv
+-   DATA_Seed_demand_Plantain.csv
+```
+
+These data sets will be used to calculate the absolute link weights of the network of planting material.
+
+#### Loading the relative exchenge proportions between departments of planting material
+
+This data set was created from the individual surveys of the stakeholders summerized in the data set `SUP_Proportion_of_movement_of_planting_materials_by_departments.csv` and organized in the scrip `Relative_exchange_rates_by_department_Organizing_the_data` usi. The data set contains the proportion of the movement of planting material between departments. The data set is divided in two categories: banana and plantain. These two data sets are called:
+
+```         
+-   DATA_MAP_Rel_Prop_banana_Network_of_Planting_Material.csv
+-   DATA_MAP_Rel_Prop_plantain_Network_of_Planting_Material.csv
+```
+
+With these two data set two scenarios will be created:
+
+- One without rare events, this is just based on the relative exchange proportions of the planting material.
+- One with rare events, this is based on the relative exchange proportions of the planting material and the events reported in the qualitative exchange of planting material (discussion with experts). For the events where no relative exchange proportions were reported (in the individual surveys), the proportions were set as 0.005 and the proportions were normalized to sum up 1.
+
+#### Calculate the seed demand without the rare events
+
+This will be equal to the demand of each department multiplied by the relative exchange proportions of the planting material.
+
+```{r}
+
+
+I have two datasets: DATA_MAP_Net_BC.csv (referred to as BC) and DATA_MAP_Net_BN.csv (referred to as BN), both of which are adjacency binary matrices. These matrices have identical dimensions, with corresponding rows and columns.
+
+I need to identify the cells where the value is 0 in BC but non-zero in BN, and vice versa—where the value is 0 in BN but non-zero in BC.
+
+For cells that are 0 in BC but non-zero in BN, I will assign a value of 100 in a new BN dataset. Conversely, for cells that are 0 in BN but non-zero in BC, I will assign a value of 200 in a new BC dataset.
+
+Do this in R
+
+
+
+# Load the necessary libraries
+library(data.table)
+
+# Read the CSV files into data frames
+BC <- fread("DATA_MAP_Net_BC.csv")
+BN <- fread("DATA_MAP_Net_BN.csv")
+
+# Create copies of BC and BN to store the new values
+new_BC <- BC
+new_BN <- BN
+
+# Identify cells where BC is 0 and BN is non-zero, then set those cells to 100 in the new BN dataset
+new_BN[BC == 0 & BN != 0] <- 100
+
+# Identify cells where BN is 0 and BC is non-zero, then set those cells to 200 in the new BC dataset
+new_BC[BN == 0 & BC != 0] <- 200
+
+# Write the new datasets to CSV files
+fwrite(new_BN, "New_DATA_MAP_Net_BN.csv")
+fwrite(new_BC, "New_DATA_MAP_Net_BC.csv")
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+This relative exchange proportions will be multiplied by the matrix of qualitative exchange of planting material `DATA_MAP_Net_BC.csv`, `DATA_MAP_Net_BN.csv`,`DATA_MAP_Net_PN.csv`,`DATA_MAP_Net_PC.csv` to get the relative link weights of the network of planting material. ***It is important to notice that rare events are reported in the qualitative exchange of planting material (obtained from the discussion section of the EKE), but were not relatively reported in the individual surveys. Therefore, the relative exchange proportions of these events are set as 0.005 and the proportions were normalize to sum up 1***
+
+# Multiply the matrixes and correcto for rare events!!!!
+
+```{r}
+# # read the two data set of the relative proportion of the movement of planting material between departments
+# rel_prop_banana<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Rel_Prop_banana_Network_of_Planting_Material.csv", header = TRUE, row.names = 1)
+# rel_prop_plantain<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Rel_Prop_plantain_Network_of_Planting_Material.csv", header = TRUE, row.names = 1)
+# 
+# #Multiply the relative exchange proportions by the matrix of qualitative exchange of planting material for each category
+# #Banana
+# rel_prop_banana_form<- rel_prop_banana*binary_matrices[["BC"]]
+# rel_prop_banana_inf<- rel_prop_banana*binary_matrices[["BN"]]
+# #Plantain
+# rel_prop_plantain_form<- rel_prop_plantain*binary_matrices[["PC"]]
+# rel_prop_plantain_inf<- rel_prop_plantain*binary_matrices[["PN"]]
+# 
+
+```
