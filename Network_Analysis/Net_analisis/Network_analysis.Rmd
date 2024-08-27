@@ -338,99 +338,216 @@ This data set was created from the individual surveys of the stakeholders summer
 
 With these two data set two scenarios will be created:
 
-- One without rare events, this is just based on the relative exchange proportions of the planting material.
-- One with rare events, this is based on the relative exchange proportions of the planting material and the events reported in the qualitative exchange of planting material (discussion with experts). For the events where no relative exchange proportions were reported (in the individual surveys), the proportions were set as 0.005 and the proportions were normalized to sum up 1.
+-   One without rare events, this is just based on the relative exchange proportions of the planting material.
+-   One with rare events, this is based on the relative exchange proportions of the planting material and the events reported in the qualitative exchange of planting material (discussion with experts). For the events where no relative exchange proportions were reported (in the individual surveys), the proportions were set as 0.005 and the proportions were normalized to sum up 1.
 
 #### Calculate the seed demand without the rare events
 
 This will be equal to the demand of each department multiplied by the relative exchange proportions of the planting material.
 
 ```{r}
+# read the two data set of the relative proportion of the movement of planting material between departments
+rel_prop_banana<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Rel_Prop_banana_Network_of_Planting_Material.csv", header = TRUE, row.names = 1)
+rel_prop_plantain<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Rel_Prop_plantain_Network_of_Planting_Material.csv", header = TRUE, row.names = 1)
+#read the adjacency matrix of the EKE discussion of banana planting material formal and informal
+con_formal_ban<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Net_BC.csv", header = TRUE, row.names = 1)
+#informal
+con_informal_ban<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Net_BN.csv", header = TRUE, row.names = 1)
+# identify the cells that are only in con_formal_ban but not in con_informal_ban
+cells_only_informal_ban<- con_informal_ban==1 & con_formal_ban==0
+cells_only_formal_ban<- con_informal_ban==0 & con_formal_ban==1
+
+# calculate the adjacency matrix for the common events 
+adj_matri_ban_Formal<- rel_prop_banana*con_formal_ban
+#Read the proportions of formality and informality per department
+proportions_informatlity<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_Percentage_of_informal_planting_material_by_department.csv", header = TRUE)
+#Divide the column `percentage_informal` by 100
+proportions_informatlity$percentage_informal<- proportions_informatlity$percentage_informal/100
+# organize the names in the column EKE.expert.in to match the colnames of adj_matri_ban_Formal
+dput(unique(proportions_informatlity$EKE.expert.in))
+# Create a named vector where the names correspond to the format in adj_matri_ban_Formal
+name_mapping<- c("Antioquia"= "Antioquia", 
+  "Atlántico"= "Atlántico", 
+  "Bogotá, D. C."="Bogotá, D. C.", 
+  "Bolívar"= "Bolívar", 
+  "Boyacá"= "Boyacá", 
+  "Caldas"= "Caldas", 
+  "Caquetá"= "Caquetá", 
+  "Cauca"="Cauca", 
+  "Cesar"="Cesar", 
+  "Córdoba"="Córdoba", 
+  "Cundinamarca"= "Cundinamarca",
+  "Chocó"= "Chocó", 
+  "Huila"= "Huila", 
+  "La Guajira"="La.Guajira", 
+  "Magdalena"= "Magdalena", 
+  "Meta"="Meta", 
+  "Nariño"="Nariño", 
+  "Norte De Santander"= "Norte.de.Santander", 
+  "Quindío"= "Quindío", 
+  "Risaralda"= "Risaralda", 
+  "Santander"= "Santander", 
+  "Sucre"="Sucre", 
+  "Tolima"= "Tolima", 
+  "Valle Del Cauca"="Valle.del.Cauca", 
+  "Arauca"= "Arauca", 
+  "Casanare"= "Casanare", 
+  "Putumayo"= "Putumayo", 
+  "Archipiélago De San Andrés, Providencia Y Santa Catalina"= "San.Andrés.y.Providencia", 
+  "Amazonas"= "Amazonas", 
+  "Guainía"= "Guainía", 
+  "Guaviare"="Guaviare", 
+  "Vaupés"= "Vaupés", 
+  "Vichada"="Vichada")
+# Replace the names in plantain$Departamento using the mapping
+proportions_informatlity$EKE.expert.in <- name_mapping[proportions_informatlity$EKE.expert.in]
+#multiply each column of adj_matri_ban_Formal by 1 - the column `percentage_informal` of proportions_informatlity matching the name of the column of adj_matri_ban_Formal with the column `EKE.expert.in` of proportions_informatlity
+adj_matri_ban_Formal_2<- adj_matri_ban_Formal
+for (i in colnames(adj_matri_ban_Formal)){
+  adj_matri_ban_Formal_2[,i]<- adj_matri_ban_Formal_2[,i]*(1-proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_ban_Formal_2[cells_only_formal_ban]<- adj_matri_ban_Formal[cells_only_formal_ban]
+
+# for the informal network the same process is done
+adj_matri_ban_INFormal<- rel_prop_banana*con_informal_ban
+adj_matri_ban_INFormal_2<- adj_matri_ban_INFormal
+adj_matri_ban_INFormal_3<- adj_matri_ban_INFormal_2
+adj_matri_ban_INFormal_3[adj_matri_ban_INFormal_3==1]<- 10
+adj_matri_ban_INFormal_3[is.na(adj_matri_ban_INFormal_3)]<- 0
+adj_matri_ban_INFormal_3<- adj_matri_ban_INFormal_3 + con_informal_ban
+
+for (i in colnames(adj_matri_ban_INFormal)){
+  adj_matri_ban_INFormal_2[,i]<- adj_matri_ban_INFormal_2[,i]*(proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_ban_INFormal_2[cells_only_informal_ban]<- adj_matri_ban_INFormal[cells_only_informal_ban]
+# the data sets are adj_matri_ban_INFormal_2 and adj_matri_ban_Formal_2
+
+# the same is done for plantain 
+#read the adjacency matrix of the EKE discussion of plantain planting material formal and informal
+con_formal_plan<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Net_PC.csv", header = TRUE, row.names = 1)
+#informal
+con_informal_plan<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Net_PN.csv", header = TRUE, row.names = 1)
+# identify the cells that are only in con_formal_plan but not in con_informal_plan
+cells_only_informal_plan<- con_informal_plan==1 & con_formal_plan==0
+cells_only_formal_plan<- con_informal_plan==0 & con_formal_plan==1
+
+# calculate the adjacency matrix for the common events 
+adj_matri_plan_Formal<- rel_prop_plantain*con_formal_plan
+adj_matri_plan_Formal_2<- adj_matri_plan_Formal
+for (i in colnames(adj_matri_plan_Formal)){
+  adj_matri_plan_Formal_2[,i]<- adj_matri_plan_Formal_2[,i]*(1-proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_plan_Formal_2[cells_only_formal_plan]<- adj_matri_plan_Formal[cells_only_formal_plan]
+
+# for the informal network the same process is done
+adj_matri_plan_INFormal<- rel_prop_plantain*con_informal_plan
+adj_matri_plan_INFormal_2<- adj_matri_plan_INFormal
+adj_matri_plan_INFormal_3<- adj_matri_plan_INFormal_2
+adj_matri_plan_INFormal_3[adj_matri_plan_INFormal_3==1]<- 10
+adj_matri_plan_INFormal_3[is.na(adj_matri_plan_INFormal_3)]<- 0
+adj_matri_plan_INFormal_3<- adj_matri_plan_INFormal_3 + con_informal_plan
+
+for (i in colnames(adj_matri_plan_INFormal)){
+  adj_matri_plan_INFormal_2[,i]<- adj_matri_plan_INFormal_2[,i]*(proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_plan_INFormal_2[cells_only_informal_ban]<- adj_matri_plan_INFormal[cells_only_informal_ban]
+# the data sets are adj_matri_plan_Formal_2 and adj_matri_plan_INFormal_2
 
 
-I have two datasets: DATA_MAP_Net_BC.csv (referred to as BC) and DATA_MAP_Net_BN.csv (referred to as BN), both of which are adjacency binary matrices. These matrices have identical dimensions, with corresponding rows and columns.
+#Multiply the networks by the demand 
+#adj_matri_plan_Formal_2
+for (i in colnames(adj_matri_plan_Formal_2)){
+  adj_matri_plan_Formal_2[,i]<- adj_matri_plan_Formal_2[,i]*(plantain$demanda[plantain$Departamento==i])
+}
+#adj_matri_plan_INFormal_2
+for (i in colnames(adj_matri_plan_INFormal_2)){
+  adj_matri_plan_INFormal_2[,i]<- adj_matri_plan_INFormal_2[,i]*(plantain$demanda[plantain$Departamento==i])
+}
+#adj_matri_ban_Formal_2
+for (i in colnames(adj_matri_ban_Formal_2)){
+  adj_matri_ban_Formal_2[,i]<- adj_matri_ban_Formal_2[,i]*(banana$demanda[banana$Departamento==i])
+}
+#adj_matri_ban_INFormal_2
+for (i in colnames(adj_matri_ban_INFormal_2)){
+  adj_matri_ban_INFormal_2[,i]<- adj_matri_ban_INFormal_2[,i]*(banana$demanda[banana$Departamento==i])
+}
+#Make all the NA values equal to 0 in ech of the four data sets
+adj_matri_plan_Formal_2[is.na(adj_matri_plan_Formal_2)]<- 0
+adj_matri_plan_INFormal_2[is.na(adj_matri_plan_INFormal_2)]<- 0
+adj_matri_ban_Formal_2[is.na(adj_matri_ban_Formal_2)]<- 0
+adj_matri_ban_INFormal_2[is.na(adj_matri_ban_INFormal_2)]<- 0
 
-I need to identify the cells where the value is 0 in BC but non-zero in BN, and vice versa—where the value is 0 in BN but non-zero in BC.
+#write the data sets
+write.csv(adj_matri_plan_Formal_2, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Seed_network_demand_Plantain_Formal.csv", row.names = TRUE)
+write.csv(adj_matri_plan_INFormal_2, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Seed_network_demand_Plantain_INFormal.csv", row.names = TRUE)
+write.csv(adj_matri_ban_Formal_2, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Seed_network_demand_Banana_Formal.csv", row.names = TRUE)
+write.csv(adj_matri_ban_INFormal_2, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Seed_network_demand_Banana_INFormal.csv", row.names = TRUE)
 
-For cells that are 0 in BC but non-zero in BN, I will assign a value of 100 in a new BN dataset. Conversely, for cells that are 0 in BN but non-zero in BC, I will assign a value of 200 in a new BC dataset.
 
-Do this in R
-
-
-
-# Load the necessary libraries
-library(data.table)
-
-# Read the CSV files into data frames
-BC <- fread("DATA_MAP_Net_BC.csv")
-BN <- fread("DATA_MAP_Net_BN.csv")
-
-# Create copies of BC and BN to store the new values
-new_BC <- BC
-new_BN <- BN
-
-# Identify cells where BC is 0 and BN is non-zero, then set those cells to 100 in the new BN dataset
-new_BN[BC == 0 & BN != 0] <- 100
-
-# Identify cells where BN is 0 and BC is non-zero, then set those cells to 200 in the new BC dataset
-new_BC[BN == 0 & BC != 0] <- 200
-
-# Write the new datasets to CSV files
-fwrite(new_BN, "New_DATA_MAP_Net_BN.csv")
-fwrite(new_BC, "New_DATA_MAP_Net_BC.csv")
 
 ```
 
+#### Including the rare events (adjusting the ad matirx three):
 
+rare events will have a small proportion 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-This relative exchange proportions will be multiplied by the matrix of qualitative exchange of planting material `DATA_MAP_Net_BC.csv`, `DATA_MAP_Net_BN.csv`,`DATA_MAP_Net_PN.csv`,`DATA_MAP_Net_PC.csv` to get the relative link weights of the network of planting material. ***It is important to notice that rare events are reported in the qualitative exchange of planting material (obtained from the discussion section of the EKE), but were not relatively reported in the individual surveys. Therefore, the relative exchange proportions of these events are set as 0.005 and the proportions were normalize to sum up 1***
-
-# Multiply the matrixes and correcto for rare events!!!!
+proportion= 0.0005
 
 ```{r}
-# # read the two data set of the relative proportion of the movement of planting material between departments
-# rel_prop_banana<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Rel_Prop_banana_Network_of_Planting_Material.csv", header = TRUE, row.names = 1)
-# rel_prop_plantain<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/DATA_MAP_Rel_Prop_plantain_Network_of_Planting_Material.csv", header = TRUE, row.names = 1)
-# 
-# #Multiply the relative exchange proportions by the matrix of qualitative exchange of planting material for each category
-# #Banana
-# rel_prop_banana_form<- rel_prop_banana*binary_matrices[["BC"]]
-# rel_prop_banana_inf<- rel_prop_banana*binary_matrices[["BN"]]
-# #Plantain
-# rel_prop_plantain_form<- rel_prop_plantain*binary_matrices[["PC"]]
-# rel_prop_plantain_inf<- rel_prop_plantain*binary_matrices[["PN"]]
-# 
+proportion = 0.0005
+adj_matri_ban_INFormal_3[adj_matri_ban_INFormal_3==1]<- proportion
+adj_matri_ban_INFormal_3[adj_matri_ban_INFormal_3>1 & adj_matri_ban_INFormal_3<10]<- (adj_matri_ban_INFormal_3[adj_matri_ban_INFormal_3>1 & adj_matri_ban_INFormal_3<10]) -1
+adj_matri_ban_INFormal_3[adj_matri_ban_INFormal_3>=10]<- 1
+# normalize (min-max) the columns of adj_matri_ban_INFormal_3 so that the sum of each column is 1
+# Step 2: Normalize each column so the sum of each column is 1
+normalize_column <- function(x) {
+  return (x / sum(x))
+}
+adj_matri_ban_INFormal_3 <- apply(adj_matri_ban_INFormal_3, 2, normalize_column)
+
+#Make all NaN values equal to 0
+adj_matri_ban_INFormal_3[is.na(adj_matri_ban_INFormal_3)]<- 0
+### Multiply the adj_matri_ban_INFormal_3 by the demand
+adj_matri_ban_INFormal_4<- as.data.frame(adj_matri_ban_INFormal_3)
+for (i in colnames(adj_matri_ban_INFormal_4)){
+  adj_matri_ban_INFormal_4[,i]<- adj_matri_ban_INFormal_4[,i]*(proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_ban_INFormal_4[cells_only_formal_ban]<- adj_matri_ban_INFormal_3[cells_only_formal_ban]
+
+for (i in colnames(adj_matri_ban_INFormal_4)){
+  adj_matri_ban_INFormal_4[,i]<- adj_matri_ban_INFormal_4[,i]*(banana$demanda[banana$Departamento==i])
+}
+
+
+
+#adj_matri_plan_INFormal_3
+adj_matri_plan_INFormal_3[adj_matri_plan_INFormal_3==1]<- proportion
+adj_matri_plan_INFormal_3[adj_matri_plan_INFormal_3>1 & adj_matri_plan_INFormal_3<10]<- (adj_matri_plan_INFormal_3[adj_matri_plan_INFormal_3>1 & adj_matri_plan_INFormal_3<10]) -1
+adj_matri_plan_INFormal_3[adj_matri_plan_INFormal_3>=10]<- 1
+# normalize (min-max) the columns of adj_matri_plan_INFormal_3 so that the sum of each column is 1
+adj_matri_plan_INFormal_3 <- apply(adj_matri_plan_INFormal_3, 2, normalize_column)
+#Make all NaN values equal to 0
+adj_matri_plan_INFormal_3[is.na(adj_matri_plan_INFormal_3)]<- 0
+### Multiply the adj_matri_plan_INFormal_3 by the demand
+adj_matri_plan_INFormal_4<- as.data.frame(adj_matri_plan_INFormal_3)
+for (i in colnames(adj_matri_plan_INFormal_4)){
+  adj_matri_plan_INFormal_4[,i]<- adj_matri_plan_INFormal_4[,i]*(proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_plan_INFormal_4[cells_only_formal_ban]<- adj_matri_plan_INFormal_3[cells_only_formal_ban]
+
+#
+for (i in colnames(adj_matri_plan_INFormal_4)){
+  adj_matri_plan_INFormal_4[,i]<- adj_matri_plan_INFormal_4[,i]*(plantain$demanda[plantain$Departamento==i])
+}
+
+
+
+
+
+write.csv(adj_matri_plan_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Banana_INFormal.csv", row.names = TRUE)
+
+write.csv(adj_matri_ban_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Plantain_INFormal.csv", row.names = TRUE)
+
+
 
 ```
