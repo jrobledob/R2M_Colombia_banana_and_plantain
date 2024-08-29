@@ -403,10 +403,20 @@ name_mapping<- c("Antioquia"= "Antioquia",
 proportions_informatlity$EKE.expert.in <- name_mapping[proportions_informatlity$EKE.expert.in]
 #multiply each column of adj_matri_ban_Formal by 1 - the column `percentage_informal` of proportions_informatlity matching the name of the column of adj_matri_ban_Formal with the column `EKE.expert.in` of proportions_informatlity
 adj_matri_ban_Formal_2<- adj_matri_ban_Formal
+
+adj_matri_ban_Formal_3<- adj_matri_ban_Formal_2
+adj_matri_ban_Formal_3[adj_matri_ban_Formal_3==1]<- 10
+adj_matri_ban_Formal_3[is.na(adj_matri_ban_Formal_3)]<- 0
+adj_matri_ban_Formal_3<- adj_matri_ban_Formal_3 + con_formal_ban
+
+
+
 for (i in colnames(adj_matri_ban_Formal)){
   adj_matri_ban_Formal_2[,i]<- adj_matri_ban_Formal_2[,i]*(1-proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
 }
 adj_matri_ban_Formal_2[cells_only_formal_ban]<- adj_matri_ban_Formal[cells_only_formal_ban]
+
+
 
 # for the informal network the same process is done
 adj_matri_ban_INFormal<- rel_prop_banana*con_informal_ban
@@ -434,6 +444,12 @@ cells_only_formal_plan<- con_informal_plan==0 & con_formal_plan==1
 # calculate the adjacency matrix for the common events 
 adj_matri_plan_Formal<- rel_prop_plantain*con_formal_plan
 adj_matri_plan_Formal_2<- adj_matri_plan_Formal
+
+adj_matri_plan_Formal_3<- adj_matri_plan_Formal_2
+adj_matri_plan_Formal_3[adj_matri_plan_Formal_3==1]<- 10
+adj_matri_plan_Formal_3[is.na(adj_matri_plan_Formal_3)]<- 0
+adj_matri_plan_Formal_3<- adj_matri_plan_Formal_3 + con_formal_plan
+
 for (i in colnames(adj_matri_plan_Formal)){
   adj_matri_plan_Formal_2[,i]<- adj_matri_plan_Formal_2[,i]*(1-proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
 }
@@ -544,10 +560,66 @@ for (i in colnames(adj_matri_plan_INFormal_4)){
 
 
 
+#adj_matri_plan_Formal_3
+adj_matri_plan_Formal_3[adj_matri_plan_Formal_3==1]<- proportion
+adj_matri_plan_Formal_3[adj_matri_plan_Formal_3>1 & adj_matri_plan_Formal_3<10]<- (adj_matri_plan_Formal_3[adj_matri_plan_Formal_3>1 & adj_matri_plan_Formal_3<10]) -1
+adj_matri_plan_Formal_3[adj_matri_plan_Formal_3>=10]<- 1
+# normalize (min-max) the columns of adj_matri_plan_Formal_3 so that the sum of each column is 1
+adj_matri_plan_Formal_3 <- apply(adj_matri_plan_Formal_3, 2, normalize_column)
+#Make all NaN values equal to 0
+adj_matri_plan_Formal_3[is.na(adj_matri_plan_Formal_3)]<- 0
+### Multiply the adj_matri_plan_Formal_3 by the demand
+adj_matri_plan_Formal_4<- as.data.frame(adj_matri_plan_Formal_3)
+for (i in colnames(adj_matri_plan_Formal_4)){
+  adj_matri_plan_Formal_4[,i]<- adj_matri_plan_Formal_4[,i]*(1-proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_plan_Formal_4[cells_only_formal_ban]<- adj_matri_plan_Formal_3[cells_only_formal_ban]
+
+#
+for (i in colnames(adj_matri_plan_Formal_4)){
+  adj_matri_plan_Formal_4[,i]<- adj_matri_plan_Formal_4[,i]*(plantain$demanda[plantain$Departamento==i])
+}
+
+
+
+#adj_matri_ban_Formal_3
+adj_matri_ban_Formal_3[adj_matri_ban_Formal_3==1]<- proportion
+adj_matri_ban_Formal_3[adj_matri_ban_Formal_3>1 & adj_matri_ban_Formal_3<10]<- (adj_matri_ban_Formal_3[adj_matri_ban_Formal_3>1 & adj_matri_ban_Formal_3<10]) -1
+adj_matri_ban_Formal_3[adj_matri_ban_Formal_3>=10]<- 1
+# normalize (min-max) the columns of adj_matri_ban_Formal_3 so that the sum of each column is 1
+adj_matri_ban_Formal_3 <- apply(adj_matri_ban_Formal_3, 2, normalize_column)
+#Make all NaN values equal to 0
+adj_matri_ban_Formal_3[is.na(adj_matri_ban_Formal_3)]<- 0
+### Multiply the adj_matri_ban_Formal_3 by the demand
+adj_matri_ban_Formal_4<- as.data.frame(adj_matri_ban_Formal_3)
+for (i in colnames(adj_matri_ban_Formal_4)){
+  adj_matri_ban_Formal_4[,i]<- adj_matri_ban_Formal_4[,i]*(1-proportions_informatlity$percentage_informal[proportions_informatlity$EKE.expert.in==i])
+}
+adj_matri_ban_Formal_4[cells_only_formal_ban]<- adj_matri_ban_Formal_3[cells_only_formal_ban]
+
+#
+for (i in colnames(adj_matri_ban_Formal_4)){
+  adj_matri_ban_Formal_4[,i]<- adj_matri_ban_Formal_4[,i]*(plantain$demanda[plantain$Departamento==i])
+}
+
+
+
+
+
+
+
+
+
+
+
+
 write.csv(adj_matri_plan_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Banana_INFormal.csv", row.names = TRUE)
 
 write.csv(adj_matri_ban_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Plantain_INFormal.csv", row.names = TRUE)
 
+write.csv(adj_matri_plan_Formal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Plantain_Formal.csv", row.names = TRUE)
+
+write.csv(adj_matri_ban_Formal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Banana_Formal.csv", row.names = TRUE)
 
 
 ```
