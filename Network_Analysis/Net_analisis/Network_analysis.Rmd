@@ -363,6 +363,8 @@ adj_matri_ban_Formal<- rel_prop_banana*con_formal_ban
 proportions_informatlity<- read.csv("https://raw.githubusercontent.com/jrobledob/R2M_Colombia_banana_and_plantain/main/Data/SUP_Percentage_of_informal_planting_material_by_department.csv", header = TRUE)
 #Divide the column `percentage_informal` by 100
 proportions_informatlity$percentage_informal<- proportions_informatlity$percentage_informal/100
+#impute missing values inpercentage_informal with the median of the column
+proportions_informatlity$percentage_informal[is.na(proportions_informatlity$percentage_informal)]<- median(proportions_informatlity$percentage_informal, na.rm = TRUE)
 # organize the names in the column EKE.expert.in to match the colnames of adj_matri_ban_Formal
 dput(unique(proportions_informatlity$EKE.expert.in))
 # Create a named vector where the names correspond to the format in adj_matri_ban_Formal
@@ -613,13 +615,13 @@ for (i in colnames(adj_matri_ban_Formal_4)){
 
 
 
-write.csv(adj_matri_plan_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Banana_INFormal.csv", row.names = TRUE)
+write.csv(adj_matri_ban_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Banana_INFormal.csv", row.names = TRUE)
 
-write.csv(adj_matri_ban_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Plantain_INFormal.csv", row.names = TRUE)
+write.csv(adj_matri_plan_INFormal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Plantain_INFormal.csv", row.names = TRUE)
 
 write.csv(adj_matri_plan_Formal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Plantain_Formal.csv", row.names = TRUE)
 
 write.csv(adj_matri_ban_Formal_4, "C:/Users/jrobl/OneDrive - University of Florida/Documents/TA_2023_R2M/R2M_Colombia_banana_and_plantain/Data/DATA_MAP_Rare_Seed_network_demand_Banana_Formal.csv", row.names = TRUE)
 
-
+ 
 ```
